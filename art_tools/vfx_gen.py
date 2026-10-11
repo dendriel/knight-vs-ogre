@@ -60,10 +60,9 @@ SPARK_A = (C(255, 250, 220), C(255, 214, 120), C(244, 150, 70))
 # ---- 1) knight sword slash: effect frame i is played together with attack_sword frame 3+i (same anchor) ----
 def sword_slash(i):
     im = Image.new('RGBA', (F, F), (0, 0, 0, 0))
-    c, R, t0, t1 = arc_through((46, 5), (62, 30), (58, 61))
-    # shift the whole sweep a bit out so it trails the blade
-    r = R - 3
-    win = [(0.0, 0.5, 5, 1), (0.0, 1.0, 8, 1), (0.3, 1.0, 6, 1), (0.6, 1.0, 4, .7), (0.8, 1.0, 3, .4), None][i]
+    c, R, t0, t1 = arc_through((8, 29), (33, 42), (61, 34))   # varredura lateral: arco raso na altura do peito
+    r = R - 2
+    win = [(0.0, 0.5, 4, 1), (0.0, 1.0, 6, 1), (0.3, 1.0, 5, 1), (0.6, 1.0, 3.5, .7), (0.8, 1.0, 2.5, .4), None][i]
     if win:
         tail, head, tmax, al = win
         crescent(im, c, r, t0, t1, tail, head, tmax, SWORD, al)
