@@ -1,0 +1,278 @@
+{
+  "frames": [
+    {
+      "filename": "sword_slash_0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_1",
+      "frame": {
+        "x": 64,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_2",
+      "frame": {
+        "x": 128,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_3",
+      "frame": {
+        "x": 192,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_4",
+      "frame": {
+        "x": 256,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_5",
+      "frame": {
+        "x": 320,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "axe_slash_0",
+      "frame": {
+        "x": 0,
+        "y": 64,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "axe_slash_1",
+      "frame": {
+        "x": 64,
+        "y": 64,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "axe_slash_2",
+      "frame": {
+        "x": 128,
+        "y": 64,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "axe_slash_3",
+      "frame": {
+        "x": 192,
+        "y": 64,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "axe_slash_4",
+      "frame": {
+        "x": 256,
+        "y": 64,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "axe_slash_5",
+      "frame": {
+        "x": 320,
+        "y": 64,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "blood_splash_0",
+      "frame": {
+        "x": 0,
+        "y": 128,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "blood_splash_1",
+      "frame": {
+        "x": 64,
+        "y": 128,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "blood_splash_2",
+      "frame": {
+        "x": 128,
+        "y": 128,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "blood_splash_3",
+      "frame": {
+        "x": 192,
+        "y": 128,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "blood_splash_4",
+      "frame": {
+        "x": 256,
+        "y": 128,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "blood_splash_5",
+      "frame": {
+        "x": 320,
+        "y": 128,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "spirit_0",
+      "frame": {
+        "x": 0,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "spirit_1",
+      "frame": {
+        "x": 64,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "spirit_2",
+      "frame": {
+        "x": 128,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "spirit_3",
+      "frame": {
+        "x": 192,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "spirit_4",
+      "frame": {
+        "x": 256,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "spirit_5",
+      "frame": {
+        "x": 320,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      }
+    }
+  ],
+  "animations": {
+    "sword_slash": {
+      "frames": [
+        "sword_slash_0",
+        "sword_slash_1",
+        "sword_slash_2",
+        "sword_slash_3",
+        "sword_slash_4",
+        "sword_slash_5"
+      ],
+      "fps": 12,
+      "loop": false
+    },
+    "axe_slash": {
+      "frames": [
+        "axe_slash_0",
+        "axe_slash_1",
+        "axe_slash_2",
+        "axe_slash_3",
+        "axe_slash_4",
+        "axe_slash_5"
+      ],
+      "fps": 10,
+      "loop": false
+    },
+    "blood_splash": {
+      "frames": [
+        "blood_splash_0",
+        "blood_splash_1",
+        "blood_splash_2",
+        "blood_splash_3",
+        "blood_splash_4",
+        "blood_splash_5"
+      ],
+      "fps": 12,
+      "loop": false
+    },
+    "spirit": {
+      "frames": [
+        "spirit_0",
+        "spirit_1",
+        "spirit_2",
+        "spirit_3",
+        "spirit_4",
+        "spirit_5"
+      ],
+      "fps": 6,
+      "loop": false
+    }
+  },
+  "meta": {
+    "image": "vfx_spritesheet.png",
+    "frame_size": [
+      64,
+      64
+    ],
+    "note": "sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; blood_splash: on the victim (flip with it); spirit: on a body lying on the ground. Same anchor as the character frames."
+  }
+}

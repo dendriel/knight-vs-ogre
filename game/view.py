@@ -1,0 +1,130 @@
+"""Everything that draws. Uses only simple pygame calls (Surface, blit, fill, draw.rect/circle, font)."""
+import json, math, os, random
+import pygame
+from . import config as C
+from .logic import slot_props
+
+SKY = (122, 178, 224)
+DIRT = (70, 54, 46)
+OUTLINE = (18, 18, 30)
+STRIP_W = 960                      # width of the tileable cloud / hill strips
+
+
+class View:
+    def __init__(self, assets_dir, timing):
+        self.timing = timing; self.assets = assets_dir
+        self.frames = {}           # (sheet, anim, flipped) -> [6 surfaces]
+        for sheet in ('knight', 'ogre', 'vfx'): self._load_sheet(sheet)
+        load = lambda n: pygame.image.load(os.path.join(assets_dir, n + '.png')).convert_alpha()
+        self.props = {n: load(n) for n in ('medieval_house', 'tree', 'well')}
+        self.street = load('street_tile')
+        self.street_h = self.street.get_height()
+        self.font = pygame.font.Font(None, 16); self.font_big = pygame.font.Font(None, 20)
+        self.clouds = self._make_clouds()
+        self.hills_far = self._make_hills(70, (98, 156, 156), seed=3, amp=(20, 9, 5))
+        self.hills_near = self._make_hills(44, (78, 134, 110), seed=9, amp=(13, 6, 3))
+        self.slots = {}
+
+    # ------------------------------------------------------------------ assets
+    def _load_sheet(self, sheet):
+        img = pygame.image.load(os.path.join(self.assets, f'{sheet}_spritesheet.png')).convert_alpha()
+        with open(os.path.join(self.assets, f'{sheet}_spritesheet.json')) as f: anims = list(json.load(f)['animations'])
+        for r, name in enumerate(anims):
+            row = [img.subsurface((i * 64, r * 64, 64, 64)).copy() for i in range(6)]
+            self.frames[(sheet, name, False)] = row
+            self.frames[(sheet, name, True)] = [pygame.transform.flip(s, True, False) for s in row]
+
+    def _make_clouds(self):
+        s = pygame.Surface((STRIP_W, 90), pygame.SRCALPHA); rnd = random.Random(4)
+        for k in range(7):
+            cx = 60 + k * (STRIP_W - 120) // 7 + rnd.randint(-20, 20); cy = rnd.randint(22, 60); w = rnd.randint(34, 60)
+            for part in range(4):
+                ox = int((part - 1.5) * w / 3.2); r = rnd.randint(9, 15) - abs(part - 1) * 2
+                pygame.draw.circle(s, (206, 224, 242, 255), (cx + ox, cy + 4), r)
+            for part in range(4):
+                ox = int((part - 1.5) * w / 3.2); r = rnd.randint(9, 15) - abs(part - 1) * 2
+                pygame.draw.circle(s, (244, 250, 255, 255), (cx + ox, cy), r)
+            s.fill((0, 0, 0, 0), (cx - w, cy + 14, w * 2, 30))           # flat cloud bottom
+        return s
+
+    def _make_hills(self, height, color, seed, amp):
+        s = pygame.Surface((STRIP_W, height), pygame.SRCALPHA); rnd = random.Random(seed)
+        ph = [rnd.uniform(0, 6.28) for _ in amp]
+        for x in range(STRIP_W):
+            h = height - 6 - sum(a * (1 + math.sin(2 * math.pi * (k + 1) * (k + 2) * x / STRIP_W + ph[k])) for k, a in enumerate(amp))
+            h = int(max(6, min(height, h)))
+            s.fill(color + (255,), (x, h, 1, height - h))
+        return s
+
+    # ------------------------------------------------------------------ drawing
+    def blit_char(self, surf, sheet, anim, idx, wx, cx, flip, oy=0):
+        left = int(round(wx - cx)) - (C.ANCHOR_X_FLIP if flip else C.ANCHOR_X)
+        surf.blit(self.frames[(sheet, anim, flip)][idx], (left, C.GROUND_Y - 60 + oy))
+
+    def _strip(self, surf, strip, parallax, cx, y):
+        off = -int(cx * parallax) % STRIP_W
+        surf.blit(strip, (off - STRIP_W, y)); surf.blit(strip, (off, y))
+
+    def draw(self, surf, world, clock_t):
+        cx = int(round(world.cam_x())); oy = 0
+        if world.shake > 0:
+            rnd = random.Random(int(clock_t * 60)); cx += rnd.randint(-2, 2); oy = rnd.randint(-1, 1)
+        top = C.GROUND_Y - 3 + oy
+        surf.fill(SKY)
+        self._strip(surf, self.clouds, 0.15, cx, 14 + oy)
+        self._strip(surf, self.hills_far, 0.30, cx, top - self.hills_far.get_height() + 2)
+        self._strip(surf, self.hills_near, 0.55, cx, top - self.hills_near.get_height() + 2)
+        # ground: tiles repeat every 64 px, aligned with world x
+        for x in range(-(cx % 64), C.SCREEN_W + 64, 64): surf.blit(self.street, (x, top))
+        surf.fill(DIRT, (0, top + self.street_h, C.SCREEN_W, C.SCREEN_H))
+        # scenery of the visible slots
+        s0 = math.floor(cx / C.SLOT_W) - 1; s1 = math.floor((cx + C.SCREEN_W) / C.SLOT_W) + 1
+        for s in range(s0, s1 + 1):
+            if s not in self.slots: self.slots[s] = slot_props(s)
+            for name, wx in self.slots[s]:
+                img = self.props[name]; surf.blit(img, (wx - cx, C.GROUND_Y - (img.get_height() - 2) + oy))
+        # bodies stay on the floor, then the living fighters
+        for f in world.corpses:
+            if -80 < f.x - cx < C.SCREEN_W + 80:
+                self.blit_char(surf, f.kind, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy)
+        for f in sorted(world.fighters(), key=lambda q: q.x):
+            self.blit_char(surf, f.kind, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy)
+        for v in world.vfx:
+            if v['t'] >= 0:
+                k = int(v['t'] * self.timing['vfx'][v['name']])
+                if 0 <= k < 6: self.blit_char(surf, 'vfx', v['name'], k, v['x'], cx, v['flip'], oy)
+        self._hud(surf, world, clock_t)
+
+    # ------------------------------------------------------------------ HUD
+    def _text(self, surf, s, x, y, color=(255, 255, 255), font=None, align='left'):
+        font = font or self.font
+        w = font.size(s)[0] if hasattr(font, 'size') else 0
+        if align == 'right': x -= w
+        surf.blit(font.render(s, False, (0, 0, 0)), (x + 1, y + 1)); surf.blit(font.render(s, False, color), (x, y))
+
+    def _bar(self, surf, x, y, hp, color, align):
+        w, h = 140, 12
+        if align == 'right': x -= w
+        pygame.draw.rect(surf, OUTLINE, (x - 2, y - 2, w + 4, h + 4))
+        pygame.draw.rect(surf, (60, 28, 36), (x, y, w, h))
+        fill = int(w * hp / C.MAX_HP)
+        if fill > 0:
+            fx = x if align == 'left' else x + w - fill
+            pygame.draw.rect(surf, color, (fx, y, fill, h))
+            pygame.draw.rect(surf, tuple(min(255, c + 60) for c in color), (fx, y, fill, 3))
+
+    def _hud(self, surf, world, t):
+        # hero: left corner. ogre: right corner (like a fighting game)
+        self._text(surf, 'HERÓI', 10, 6, (230, 240, 255), self.font_big)
+        self._bar(surf, 10, 20, world.hero.hp, (84, 200, 96), 'left')
+        self._text(surf, f'{world.hero.hp}', 156, 18, font=self.font_big)
+        self._text(surf, f'Derrotas: {world.hero_deaths}', 10, 38, (255, 220, 150))
+        self._text(surf, 'OGRO', C.SCREEN_W - 10, 6, (255, 220, 200), self.font_big, 'right')
+        self._bar(surf, C.SCREEN_W - 10, 20, world.ogre.hp, (222, 80, 60), 'right')
+        self._text(surf, f'{world.ogre.hp}', C.SCREEN_W - 156, 18, font=self.font_big, align='right')
+        self._text(surf, f'Derrotas: {world.ogre_deaths}', C.SCREEN_W - 10, 38, (255, 220, 150), align='right')
+        if t < 8:
+            self._center(surf, 'SETAS ou A D: andar     ESPACO: atacar     F11: tela cheia', C.SCREEN_H - 14)
+
+    def _center(self, surf, s, y):
+        w = self.font.size(s)[0]; self._text(surf, s, (C.SCREEN_W - w) // 2, y)
