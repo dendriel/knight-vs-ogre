@@ -161,8 +161,9 @@ com precisão — o veredito final de visual/som é do usuário. Na dúvida entr
 
 ### 6.2 Changelog
 
-Mantenha `CHANGELOG.md` atualizado **na mesma sessão** de cada mudança (e inclua-o no commit). Formato: por data, mais
-recente primeiro; o que ainda não foi commitado fica em `[Não lançado]`. Categorias: Jogabilidade, Balanceamento (cite a
+Mantenha `CHANGELOG.md` atualizado **na mesma sessão** de cada mudança (e inclua-o no commit). Formato: um bloco por
+data, mais recente primeiro; **todos os commits do mesmo dia ficam no mesmo bloco** (sem subtítulo); o que ainda não foi
+commitado entra no bloco do dia. Categorias: Jogabilidade, Balanceamento (cite a
 constante de `config.py` e o valor antes → depois), Arte, Contrato de arte (linhas dos sheets, âncora, frames de golpe),
 Áudio, Técnico, Correções, Pendente de validação. Só inclua as categorias que têm itens.
 
