@@ -173,4 +173,16 @@ print('15 ok: moves while attacking')
 
 # 16) attack is faster than the old 1.5x, and the hero is faster than before
 assert C.KNIGHT_ATTACK_ANIM_SPEED > 1.5 and C.HERO_SPEED > 84
+# 17) ogre re-faces the hero during the wind-up of a swing (hero walks through him), and is locked once the swing is active
+w = World(T); w.cam_off = 0; w.hero.x = 100.0; w.ogre.x = 130.0; w.ogre.facing = -1; w.hero.invuln = 99
+w.ogre.set_state('attack'); w.ai_cooldown = 0
+w.update(DT, Inputs()); assert w.ogre.facing == -1
+w.hero.x = 160.0; w.update(DT, Inputs())                       # hero is now behind him, still in the wind-up
+assert w.ogre.state == 'attack' and w.ogre.facing == +1, w.ogre.facing
+for _ in range(int(2 / DT)):
+    if w.ogre.frame_index(T) >= C.ACTIVE_FRAMES[0]: break
+    w.update(DT, Inputs())
+f = w.ogre.facing; w.hero.x = 40.0; w.update(DT, Inputs())      # swing is active: direction stays locked
+assert w.ogre.facing == f
+print('17 ok: ogre turns during the wind-up, direction locked during the swing')
 print('ALL LOGIC TESTS PASSED')

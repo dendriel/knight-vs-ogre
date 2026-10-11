@@ -51,7 +51,7 @@ HALF_WIDTH = {'knight': 8, 'ogre': 10}
 
 # ---- ogre AI ------------------------------------------------------------------------------
 OGRE_ATTACK_DIST = 38              # distance at which the ogre stops walking and prepares to attack
-OGRE_WAIT_BEFORE_ATTACK = (0.55, 0.95)   # random pause (seconds) before each swing: the player's window
+OGRE_WAIT_BEFORE_ATTACK = (0.35, 0.65)   # random pause (seconds) before each swing: the player's window
 OGRE_PATIENCE_DIST = 22            # if the hero steps back less than this, the ogre keeps its attack plan
 OGRE_COOLDOWN = (0.8, 1.3)         # random rest (seconds) after a swing
 OGRE_RETALIATE_WAIT = (0.15, 0.35) # shorter pause when the ogre has just recovered from a hit

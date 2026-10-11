@@ -4,7 +4,7 @@ Formato: por data, mais recente primeiro; mudanças ainda não commitadas ficam 
 Constantes entre crases estão em `game/config.py`. Só aparecem as categorias que têm itens.
 Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio · Técnico · Correções · Pendente de validação.
 
-## [2026-10-11] — pulo, caixas e balanceamento
+## [2026-10-11] — ajustes do ogro
 
 ### Jogabilidade
 - Pulo no **Espaço** (altura ≈ a do cavaleiro, move-se no ar); o ataque passa para o **botão esquerdo do mouse**.
@@ -15,6 +15,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - Cair de uma caixa sem ter pulado toca a animação de queda.
 
 ### Balanceamento
+- Pausa do ogro antes de bater (`OGRE_WAIT_BEFORE_ATTACK`) 0,55–0,95 s → 0,35–0,65 s.
 - `OGRE_MAX_HP` 100 → 30 (3 golpes); barras de vida usam o máximo de cada lutador.
 - `HERO_SPEED` 84 → 120; o herói usa a animação `run` (`RUN_ANIM_SPEED` = 1,65).
 - Ataque de espada 1,5x → 2,0x (`KNIGHT_ATTACK_ANIM_SPEED`); o do ogro continua 1,5x (`ATTACK_ANIM_SPEED`).
@@ -35,6 +36,9 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - Novos testes de pulo, caixas, escada, alcance vertical, sobreposição e ataque em movimento (`tests/test_logic.py`).
 - `tests/fake_pygame.py` e `tests/simulate.py` passam a simular o botão esquerdo do mouse.
 - `CLAUDE.md`: seção 4.1 (pulo, caixas, alcance) e critério de delegação ao Haiku (6.1). Este changelog.
+
+### Correções
+- O ogro atacava para um lado enquanto o herói passava por ele para o outro: agora ele se vira durante a preparação do golpe (antes do frame ativo) e trava a direção só no golpe.
 
 ### Pendente de validação
 - Feeling do pulo, do ataque lateral e da velocidade nova com teclado e mouse reais (pygame de verdade).

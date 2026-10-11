@@ -159,6 +159,8 @@ class World:
 
     def _ogre_ai(self, dt):
         o, h = self.ogre, self.hero
+        if o.state == 'attack' and h.state != 'dead' and abs(h.x - o.x) > 2 and o.frame_index(self.timing) < C.ACTIVE_FRAMES[0]:
+            o.facing = 1 if h.x > o.x else -1               # wind-up: keep tracking a hero who walks through him
         if not o.can_act(): return
         if h.state == 'dead':
             if o.state != 'idle': o.set_state('idle')
