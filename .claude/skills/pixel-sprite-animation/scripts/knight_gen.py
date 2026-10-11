@@ -93,10 +93,36 @@ def death(i):
                 plume=[(-7, -1), (-9, -2), (-9, -1), (-8, 0), (-7, -1), (-7, -1)][i],
                 flash=[.85, 0, 0, 0, 0, 0][i], flap=0)
 
+
+def jump_up(i):
+    # subindo: impulso (i0 agacha) -> estica -> encolhe o joelho da frente; o pe de tras fica na linha do chao
+    return dict(weapon='sword', hx=[0, 0, 1, 1, 1, 1][i],
+                footN=[(CX + 5, GY), (CX + 5, GY - 3), (CX + 7, GY - 8), (CX + 8, GY - 11), (CX + 8, GY - 12), (CX + 7, GY - 11)][i],
+                footF=[(CX - 4, GY), (CX - 5, GY), (CX - 5, GY - 1), (CX - 4, GY), (CX - 4, GY), (CX - 4, GY)][i],
+                sink=[2.5, 0, 0, 0, 0, 0][i], lean=[0, 6, 8, 8, 6, 6][i],
+                handN=[(7, 8), (9, -3), (10, -7), (9, -9), (9, -9), (9, -8)][i],
+                wang=[165, 145, 128, 120, 118, 122][i],
+                handF=[(1, 11), (-2, 4), (-4, -1), (-5, -3), (-5, -3), (-5, -2)][i],
+                plume=[(-7, -1), (-8, 1), (-8, 2), (-8, 3), (-8, 3), (-8, 2)][i],
+                flap=[0, 1, 2, 2, 3, 2][i], shift=[0, 0, 0, 0, 0, 0][i])
+
+def jump_fall(i):
+    # caindo: pernas esticadas, bracos abertos para equilibrio, capa e pluma subindo (loop de 6 quadros)
+    return dict(weapon='sword', hx=0,
+                footN=[(CX + 8, GY - 1), (CX + 8, GY - 1), (CX + 7, GY - 2), (CX + 8, GY - 2), (CX + 8, GY - 1), (CX + 7, GY - 1)][i],
+                footF=[(CX - 7, GY), (CX - 7, GY), (CX - 6, GY), (CX - 7, GY), (CX - 7, GY), (CX - 6, GY)][i],
+                sink=0, lean=[-2, -3, -2, -3, -2, -3][i],
+                handN=[(9, -5), (9, -6), (10, -5), (9, -4), (9, -5), (10, -6)][i],
+                wang=[150, 146, 148, 152, 148, 145][i],
+                handF=[(-3, -3), (-4, -4), (-3, -2), (-4, -3), (-3, -4), (-4, -3)][i],
+                plume=[(-7, 2), (-8, 3), (-7, 3), (-8, 2), (-7, 3), (-8, 3)][i],
+                flap=[3, 4, 3, 4, 3, 4][i])
+
 ANIMS = [('idle', idle, 6), ('walk', walk, 10), ('run', lambda i: walk(i, True), 12),
          ('attack_sword', atk_sword, 12), ('attack_axe', atk_axe, 10),
          ('attack_bow', atk_bow, 10), ('attack_crossbow', atk_xbow, 10),
-         ('hurt', hurt, 10), ('death', death, 8)]
+         ('hurt', hurt, 10), ('death', death, 8),
+         ('jump_up', jump_up, 12), ('jump_fall', jump_fall, 10)]
 NOLOOP = ('attack', 'hurt', 'death')
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@
 import json, math, os, random
 from . import config as C
 
-ANIM = {'knight': {'idle': 'idle', 'walk': 'walk', 'attack': 'attack_sword', 'hurt': 'hurt', 'dead': 'death'},
+ANIM = {'knight': {'idle': 'idle', 'walk': 'run', 'attack': 'attack_sword', 'hurt': 'hurt', 'dead': 'death'},
         'ogre': {'idle': 'idle', 'walk': 'walk', 'attack': 'attack', 'hurt': 'hurt', 'dead': 'death'}}
 LOOPING = ('idle', 'walk')
 SLASH = {'knight': 'sword_slash', 'ogre': 'axe_slash'}
@@ -20,14 +20,18 @@ def load_timing(assets_dir):
 
 
 class Inputs:
-    def __init__(self, left=False, right=False, attack=False):
-        self.left, self.right, self.attack = left, right, attack
+    def __init__(self, left=False, right=False, attack=False, jump=False):
+        self.left, self.right, self.attack, self.jump = left, right, attack, jump
 
 
 class Fighter:
-    def __init__(self, kind, x, facing, hp=C.MAX_HP, invuln=0.0):
+    def __init__(self, kind, x, facing, hp=None, invuln=0.0):
+        self.max_hp = C.HERO_MAX_HP if kind == 'knight' else C.OGRE_MAX_HP
+        if hp is None: hp = self.max_hp
         self.kind, self.x, self.facing, self.hp, self.invuln = kind, float(x), facing, hp, invuln
         self.state = 'idle'; self.t = 0.0
+        self.y = 0.0; self.vy = 0.0; self.grounded = True      # y = height of the feet above the ground (up is +)
+        self.air_t = 0.0; self.air_phase = None                 # time in the current rising / falling phase
         self.hit_done = False; self.slash_done = False
         self.kb_dir = 0; self.kb_t = 0.0
 
@@ -35,13 +39,22 @@ class Fighter:
         self.state = s; self.t = 0.0; self.hit_done = False; self.slash_done = False
 
     @property
-    def anim(self): return ANIM[self.kind][self.state]
+    def airborne(self): return not self.grounded
+
+    @property
+    def anim(self):
+        if self.kind == 'knight' and self.airborne and self.state in ('idle', 'walk'):
+            return 'jump_up' if self.vy > 0 else 'jump_fall'      # falling off a ledge without jumping plays jump_fall too
+        return ANIM[self.kind][self.state]
 
     @property
     def hw(self): return C.HALF_WIDTH[self.kind]
 
     def frame_index(self, timing):
-        n = int(self.t * timing[self.kind][self.anim])
+        a = self.anim
+        if a == 'jump_up': return min(int(self.air_t * timing[self.kind][a]), 5)
+        if a == 'jump_fall': return int(self.air_t * timing[self.kind][a]) % 6
+        n = int(self.t * timing[self.kind][a])
         return n % 6 if self.state in LOOPING else min(n, 5)
 
     def duration(self, timing): return 6.0 / timing[self.kind][self.anim]
@@ -54,6 +67,7 @@ class World:
         self.timing = timing; self.rng = random.Random(seed)
         self.hero = Fighter('knight', 0.0, +1)
         self.ogre = Fighter('ogre', C.START_OGRE_OFFSET, -1)
+        self._jump_held = False; self._box_cache = {}
         self.corpses = []; self.vfx = []
         self.hero_deaths = 0; self.ogre_deaths = 0
         self.hero_timer = None; self.ogre_timer = None
@@ -66,8 +80,41 @@ class World:
     def cam_x(self): return self.hero.x - C.SCREEN_W / 2 + self.cam_off
     def fighters(self): return (self.hero, self.ogre)
 
-    def add_vfx(self, name, x, flip, delay=0.0):
-        self.vfx.append({'name': name, 'x': x, 'flip': flip, 't': -delay})
+    def add_vfx(self, name, x, flip, delay=0.0, y=0.0):
+        self.vfx.append({'name': name, 'x': x, 'flip': flip, 't': -delay, 'y': y})
+
+    # ------------------------------------------------------------------ boxes (one-way platforms)
+    def box_tops(self, x):
+        """Heights of the tops of every box cell under world x (with a little edge slack)."""
+        slot = math.floor(x / C.SLOT_W); out = []
+        for s in (slot - 1, slot, slot + 1):
+            if s not in self._box_cache: self._box_cache[s] = slot_boxes(s)
+            for bx, lvl in self._box_cache[s]:
+                if bx - C.BOX_EDGE <= x <= bx + C.BOX_W + C.BOX_EDGE: out.append(lvl * C.BOX_H)
+        return out
+
+    def support_height(self, x, y):
+        """Height of the floor under a fighter whose feet are at height y: the ground, or the highest box top that is
+        not above his feet. Boxes are one-way: walking at ground level goes straight through them."""
+        return max([0.0] + [t for t in self.box_tops(x) if t <= y + 1e-6])
+
+    def _physics(self, f, dt):
+        if f.kind != 'knight': return                     # the ogre always walks on the ground
+        if f.grounded and self.support_height(f.x, f.y) < f.y - 1e-6:
+            f.grounded = False; f.vy = 0.0                # walked off a ledge: starts falling
+        if f.grounded:
+            f.y = self.support_height(f.x, f.y); f.air_phase = None; return
+        g = 2 * C.JUMP_HEIGHT / C.JUMP_RISE_TIME ** 2
+        ny = f.y + f.vy * dt - 0.5 * g * dt * dt; f.vy -= g * dt      # exact for constant gravity (apex = JUMP_HEIGHT)
+        if f.vy <= 0:                                     # falling: land on the highest top crossed this step
+            land = [t for t in self.box_tops(f.x) if ny <= t <= f.y + 1e-6] + ([0.0] if ny <= 0 else [])
+            if land:
+                f.y = max(land); f.vy = 0.0; f.grounded = True; f.air_phase = None
+                self.events.append(('land', f.kind)); return
+        f.y = ny
+        phase = 'up' if f.vy > 0 else 'fall'
+        if phase != f.air_phase: f.air_phase = phase; f.air_t = 0.0
+        else: f.air_t += dt
 
     def bury(self, f):
         self.corpses.append(f)
@@ -83,6 +130,7 @@ class World:
         self._hero_control(dt, inp)
         self._ogre_ai(dt)
         self._knockback(dt)
+        for f in self.fighters(): self._physics(f, dt)
         self._attacks()
         self._timeouts()
         self._respawns(dt)
@@ -93,15 +141,18 @@ class World:
 
     def _hero_control(self, dt, inp):
         h = self.hero
-        if not h.can_act(): return
+        jump_edge = inp.jump and not self._jump_held; self._jump_held = inp.jump     # one jump per key press
+        if h.state not in ('idle', 'walk', 'attack'): return                          # hurt / dead: no control
         dx = (1 if inp.right else 0) - (1 if inp.left else 0)
-        if inp.attack:
-            h.set_state('attack'); return
+        if jump_edge and h.grounded:
+            h.vy = 2 * C.JUMP_HEIGHT / C.JUMP_RISE_TIME; h.grounded = False; h.air_phase = None
+            self.events.append(('jump', 'knight'))
+        if h.state == 'attack' or inp.attack:                                         # can walk (not turn) while swinging
+            if h.state != 'attack': h.set_state('attack')
+            h.x += dx * C.HERO_SPEED * C.ATTACK_MOVE_FACTOR * dt
+            return
         if dx:
-            side = 1 if h.x >= self.ogre.x else -1
             h.facing = dx; h.x += dx * C.HERO_SPEED * dt
-            o = self.ogre
-            if o.state != 'dead' and abs(h.x - o.x) < C.MIN_SEPARATION: h.x = o.x + side * C.MIN_SEPARATION
             if h.state != 'walk': h.set_state('walk')
         elif h.state != 'idle':
             h.set_state('idle')
@@ -112,8 +163,9 @@ class World:
         if h.state == 'dead':
             if o.state != 'idle': o.set_state('idle')
             return
-        o.facing = 1 if h.x > o.x else -1
+        if abs(h.x - o.x) > 2: o.facing = 1 if h.x > o.x else -1        # no flip-flop when the hero is right on top of him
         dist = abs(h.x - o.x)
+        reachable = abs(h.y - o.y) <= C.VERTICAL_REACH
         if self.ai_cooldown > 0: self.ai_cooldown -= dt
         if dist > C.OGRE_ATTACK_DIST:                      # approach
             o.x += o.facing * C.OGRE_SPEED * dt
@@ -121,6 +173,7 @@ class World:
             if dist > C.OGRE_ATTACK_DIST + C.OGRE_PATIENCE_DIST: self.ai_wait = None   # hero ran away: forget the plan
             return
         if o.state != 'idle': o.set_state('idle')
+        if not reachable: self.ai_wait = None; return      # hero too high: the ogre just waits below him
         if self.ai_cooldown <= 0:                          # in range: pause first, then swing
             if self.ai_wait is None: self.ai_wait = self.rng.uniform(*C.OGRE_WAIT_BEFORE_ATTACK)
             self.ai_wait -= dt
@@ -138,10 +191,11 @@ class World:
             if atk.state != 'attack': continue
             idx = atk.frame_index(self.timing)
             if idx >= 3 and not atk.slash_done:
-                atk.slash_done = True; self.add_vfx(SLASH[atk.kind], atk.x, atk.facing < 0)
+                atk.slash_done = True; self.add_vfx(SLASH[atk.kind], atk.x, atk.facing < 0, y=atk.y)
                 self.events.append(('swing', atk.kind))
             if atk.hit_done or idx not in C.ACTIVE_FRAMES: continue
             if tgt.state == 'dead' or tgt.invuln > 0: continue
+            if abs(atk.y - tgt.y) > C.VERTICAL_REACH: continue          # too high / low for the swing to connect
             lo, hi = REACH[atk.kind]
             a0, a1 = (atk.x + lo, atk.x + hi) if atk.facing > 0 else (atk.x - hi, atk.x - lo)
             if a0 <= tgt.x + tgt.hw and a1 >= tgt.x - tgt.hw:
@@ -150,7 +204,7 @@ class World:
 
     def _hit(self, atk, tgt):
         tgt.hp = max(0, tgt.hp - C.DAMAGE)
-        self.add_vfx('blood_splash', tgt.x, tgt.x > atk.x)
+        self.add_vfx('blood_splash', tgt.x, tgt.x > atk.x, y=tgt.y)
         self.shake = C.SHAKE_TIME
         self.events.append(('hit', tgt.kind))
         dirn = 1 if tgt.x >= atk.x else -1
@@ -159,12 +213,14 @@ class World:
         if tgt.hp <= 0:
             tgt.set_state('dead'); tgt.invuln = 999.0
             self.events.append(('death', tgt.kind))
-            self.add_vfx('spirit', tgt.x, tgt.x > atk.x, delay=C.SPIRIT_DELAY)
+            self.add_vfx('spirit', tgt.x, tgt.x > atk.x, delay=C.SPIRIT_DELAY, y=tgt.y)
             if tgt is self.hero: self.hero_deaths += 1; self.hero_timer = C.RESPAWN_DELAY
             else: self.ogre_deaths += 1; self.ogre_timer = C.RESPAWN_DELAY
         else:
             self.events.append(('hurt', tgt.kind))
-            tgt.set_state('hurt'); tgt.invuln = tgt.duration(self.timing) + C.HURT_INVULN_EXTRA
+            tgt.set_state('hurt')
+            if tgt is self.hero: tgt.invuln = tgt.duration(self.timing) + C.HURT_INVULN_EXTRA
+            elif C.OGRE_HURT_INVULN: tgt.invuln = tgt.duration(self.timing) + C.OGRE_HURT_INVULN_EXTRA
             if tgt is self.ogre: self.ai_wait = None
 
     def _timeouts(self):
@@ -192,6 +248,27 @@ class World:
                 self.ogre = Fighter('ogre', self.cam_x() + C.SCREEN_W + C.OGRE_SPAWN_MARGIN, -1)
                 self.ai_wait = None; self.ai_cooldown = 0.6
                 self.events.append(('spawn', 'ogre'))
+
+
+def _stairs(x, direction):
+    """Three columns of 1, 2 and 3 boxes (rising to the right when direction > 0)."""
+    out = []
+    for c in range(3):
+        n = c + 1 if direction > 0 else 3 - c
+        out += [(x + c * C.BOX_W, lvl) for lvl in range(1, n + 1)]
+    return out
+
+
+def slot_boxes(slot, seed=7):
+    """Box cells of one world slot: a list of (left x, level); a cell's top is level * BOX_H above the ground.
+    Deterministic like slot_props. Slot 0 has a lone box and slot 2 a staircase, so both are close to the start."""
+    x0 = slot * C.SLOT_W
+    if slot == 0: return [(x0 + 90, 1)]
+    if slot == 2: return _stairs(x0 + 14, +1)
+    r = random.Random(slot * 6571 + seed); v = r.random()
+    if v < .22: return [(x0 + r.randint(0, C.SLOT_W - C.BOX_W), 1)]
+    if v < .36: return _stairs(x0 + r.randint(0, C.SLOT_W - 3 * C.BOX_W), r.choice((1, -1)))
+    return []
 
 
 def slot_props(slot, seed=7):

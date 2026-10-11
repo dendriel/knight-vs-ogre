@@ -9,28 +9,43 @@ ANCHOR_X = 30                      # hip column inside a 64x64 frame (30 normal,
 ANCHOR_X_FLIP = 33
 
 # ---- fighters -----------------------------------------------------------------------------
-MAX_HP = 100
+HERO_MAX_HP = 100
+OGRE_MAX_HP = 30                   # 3 hits
+MAX_HP = HERO_MAX_HP               # (kept for old code/tests)
 DAMAGE = 10                        # damage of every hit (both sides)
-HERO_SPEED = 84.0                  # pixels per second
+HERO_SPEED = 120.0                 # pixels per second (was 84)
 OGRE_SPEED = 50.0
+ATTACK_MOVE_FACTOR = 1.0           # hero speed multiplier while the attack animation plays (he can move and swing)
+
+# ---- jump / boxes -------------------------------------------------------------------------
+JUMP_HEIGHT = 44.0                 # pixels the hero rises: about his own height (45 px)
+JUMP_RISE_TIME = 0.34              # seconds from take-off to the top of the jump (gravity is derived from the two)
+BOX_W = 24                         # box cell size in the world (sprite is 24x24; stacked boxes share the outline row)
+BOX_H = 23                         # half the knight's height: the top of a box is this high (23 px per level)
+BOX_EDGE = 3                       # the hero's hip may hang this far past a box edge and still stand on it
+VERTICAL_REACH = 30                # a swing only connects if both fighters' feet are within this height difference
 
 # animation speed multipliers, applied on top of the fps stored in the sprite atlases (.json stays untouched)
-ATTACK_ANIM_SPEED = 1.5            # attack animations AND their slash effects (they must stay in sync)
-WALK_ANIM_SPEED = 1.2              # walk cycle; keep it proportional to the speeds above so the feet don't slide
+ATTACK_ANIM_SPEED = 1.5            # ogre axe swing AND its slash effect (they must stay in sync)
+KNIGHT_ATTACK_ANIM_SPEED = 2.0     # knight sword swing AND its slash effect (they must stay in sync)
+WALK_ANIM_SPEED = 1.2              # ogre walk cycle; keep it proportional to OGRE_SPEED so the feet don't slide
+RUN_ANIM_SPEED = 1.65              # the hero's movement uses the 'run' cycle (~72 px/s per 1.0x), proportional to HERO_SPEED
 ANIM_SPEED = {
-    'knight': {'attack_sword': ATTACK_ANIM_SPEED, 'attack_axe': ATTACK_ANIM_SPEED, 'walk': WALK_ANIM_SPEED},
+    'knight': {'attack_sword': KNIGHT_ATTACK_ANIM_SPEED, 'attack_axe': KNIGHT_ATTACK_ANIM_SPEED, 'run': RUN_ANIM_SPEED,
+               'jump_up': 1.6},
     'ogre': {'attack': ATTACK_ANIM_SPEED, 'walk': WALK_ANIM_SPEED},
-    'vfx': {'sword_slash': ATTACK_ANIM_SPEED, 'axe_slash': ATTACK_ANIM_SPEED},
+    'vfx': {'sword_slash': KNIGHT_ATTACK_ANIM_SPEED, 'axe_slash': ATTACK_ANIM_SPEED},
 }
 HURT_INVULN_EXTRA = 0.6            # extra invulnerable seconds after the hurt animation (prevents stun-lock)
+OGRE_HURT_INVULN = True            # True: the ogre cannot be hit again during hurt + OGRE_HURT_INVULN_EXTRA
+OGRE_HURT_INVULN_EXTRA = 0.4       # extra invulnerable seconds for the ogre only (hero uses HURT_INVULN_EXTRA)
 SPAWN_INVULN = 1.0                 # a freshly spawned hero cannot be hit during this time
 KNOCKBACK = 14.0                   # pixels the victim is pushed back
 KNOCKBACK_TIME = 0.25
-MIN_SEPARATION = 22.0              # hero cannot walk through a living ogre
 
 # attack reach: interval in front of the attacker's hip (pixels), and which frames can hit
-KNIGHT_REACH = (4, 40)
-OGRE_REACH = (8, 44)
+KNIGHT_REACH = (-12, 40)           # negative start: a target overlapping the attacker (no body collision) is still hit
+OGRE_REACH = (-12, 44)
 ACTIVE_FRAMES = (3, 4)             # the swing frames of both attack animations
 HALF_WIDTH = {'knight': 8, 'ogre': 10}
 

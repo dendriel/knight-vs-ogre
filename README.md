@@ -9,12 +9,14 @@ Para gerar um `.exe`: `build_exe.bat` (resultado em `dist\KnightVsOgre.exe`).
 
 ## Controles
 - Setas esquerda/direita ou A / D: andar
-- Espaco: atacar com a espada
+- Espaco: pular
+- Botao esquerdo do mouse: atacar com a espada (golpe lateral); da para andar enquanto ataca
 - F11: tela cheia | Esc: sair
 
 ## Regras
-- Heroi (esquerda) e ogro (direita) comecam com 100 de vida; cada golpe que acerta tira 10.
-- Ao ser atingido o personagem toca "hurt" e nao pode andar nem atacar. Depois fica um instante invulneravel.
+- Heroi (esquerda) comeca com 100 de vida e o ogro (direita) com 30; cada golpe que acerta tira 10.
+- Caixas: da para pular em cima delas (a escada de 3 niveis deixa o heroi fora do alcance do ogro).
+- Ao ser atingido o personagem toca "hurt" e nao pode andar nem atacar. Depois o heroi fica um instante invulneravel (o ogro nao).
 - O golpe so acerta nos frames de impacto da animacao (o rastro da arma mostra onde).
 - Ogro morreu: o corpo fica no chao e outro ogro entra pela direita. Heroi morreu: outro heroi nasce na esquerda.
 - Contadores de derrotas de cada lado ficam abaixo das barras de vida.

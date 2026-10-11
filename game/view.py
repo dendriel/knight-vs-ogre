@@ -2,7 +2,7 @@
 import json, math, os, random
 import pygame
 from . import config as C
-from .logic import slot_props
+from .logic import slot_props, slot_boxes
 
 SKY = (122, 178, 224)
 DIRT = (70, 54, 46)
@@ -17,13 +17,14 @@ class View:
         for sheet in ('knight', 'ogre', 'vfx'): self._load_sheet(sheet)
         load = lambda n: pygame.image.load(os.path.join(assets_dir, n + '.png')).convert_alpha()
         self.props = {n: load(n) for n in ('medieval_house', 'tree', 'well')}
+        self.box = load('box')
         self.street = load('street_tile')
         self.street_h = self.street.get_height()
         self.font = pygame.font.Font(None, 16); self.font_big = pygame.font.Font(None, 20)
         self.clouds = self._make_clouds()
         self.hills_far = self._make_hills(70, (98, 156, 156), seed=3, amp=(20, 9, 5))
         self.hills_near = self._make_hills(44, (78, 134, 110), seed=9, amp=(13, 6, 3))
-        self.slots = {}
+        self.slots = {}; self.boxes = {}
 
     # ------------------------------------------------------------------ assets
     def _load_sheet(self, sheet):
@@ -83,16 +84,22 @@ class View:
             if s not in self.slots: self.slots[s] = slot_props(s)
             for name, wx in self.slots[s]:
                 img = self.props[name]; surf.blit(img, (wx - cx, C.GROUND_Y - (img.get_height() - 2) + oy))
-        # bodies stay on the floor, then the living fighters
+        # boxes: stacked boxes share their outline row, so level L is drawn L * BOX_H above the ground
+        for s in range(s0, s1 + 1):
+            if s not in self.boxes: self.boxes[s] = slot_boxes(s)
+            for bx, lvl in self.boxes[s]:
+                surf.blit(self.box, (bx - cx, C.GROUND_Y + 1 - lvl * C.BOX_H + oy))
+        # bodies stay where they fell, then the living fighters (the hero is drawn over the ogre when they overlap)
         for f in world.corpses:
             if -80 < f.x - cx < C.SCREEN_W + 80:
-                self.blit_char(surf, f.kind, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy)
-        for f in sorted(world.fighters(), key=lambda q: q.x):
-            self.blit_char(surf, f.kind, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy)
+                self.blit_char(surf, f.kind, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)))
+        for f in sorted(world.fighters(), key=lambda q: q.kind != 'ogre'):
+            self.blit_char(surf, f.kind, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)))
         for v in world.vfx:
             if v['t'] >= 0:
                 k = int(v['t'] * self.timing['vfx'][v['name']])
-                if 0 <= k < 6: self.blit_char(surf, 'vfx', v['name'], k, v['x'], cx, v['flip'], oy)
+                if 0 <= k < 6:
+                    self.blit_char(surf, 'vfx', v['name'], k, v['x'], cx, v['flip'], oy - int(round(v.get('y', 0))))
         self._hud(surf, world, clock_t)
 
     # ------------------------------------------------------------------ HUD
@@ -102,12 +109,12 @@ class View:
         if align == 'right': x -= w
         surf.blit(font.render(s, False, (0, 0, 0)), (x + 1, y + 1)); surf.blit(font.render(s, False, color), (x, y))
 
-    def _bar(self, surf, x, y, hp, color, align):
+    def _bar(self, surf, x, y, hp, max_hp, color, align):
         w, h = 140, 12
         if align == 'right': x -= w
         pygame.draw.rect(surf, OUTLINE, (x - 2, y - 2, w + 4, h + 4))
         pygame.draw.rect(surf, (60, 28, 36), (x, y, w, h))
-        fill = int(w * hp / C.MAX_HP)
+        fill = int(w * hp / max_hp)
         if fill > 0:
             fx = x if align == 'left' else x + w - fill
             pygame.draw.rect(surf, color, (fx, y, fill, h))
@@ -116,15 +123,15 @@ class View:
     def _hud(self, surf, world, t):
         # hero: left corner. ogre: right corner (like a fighting game)
         self._text(surf, 'HERÓI', 10, 6, (230, 240, 255), self.font_big)
-        self._bar(surf, 10, 20, world.hero.hp, (84, 200, 96), 'left')
+        self._bar(surf, 10, 20, world.hero.hp, world.hero.max_hp, (84, 200, 96), 'left')
         self._text(surf, f'{world.hero.hp}', 156, 18, font=self.font_big)
         self._text(surf, f'Derrotas: {world.hero_deaths}', 10, 38, (255, 220, 150))
         self._text(surf, 'OGRO', C.SCREEN_W - 10, 6, (255, 220, 200), self.font_big, 'right')
-        self._bar(surf, C.SCREEN_W - 10, 20, world.ogre.hp, (222, 80, 60), 'right')
+        self._bar(surf, C.SCREEN_W - 10, 20, world.ogre.hp, world.ogre.max_hp, (222, 80, 60), 'right')
         self._text(surf, f'{world.ogre.hp}', C.SCREEN_W - 156, 18, font=self.font_big, align='right')
         self._text(surf, f'Derrotas: {world.ogre_deaths}', C.SCREEN_W - 10, 38, (255, 220, 150), align='right')
         if t < 8:
-            self._center(surf, 'SETAS ou A D: andar     ESPACO: atacar     F11: tela cheia', C.SCREEN_H - 14)
+            self._center(surf, 'SETAS ou A D: andar    ESPACO: pular    MOUSE ESQ: atacar    F11: tela cheia', C.SCREEN_H - 14)
 
     def _center(self, surf, s, y):
         w = self.font.size(s)[0]; self._text(surf, s, (C.SCREEN_W - w) // 2, y)

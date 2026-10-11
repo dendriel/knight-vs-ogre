@@ -7,6 +7,7 @@ SRCALPHA = 1; RESIZABLE = 2; FULLSCREEN = 4
 QUIT, KEYDOWN, KEYUP = 256, 768, 769
 K_LEFT, K_RIGHT, K_UP, K_DOWN, K_a, K_d, K_w, K_s, K_SPACE, K_ESCAPE, K_F11, K_m = range(1000, 1012)
 PRESSED = set(); EVENTS = []; FLIP_HOOK = [None]
+MOUSE_LEFT = 'mouse-left'   # put it in PRESSED to simulate the left button held
 
 
 def _rgba(c): return tuple(c) + (255,) if len(c) == 3 else tuple(c)
@@ -76,4 +77,5 @@ module = N(SRCALPHA=SRCALPHA, RESIZABLE=RESIZABLE, FULLSCREEN=FULLSCREEN, QUIT=Q
            display=N(set_caption=lambda s: None, set_mode=_set_mode, get_surface=lambda: _state['screen'], flip=_flip),
            image=N(load=_load), transform=N(flip=_tflip, scale=_scale),
            draw=N(rect=_rect, circle=_circle), font=N(Font=Font), time=N(Clock=Clock),
-           event=N(get=_events), key=N(get_pressed=lambda: _Keys()))
+           event=N(get=_events), key=N(get_pressed=lambda: _Keys()),
+           mouse=N(get_pressed=lambda: (MOUSE_LEFT in PRESSED, False, False)))

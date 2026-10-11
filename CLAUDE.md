@@ -20,7 +20,7 @@ python tests/test_logic.py             # testes das regras (não precisam de jan
 python tests/simulate.py               # roda main.py/view.py reais num "pygame de mentira" e grava GIFs em out/
 ```
 
-Controles: setas ou A/D andam, **Espaço** ataca, **M** liga/desliga o som, F11 tela cheia, Esc sai.
+Controles: setas ou A/D andam, **Espaço** pula, **botão esquerdo do mouse** ataca (segurar repete), **M** liga/desliga o som, F11 tela cheia, Esc sai.
 
 > **pygame-ce:** o `pygame` clássico não instalou no Python do usuário; o jogo roda com `pip install pygame-ce` (mesmo `import pygame`).
 
@@ -84,7 +84,7 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 
 | sheet | linhas (na ordem) |
 |---|---|
-| `knight_spritesheet` | idle(6fps), walk(10), run(12), attack_sword(12), attack_axe(10), attack_bow(10), attack_crossbow(10), hurt(10), death(8) |
+| `knight_spritesheet` | idle(6fps), walk(10), run(12), attack_sword(12, golpe LATERAL), attack_axe(10), attack_bow(10), attack_crossbow(10), hurt(10), death(8), jump_up(12), jump_fall(10) |
 | `ogre_spritesheet` | idle(6), walk(10), attack(10, machado), hurt(10), death(8) |
 | `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6) |
 
@@ -92,8 +92,9 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
   (no jogo `GROUND_Y = 217`). Posicione sempre por essa coluna, senão o sprite "pula" ao virar.
 - Animações de ataque têm o golpe nos **frames 3–4**; o efeito `i` toca junto com o frame `3+i` do ataque.
 - No cavaleiro o frame 4 do arco e da besta é o disparo (a flecha/virote só é desenhada nesse frame; o projétil de verdade
-  teria de ser criado pelo jogo). **Corra, arco, besta e machado do cavaleiro existem nos sheets mas o jogo ainda não usa.**
-- Cenário: `tree` 112x128, `medieval_house` 160x160, `well` 48x64, `street_tile` 64x40 (repetível na horizontal).
+  teria de ser criado pelo jogo). **Arco, besta e machado do cavaleiro existem nos sheets mas o jogo ainda não usa** (a animação `run` já é usada ao andar).
+- Cenário: `tree` 112x128, `medieval_house` 160x160, `well` 48x64, `street_tile` 64x40 (repetível na horizontal),
+  `box` 24x24 (caixote; contorno nas 4 bordas; caixas empilhadas compartilham a linha de contorno, 23 px por nível).
   O último pixel sólido de cada objeto é o chão (a linha de baixo é o contorno).
 - Estilo: contorno 1 px `(18,18,30)`, só pixels opacos (transparência de efeitos é simulada com dithering), luz vinda do
   topo-esquerda, paleta compartilhada entre personagens e cenário.
@@ -107,6 +108,24 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 - Depois de mexer em poses rode o verificador de cortes:
   `python ../.claude/skills/pixel-sprite-animation/scripts/check_edges.py ../assets/knight_spritesheet.png`.
 - **Se mudar os frames de ataque, regenere os efeitos de golpe**: foram ajustados a essas poses exatas.
+
+### 4.1 Pulo, caixas e alcance (regras adicionadas depois)
+
+- **Pulo**: Espaço (um pulo por toque). `Fighter.y` = altura dos pés, `vy`, `grounded`. Altura `JUMP_HEIGHT` (44 px ≈ altura do
+  cavaleiro), tempo de subida `JUMP_RISE_TIME`; gravidade derivada. Move-se no ar. Animação derivada do estado físico:
+  `jump_up` (vy>0) e `jump_fall` (vy<=0, inclusive ao cair de uma caixa sem ter pulado). O ogro nunca sai do chão.
+- **Ataque**: botão esquerdo do mouse. O herói **anda enquanto ataca** (sem virar de lado). Ataque de espada em
+  `KNIGHT_ATTACK_ANIM_SPEED = 2.0`; o herói usa a animação `run` ao andar (`HERO_SPEED = 120`).
+- **Sem colisão entre personagens**: atravessam-se. `KNIGHT_REACH/OGRE_REACH` começam em −12 para que um alvo sobreposto
+  ainda seja acertado; o ogro não "pisca" de lado quando o herói está em cima dele (zona morta de 2 px).
+- **Caixas** (`slot_boxes(slot)` em `logic.py`, desenhadas em `view.py`): plataformas só de pouso (one-way). Andar no chão
+  atravessa a caixa; pular e cair em cima pousa; pode pular de dentro/na frente. Cada nível = `BOX_H` (23 px, metade do
+  cavaleiro). Slot 0 tem 1 caixa e o slot 2 uma escada 1-2-3 perto do início; o resto é sorteado de forma determinística.
+- **Alcance vertical**: um golpe só acerta se a diferença de altura dos pés ≤ `VERTICAL_REACH` (30 px; vale para os dois
+  lados). Herói em 1 caixa (23) é atingido do chão; em 2 ou 3 caixas o ogro fica embaixo sem conseguir acertar (e o
+  herói também não acerta de lá). O ogro não balança o machado no vazio.
+- **Ogro**: `OGRE_MAX_HP = 30` (3 golpes). Mantém a invulnerabilidade pós-dano (`OGRE_HURT_INVULN = True`, hurt +
+  `OGRE_HURT_INVULN_EXTRA = 0.4` → 1,0 s no total; o herói usa `HURT_INVULN_EXTRA = 0.6`); com `False` ele morria rápido demais (o usuário pediu para voltar).
 
 ## 6. Skills
 
@@ -140,10 +159,17 @@ Fluxo econômico quando delegar: (1) Haiku gera numa pasta de saída/worktree se
 aprova ou pede ajuste; (4) integra em `assets/` só depois de aprovado. Limite: Claude não ouve áudio nem julga estética
 com precisão — o veredito final de visual/som é do usuário. Na dúvida entre os dois casos, use Sonnet.
 
+### 6.2 Changelog
+
+Mantenha `CHANGELOG.md` atualizado **na mesma sessão** de cada mudança (e inclua-o no commit). Formato: por data, mais
+recente primeiro; o que ainda não foi commitado fica em `[Não lançado]`. Categorias: Jogabilidade, Balanceamento (cite a
+constante de `config.py` e o valor antes → depois), Arte, Contrato de arte (linhas dos sheets, âncora, frames de golpe),
+Áudio, Técnico, Correções, Pendente de validação. Só inclua as categorias que têm itens.
+
 ## 7. O que foi e o que NÃO foi testado (leia antes de mexer)
 
 **Testado**: `tests/test_logic.py` (início/câmera, −10 de vida por golpe, `hurt` bloqueando mover/atacar, invulnerabilidade,
-10 golpes matam, contadores, cadáver permanece, respawns nas bordas certas, pausa da IA, luta longa simulada, herói
+3 golpes matam o ogro, contadores, cadáver permanece, respawns nas bordas certas, pausa da IA, luta longa simulada, herói
 parado morre). `tests/simulate.py` executa o **`main.py`, `view.py` e `logic.py` reais** com `fake_pygame.py` (um stand-in
 em Pillow) e gravou os GIFs de gameplay que o usuário viu. Os geradores de arte reproduzem os PNGs do jogo pixel a pixel.
 

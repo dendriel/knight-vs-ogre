@@ -33,7 +33,8 @@ class Game:
         k = pygame.key.get_pressed()
         return Inputs(left=bool(k[pygame.K_LEFT] or k[pygame.K_a]),
                       right=bool(k[pygame.K_RIGHT] or k[pygame.K_d]),
-                      attack=bool(k[pygame.K_SPACE]))
+                      attack=bool(pygame.mouse.get_pressed()[0]),
+                      jump=bool(k[pygame.K_SPACE]))
 
     def handle_events(self):
         for e in pygame.event.get():

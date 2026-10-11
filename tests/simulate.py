@@ -11,7 +11,7 @@ from PIL import Image
 
 def keys_for(pressed_names):
     fp.PRESSED.clear()
-    for n in pressed_names: fp.PRESSED.add({'left': fp.K_LEFT, 'right': fp.K_RIGHT, 'space': fp.K_SPACE, 'a': fp.K_a, 'd': fp.K_d}[n])
+    for n in pressed_names: fp.PRESSED.add({'left': fp.K_LEFT, 'right': fp.K_RIGHT, 'space': fp.K_SPACE, 'attack': fp.MOUSE_LEFT, 'a': fp.K_a, 'd': fp.K_d}[n])
 
 
 def smart_bot(w):
@@ -21,7 +21,7 @@ def smart_bot(w):
     if o.state == 'attack' and o.frame_index(w.timing) <= 2 and abs(d) < 56:
         return ['left'] if d > 0 else ['right']
     if abs(d) > 41: return ['right'] if d > 0 else ['left']
-    return ['space']
+    return ['attack']
 
 
 def record(total_s, policy, stills=(), every=3, out_dir='out'):

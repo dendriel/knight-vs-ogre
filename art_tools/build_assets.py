@@ -13,7 +13,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, '..', 'assets')
 SHEETS = ['knight_spritesheet.png', 'knight_spritesheet.json', 'ogre_spritesheet.png', 'ogre_spritesheet.json',
           'vfx_spritesheet.png', 'vfx_spritesheet.json']
-SCENERY = ['tree.png', 'medieval_house.png', 'well.png', 'street_tile.png']
+SCENERY = ['tree.png', 'medieval_house.png', 'well.png', 'street_tile.png', 'box.png']
 
 
 def same(a, b):

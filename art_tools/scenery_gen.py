@@ -240,8 +240,38 @@ def make_street(seed=7):
     R(d, 0, 0, W * 3 - 1, 1, S4); R(d, 0, 2, W * 3 - 1, 2, S3); R(d, 0, 3, W * 3 - 1, 3, GAP)
     return big.crop((W, 0, 2 * W, H))
 
-tree = make_tree(); house = make_house(); well = make_well(); street = make_street()
+# ===================== BOX (24x24, wooden crate, front view) =====================
+def make_box():
+    W = H = 24
+    IRON_HL = C(84, 88, 106)
+    # background = outline colour; the 22x22 interior is painted over, so the 1 px frame stays OUT
+    im = Image.new('RGBA', (W, H), OUT); d = ImageDraw.Draw(im)
+    R(d, 1, 1, 22, 22, WD)
+    # three horizontal boards (rows 1-7, 9-14, 16-22), dark gaps between them
+    for (a, b) in ((1, 7), (9, 14), (16, 22)):
+        R(d, 1, a, 22, b, WM)
+        d.line([(1, a), (22, a)], fill=WL)          # top edge catches light
+        d.line([(1, b), (22, b)], fill=dk(WM, .8))  # bottom edge in shade
+        for gx in range(4 + a % 3, 21, 6): d.point((gx, (a + b) // 2), fill=dk(WM, .9))
+    px = im.load()
+    for y in range(1, 23):
+        for x in range(1, 23):
+            c = px[x, y]
+            if c == WD: continue
+            if x == 1 and c == WM: px[x, y] = WL        # left edge lit
+            if x == 22 or y == 22: px[x, y] = dk(c, .7) # right and bottom edges in shade
+    # diagonal cross brace (X)
+    d.line([(3, 2), (21, 20)], fill=WD, width=2)
+    d.line([(20, 2), (2, 20)], fill=WD, width=2)
+    # iron corner brackets with rivets
+    for (cx, cy) in ((1, 1), (20, 1), (1, 20), (20, 20)):
+        R(d, cx, cy, cx + 2, cy + 2, IRON)
+        d.point((cx + 1, cy + 1), fill=IRON_HL)
+    return im
+
+tree = make_tree(); house = make_house(); well = make_well(); street = make_street(); box = make_box()
 tree.save(f'{out}/tree.png'); house.save(f'{out}/medieval_house.png'); well.save(f'{out}/well.png'); street.save(f'{out}/street_tile.png')
+box.save(f'{out}/box.png')
 
 # preview scene with the knight for scale
 knight = None
@@ -255,7 +285,7 @@ for x in range(0, W, 64): scene.alpha_composite(street, (x, TOP))
 G = TOP + 3
 def put(im, x, bottom_row=None):
     h = im.size[1]; scene.alpha_composite(im, (x, G - (h - 2)))
-put(house, 10); put(tree, 180); put(well, 300)
+put(house, 10); put(tree, 180); put(well, 300); put(box, 470)
 if knight: scene.alpha_composite(knight, (370, G - 60))
 scene.resize((W * 2, H * 2), Image.NEAREST).save(f'{out}/scene_preview.png')
 st = Image.new('RGBA', (256, 40))
