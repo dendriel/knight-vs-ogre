@@ -121,6 +121,10 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T44: `Projectile.explode` + `World._explode()`, `ATTACKS[x].area` (caixa atrasada no frame do golpe), burst `rain` com `abs`; teste 48.
 - T50: `ShopScene`, `Game.start_with_shop()`, `World.bombs/throw_bomb()`, `Inputs.bomb_pressed`, run state com `bombs`; cenas 8 e 9, teste 49.
 - Teste 50: todo evento emitido por `logic.py` tem som (ou está na lista de mudos).
+- `build_exe.bat` validado de verdade: o PyInstaller gera `KnightVsOgre.exe` (≈19 MB) e ele abre campanha, modo infinito e título sem erro (testado em modo headless). Scripts das skills sincronizados com `art_tools/`. `README.md` e `CLAUDE.md` reescritos para o estado final; `TASKS_PLAN.md` marcado como executado.
+
+### Correções
+- `Game.run` (o laço principal) estava sobrescrito pelo atributo `self.run` (estado da run, T37): o jogo empacotado quebrava com 'dict object is not callable' ao iniciar. Atributo renomeado para `run_state`; achado ao rodar o executável do PyInstaller. Novos testes cobrem o laço principal (`Game.run`) com o stand-in e com o pygame real.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

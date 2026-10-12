@@ -32,5 +32,15 @@ assert type(g.scene).__name__ == 'ControlsScene'
 post_key(pygame.K_ESCAPE); run(2); post_key(pygame.K_ESCAPE); run(5)
 assert type(g.scene).__name__ == 'PlayScene'
 run(300)
+# the real main loop (Game.run) must start, run some frames and stop on its own (a name clash once broke it)
+import types
+g2 = main.Game('endless'); n = [0]; real_clock = g2.clock
+def counting_tick(fps=0):
+    n[0] += 1
+    if n[0] >= 40: g2.running = False
+    return real_clock.tick(fps)
+g2.clock = types.SimpleNamespace(tick=counting_tick)
+assert callable(g2.run); g2.run()
+assert n[0] >= 40
 print('real pygame smoke ok:', frames, 'frames,', pygame.version.ver)
 pygame.quit()

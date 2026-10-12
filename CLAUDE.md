@@ -6,21 +6,24 @@
 
 ## 1. Em uma frase
 
-Um jogo 2D de combate (cavaleiro vs. ogro) em **Python + pygame**, com toda a arte em pixel art **gerada por código**
-(Python + Pillow): personagens animados, efeitos especiais e cenário. O jogo roda e as regras estão testadas, mas
-**ainda não foi executado com o pygame de verdade** (veja a seção 7).
+Um jogo 2D de combate em **Python + pygame**, com toda a arte em pixel art **gerada por código** (Python + Pillow):
+4 classes, ~12 inimigos e 3 chefes, 3 fases temáticas + modo infinito, loja, efeitos e cenário. O plano de
+`TASKS_PLAN.md` (T00–T50) foi implementado inteiro (ver `CHANGELOG.md` e `README.md`). Falta a validação por jogo real:
+feeling, equilíbrio, sons e estética são do usuário (seção 7).
 
 ## 2. Como rodar
 
 ```
 pip install -r requirements.txt        # pygame
-python main.py                         # ou dois cliques em run_game.bat
+python main.py                         # ou dois cliques em run_game.bat (--endless, --stage 2, --class mage)
 build_exe.bat                          # gera dist\KnightVsOgre.exe (PyInstaller, não testado)
 python tests/test_logic.py             # testes das regras (não precisam de janela)
+python tests/test_scenes.py            # telas, menus, loja (stand-in de pygame em Pillow)
+python tests/real_pygame_smoke.py      # o jogo com o pygame REAL em modo headless (SDL dummy)
 python tests/simulate.py               # roda main.py/view.py reais num "pygame de mentira" e grava GIFs em out/
 ```
 
-Controles: setas ou A/D andam, **Espaço** pula, **botão esquerdo do mouse** ataca (segurar repete), **M** liga/desliga o som, F11 tela cheia, Esc sai.
+Controles: setas ou A/D andam, **Espaço** pula, **botão esquerdo** ataca (clicar de novo = combo; segurar com a barra cheia = especial), **botão direito** ataque secundário, **1** poção, **2** bomba, **M** som, F11 tela cheia, **Esc** menu. A tabela única é `CONTROLS` em `config.py`.
 
 > **pygame-ce:** o `pygame` clássico não instalou no Python do usuário; o jogo roda com `pip install pygame-ce` (mesmo `import pygame`).
 
@@ -35,8 +38,8 @@ game/audio.py           toca os SFX a partir de `world.events` (falha em silênc
 assets/                 spritesheets (png + json) e cenário (png) usados pelo jogo
 assets/sfx/             efeitos sonoros .wav (gerados por código, ver skill game-audio-synthesis)
 assets/music/           trilha .wav em loop (`music_gen.py` da mesma skill regenera)
-tests/                  test_logic.py, simulate.py, fake_pygame.py (stand-in em Pillow para rodar sem janela)
-art_tools/              geradores da arte (ver seção 5); build_assets.py regenera tudo em assets/
+tests/                  test_logic.py (50 testes), test_scenes.py, real_pygame_smoke.py, simulate.py, fake_pygame.py (stand-in em Pillow)
+art_tools/              geradores da arte (ver seção 5); build_assets.py regenera tudo em assets/ (knight/ogre/enemy/class/vfx/theme/proj/icons_gen)
 .claude/skills/         4 skills do projeto (carregadas automaticamente pelo Claude Code, ver seção 6)
 install_skills.py       OPCIONAL: instala as skills também como skills pessoais (~/.claude/skills)
 requirements.txt        pygame            requirements-art.txt   Pillow (só para as ferramentas de arte)
@@ -75,6 +78,23 @@ centro).
   de 64 px alinhados ao mundo, mais nuvens e duas colinas com parallax (geradas no `view.py`, sem arquivos).
 - **Janela**: tela interna 480x270 ampliada por **escala inteira** (pixels quadrados e nítidos); redimensionável; F11
   alterna tela cheia; no Windows chama `SetProcessDPIAware`.
+
+### 4.3 Sistemas do plano T01–T50 (resumo para quem vai mexer)
+
+- **Tudo é dado**: `FIGHTER_DEFS[kind]` (herói/classe/inimigo/boss: vida, velocidade, sheet, mapa de animações, IA,
+  `ai_params`, guarda, boss...), `ATTACKS[id]` (animação, dano, alcance, frames ativos, `next` do combo, `shoot`,
+  `area`, `burst`, `cooldown`, `wear`, `guard_break`...), `WEAPONS`, `CLASSES`, `ELITE_MODS`, `STAGES/THEMES`.
+  Um ataque/inimigo/classe novo = entradas de dados + uma linha de sheet.
+- **Mundo** (`World`): `hero` + `enemies`; `World(stage=None)` = modo infinito (respawn, elenco por abates);
+  com `stage` = percurso finito (`_stage`: encontros → `queue` → entram enquanto `alive < max_alive`, arena do boss,
+  `stage_clear`, `defeated`). Projéteis (`straight`/`lob` com marcador), `AreaHit`, `timers` (rajadas de especiais).
+- **Entrada → telas** (`main.Game`): `sample_inputs` calcula as bordas; pilha de cenas `Title → Select → Play
+  (+ Pause/Controls/Defeat/Summary) → Shop → … → End`. `Game.run` / `run_start` = estado que atravessa as fases
+  (ouro, poções, arma, armadura, bombas) e o snapshot do início da fase (D9).
+- **Arte**: `build_assets.py` regenera tudo; as classes/inimigos são o rig do cavaleiro/ogro com **override
+  temporário de paleta** (`enemy_gen.palette`), nunca mudando as saídas já existentes.
+- **Eventos** (`world.events` → `audio.SOUND_FOR`): todo evento emitido precisa de som ou estar na lista de mudos do
+  teste 50.
 
 ## 5. Arte (convenções que o código do jogo assume — não quebre!)
 
@@ -192,28 +212,36 @@ constante de `config.py` e o valor antes → depois), Arte, Contrato de arte (li
 
 ## 7. O que foi e o que NÃO foi testado (leia antes de mexer)
 
-**Testado**: `tests/test_logic.py` (início/câmera, −10 de vida por golpe, `hurt` bloqueando mover/atacar, invulnerabilidade,
-3 golpes matam o ogro, contadores, cadáver permanece, respawns nas bordas certas, pausa da IA, luta longa simulada, herói
-parado morre). `tests/simulate.py` executa o **`main.py`, `view.py` e `logic.py` reais** com `fake_pygame.py` (um stand-in
-em Pillow) e gravou os GIFs de gameplay que o usuário viu. Os geradores de arte reproduzem os PNGs do jogo pixel a pixel.
+**Testado automaticamente** (rode tudo antes de commitar; os três primeiros não precisam de janela):
+- `tests/test_logic.py` (50 testes): dano/hurt/invulnerabilidade, vários inimigos, ataques como dados, projéteis e
+  áreas, poções, combo, machado/arco/besta, armadura, barra de combo e especial, fichas e elites, cada inimigo, fases
+  (encontros, arena, boss, derrota, renascer), curva de dificuldade, classes, secundário, loja/bombas, mapa de áudio.
+- `tests/test_scenes.py`: pilha de telas com o stand-in Pillow (título, classe, pausa, comandos, derrota, conclusão,
+  loja, fim); `tests/real_pygame_smoke.py`: o jogo com o **pygame de verdade** em modo headless.
+- `python art_tools/build_assets.py --check` (assets = geradores) e `check_edges.py` (cortes nos quadros).
+- `tests/simulate.py` grava GIFs de gameplay (modo infinito).
+- Um bot ingênuo (aperta o ataque sem esquivar) vence a fase 2 sempre, a fase 1 às vezes e perde a fase 3 — serve só
+  de régua grosseira.
 
-**NÃO testado — verifique na primeira execução real**
-1. Rodar com o **pygame de verdade** no Windows: qualquer diferença entre ele e o stand-in aparece aqui (fonte do HUD —
-   `pygame.font.Font(None, 16)` e o acento de "HERÓI", tamanho/DPI da janela, F11, desempenho do `transform.scale`).
-2. O **feeling** do combate com teclado real: velocidades, janela da IA, alcance dos golpes, tamanho do knockback —
-   tudo em `game/config.py`.
-3. `build_exe.bat` (PyInstaller) nunca foi executado.
-4. **Sons (10 SFX) criados mas ainda não ouvidos pelo usuário** — volumes/timbres a ajustar. Música (`medieval_theme.wav`, 35 s, loop) também ainda não ouvida; volumes em `config.py` (`MUSIC_VOLUME`).
-5. Velocidades: ataques 1,5x e andar 1,2x mais rápidos (multiplicadores em `config.py`: `ATTACK_ANIM_SPEED`, `WALK_ANIM_SPEED`).
+**NÃO testado — valide jogando**
+1. O **feeling** com teclado e mouse reais: velocidades, janelas de combo/especial, alcance, recargas, knockback,
+   telegrafia dos inimigos (minotauro, arqueiro) e **equilíbrio** (vida, dano, preços da loja, drops) — tudo em
+   `game/config.py` e `game/stages.py`.
+2. **Estética** da arte nova vista só em imagens estáticas (poses de combo/especial, as 3 classes novas, os chefes,
+   temas, projéteis de 8–16 px, HUD com fonte real).
+3. **Sons**: 29 SFX sintetizados (12 originais + 17 da passada de áudio) e a música nunca foram ouvidos pelo usuário.
+4. `build_exe.bat` (PyInstaller): ver o CHANGELOG; rode no Windows do usuário antes de distribuir.
+5. Modo infinito: elenco por abates e multidão máxima 3 (`ENDLESS_*`) são escolhas minhas.
 
-## 8. Próximos passos sugeridos (o usuário disse que seguirá o desenvolvimento por aqui)
+## 8. Próximos passos sugeridos
 
-- Primeiro: rodar `python main.py`, jogar uns minutos e ajustar `config.py` (dificuldade) e quaisquer bugs de pygame real.
-- Usar o que já existe nos sheets: correr (Shift), ataque de machado, arco e besta do herói (precisa de projétil).
-- Mais inimigos (reaproveitar `ogre_gen.py` com outra paleta/arma), tela de início/pause/game over, som (SFX gerados por
-  código ou arquivos), pontuação, partículas de poeira nos passos, sombra sob os personagens.
-- Quando for criar arte nova, use as skills acima; quando mudar contratos (linhas dos sheets, âncora), atualize esta
-  seção 5 e o `meta` do `.json`.
+- Jogar de ponta a ponta (campanha com cada classe), anotar o que está fácil/difícil/injusto e ajustar `config.py` /
+  `stages.py`; ouvir os SFX e a música.
+- Ideias que ficaram fora: persistência entre execuções (T51), correr com Shift, música por fase, mais chefes e
+  inimigos, pontuação, partículas de poeira, sombra sob os personagens, remapear teclas, joystick.
+- Quando for criar arte nova use as skills; quando mudar contratos (linhas dos sheets, âncora, tamanho de quadro)
+  atualize a seção 5 e o `meta` do `.json`. Os scripts das skills em `.claude/skills/*/scripts` são cópias das
+  ferramentas de `art_tools/`: mantenha-os em sincronia.
 
 ## 9. Histórico resumido da conversa original
 

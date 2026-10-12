@@ -167,4 +167,15 @@ g = main.Game('endless'); step(g, 2); g.run_start = dict(gold=500, potions=0, we
 assert isinstance(g.scene, S.PlayScene) and g.world.gold == 0
 print('9 ok: shop (prices, caps, knight-only weapons, free of charge below the cheapest price, restart goes through it)')
 
+# 10) the main loop itself: Game.run() runs frames and stops when `running` goes False
+g = main.Game('endless'); n = [0]
+orig = g.clock.tick
+def tick(fps=0):
+    n[0] += 1
+    if n[0] >= 25: g.running = False
+    return orig(fps)
+g.clock.tick = tick
+g.run(); assert n[0] == 25
+print('10 ok: Game.run main loop')
+
 print('ALL SCENE TESTS PASSED')

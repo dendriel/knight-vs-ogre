@@ -234,8 +234,123 @@ def coin_glint(i):
         if k % 3 == 0: put(im, x, y + 1, GC_DARK, al); put(im, x + 1, y + 1, GC_DARK, al)
     return im
 
+# ---- 7) combo strokes: same palette/timing as sword_slash; effect frame i plays with attack_sword_2/3 frame 3+i ----
+def _slash(i, pts, win_set, seed):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0))
+    c, R, t0, t1 = arc_through(*pts)
+    r = R - 2
+    win = win_set[i]
+    if win:
+        tail, head, tmax, al = win
+        crescent(im, c, r, t0, t1, tail, head, tmax, SWORD, al)
+        sparks(im, c, r, t0, t1, max(tail, .3), head, [3, 6, 5, 4, 3][i], SPARK_S, seed + i, al)
+    else:
+        sparks(im, c, r, t0, t1, .75, 1.0, 5, SPARK_S, seed + 90, .6, spread=(-2, 6))
+    return im
+
+def sword_slash_2(i):      # rising cut: from low behind up to high in front
+    return _slash(i, ((6, 47), (36, 55), (60, 26)),
+                  [(0.0, 0.5, 4, 1), (0.0, 1.0, 6, 1), (0.3, 1.0, 5, 1), (0.6, 1.0, 3.5, .7), (0.8, 1.0, 2.5, .4), None], 30)
+
+def sword_slash_3(i):      # overhead chop: from above the head down to the front, wider and brighter
+    return _slash(i, ((14, 6), (47, 8), (59, 42)),
+                  [(0.0, 0.5, 5, 1), (0.0, 1.0, 8, 1), (0.25, 1.0, 7, 1), (0.55, 1.0, 5, .8), (0.8, 1.0, 3, .45), None], 50)
+
+# ---- 8) spin slash (knight special): a flat ring of light whirling around the hero at chest height ----
+def spin_slash(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0))
+    cx, cy = 30, 36
+    rx = [12, 22, 28, 30, 28, 22][i]; ry = max(3, int(rx * .32)); al = [1, 1, 1, .9, .55, .3][i]
+    for k in range(180):
+        a = k * math.tau / 180 + i * 1.3
+        near = math.sin(a) > 0                               # the half in front of the body is brighter and thicker
+        col = SWORD[0] if near else SWORD[2]
+        x, y = cx + math.cos(a) * rx, cy + math.sin(a) * ry
+        # a gap rotating with the frame makes the whirl read as motion
+        if (k // 22 + i) % 4 == 0: continue
+        put(im, x, y, col, al)
+        if near and rx > 14: put(im, x, y + 1, SWORD[1], al)
+        if near and rx > 20: put(im, x, y - 1, SWORD[1], al * .8)
+    sparks(im, (cx, cy), rx, 0, math.tau, 0, 1, [4, 6, 8, 8, 6, 4][i], SPARK_S, 70 + i, al, spread=(-2, 3))
+    return im
+
+# ---- 9) charge: warm light gathering around the hero while the special is held (re-spawned while holding) ----
+def charge(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0)); cx = 30
+    rr = [16, 13, 10, 8, 10, 13][i]; al = [.5, .7, .9, 1, .9, .7][i]          # ground ring contracting then pulsing
+    for k in range(40):
+        a = k * math.tau / 40
+        put(im, cx + math.cos(a) * rr, 57 + math.sin(a) * rr * .28, GC_LIGHT if k % 2 else GC_GOLD, al)
+    rnd = random.Random(23)
+    for k in range(12):                                                         # embers rising along the body
+        ox = rnd.uniform(-11, 11); y0 = rnd.uniform(40, 58); sp = rnd.uniform(3, 6)
+        y = y0 - sp * i
+        if 6 <= y <= 58:
+            put(im, cx + ox, y, GC_WHITE if k % 3 == 0 else GC_GOLD, 1.0)
+            if k % 2: put(im, cx + ox, y + 1, GC_DARK, .8)
+    return im
+
+# ---- 10) block spark: a flash on the front of a shield when it stops a blow (anchor of the defender, faces right) ----
+def block_spark(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0)); cx, cy = 45, 36
+    arm = [3, 7, 8, 6, 3, 0][i]
+    for d in range(1, arm + 1):
+        col = GC_WHITE if d <= 2 else (GC_LIGHT if d <= 5 else GC_GOLD)
+        for dx, dy in ((d, 0), (-d, 0), (0, d), (0, -d), (d - 1, d - 1), (-(d - 1), d - 1), (d - 1, -(d - 1)), (-(d - 1), -(d - 1))):
+            put(im, cx + dx, cy + dy, col, 1.0 if i < 4 else .5)
+    if arm: put(im, cx, cy, GC_WHITE)
+    rnd = random.Random(41)
+    for k in range(8):
+        a = rnd.uniform(-math.pi * 0.8, math.pi * 0.8); v = rnd.uniform(3, 7)
+        if i == 0: continue
+        put(im, cx + math.cos(a) * v * i * .6, cy + math.sin(a) * v * i * .6 + .5 * i * i * .2, GC_LIGHT if k % 2 else GC_GOLD, 1 if i < 4 else .5)
+    return im
+
+# ---- 11) stone spikes: rock spikes bursting out of the ground in front of the caster (secondary of the mage) ----
+STONE = (C(214, 218, 226), C(160, 166, 182), C(112, 118, 136), C(70, 74, 92))
+
+def stone_spikes(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0))
+    hs = [3, 10, 17, 17, 11, 4][i]; al = [1, 1, 1, 1, .8, .5][i]
+    for k, x in enumerate((24, 36, 48, 58)):
+        h = hs - (k % 2) * 4
+        if h < 2: continue
+        for y in range(h):
+            w = max(1, int((h - y) * .45) + 1)
+            for dx in range(-w, w + 1):
+                col = STONE[0] if dx < -w // 2 else (STONE[1] if dx <= w // 2 else STONE[2])
+                put(im, x + dx, 58 - y, col, al)
+        put(im, x, 58 - h, STONE[3], al)
+    rnd = random.Random(8)
+    for k in range(8):                                                   # dust and chips
+        if i == 0: break
+        put(im, 20 + rnd.randint(0, 44) + i, 58 - rnd.randint(0, 4 + 3 * i), STONE[1], .8 if i < 4 else .4)
+    return im
+
+# ---- 12) fire burst: the explosion of a fireball (ground level, centred on the hip column) ----
+FIRE = (C(255, 250, 210), C(255, 214, 96), C(246, 138, 52), C(188, 66, 40))
+
+def fire_burst(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0)); cx, cy = 30, 50
+    r = [5, 11, 15, 16, 13, 8][i]; al = [1, 1, 1, .85, .6, .35][i]
+    for y in range(-r, r + 1):
+        for x in range(-r, r + 1):
+            d2 = x * x * .8 + y * y * 1.25
+            if d2 > r * r: continue
+            f = d2 / (r * r)
+            col = FIRE[0] if f < .15 else (FIRE[1] if f < .45 else (FIRE[2] if f < .8 else FIRE[3]))
+            put(im, cx + x, cy + y - r // 3, col, al)
+    rnd = random.Random(15)
+    for k in range(10):
+        a = rnd.uniform(0, math.tau); v = rnd.uniform(.8, 1.4) * (r + 3)
+        put(im, cx + math.cos(a) * v, cy - r // 3 + math.sin(a) * v * .8, FIRE[1] if k % 2 else FIRE[2], al)
+    return im
+
 EFFECTS = [('sword_slash', sword_slash, 12), ('axe_slash', axe_slash, 10), ('blood_splash', blood, 12), ('spirit', spirit, 6),
-           ('heal', heal, 10), ('coin_glint', coin_glint, 12)]
+           ('heal', heal, 10), ('coin_glint', coin_glint, 12),
+           ('sword_slash_2', sword_slash_2, 12), ('sword_slash_3', sword_slash_3, 12),
+           ('spin_slash', spin_slash, 12), ('charge', charge, 10), ('block_spark', block_spark, 14),
+           ('stone_spikes', stone_spikes, 12), ('fire_burst', fire_burst, 14)]
 
 if __name__ == '__main__':
     out = sys.argv[1] if len(sys.argv) > 1 else './out'; os.makedirs(out, exist_ok=True)
@@ -243,7 +358,7 @@ if __name__ == '__main__':
     atlas = {'frames': [], 'animations': {}, 'meta': {'image': 'vfx_spritesheet.png', 'frame_size': [64, 64], 'note':
              'sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; '
              'blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life '
-             '(any healing item); coin_glint: on the hero when he picks up gold. Same anchor as the character frames.'}}
+             '(any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held; block_spark: on the front of a shielded defender; stone_spikes: ground spikes in front of the mage; fire_burst: an explosion on the ground. Same anchor as the character frames.'}}
     for r, (name, fn, fps) in enumerate(EFFECTS):
         for i in range(6):
             sheet.alpha_composite(fn(i), (i * F, r * F))

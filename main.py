@@ -31,9 +31,9 @@ class Game:
         self.screen = pygame.Surface((C.SCREEN_W, C.SCREEN_H))     # internal low-res canvas
         self.clock = pygame.time.Clock(); self.running = True; self.t = 0.0
         self.stage_id = 'endless'; self.hero_class = hero_class                 # chosen class (T45 sets it from the menu)
-        self.run = dict(gold=0, potions=0, weapon=None, armor=0, bombs=0)  # what travels between stages (D6)
+        self.run_state = dict(gold=0, potions=0, weapon=None, armor=0, bombs=0)  # what travels between stages (D6)
         self.shop_log = []                                           # ids bought (tests / stats)
-        self.run_start = dict(self.run)                              # snapshot at the start of the stage (D9)
+        self.run_start = dict(self.run_state)                              # snapshot at the start of the stage (D9)
         self.scenes = [PlayScene()]                                 # scene stack: the last one is on top
         self._scale, self._off = 1, (0, 0)                          # window -> internal canvas mapping (set by present())
         self._prev = dict(attack=False, secondary=False, potion=False, bomb=False); self._attack_t = 0.0; self._lock = False
@@ -56,7 +56,7 @@ class Game:
         self.stage_id = stage_id
         stage = STAGES.get(stage_id)
         if stage is None: run = dict(gold=0, potions=0, weapon=None, armor=0, bombs=0)     # endless: nothing carries over
-        elif run is None: run = self.run
+        elif run is None: run = self.run_state
         self.run_start = {k: (dict(v) if isinstance(v, dict) else v) for k, v in run.items()}
         self.world = World(self.timing, stage=stage, hero_class=self.hero_class)
         self.world.apply_run(self.run_start)
@@ -70,7 +70,7 @@ class Game:
         self.scenes = [ShopScene(self, stage_id, run)]; self._lock = True
 
     def to_title(self):
-        self.run = dict(gold=0, potions=0, weapon=None, armor=0, bombs=0)
+        self.run_state = dict(gold=0, potions=0, weapon=None, armor=0, bombs=0)
         self.world = World(self.timing); self.scenes = [TitleScene()]; self._lock = True
 
     def restart_stage(self):
@@ -85,9 +85,9 @@ class Game:
 
     def after_summary(self):
         """Continue after the stage summary: carry the run state to the next stage of the campaign, or end."""
-        self.run = self.world.export_run()
+        self.run_state = self.world.export_run()
         i = CAMPAIGN.index(self.stage_id) if self.stage_id in CAMPAIGN else -1
-        if 0 <= i < len(CAMPAIGN) - 1: self.start_with_shop(CAMPAIGN[i + 1], self.run)
+        if 0 <= i < len(CAMPAIGN) - 1: self.start_with_shop(CAMPAIGN[i + 1], self.run_state)
         else:
             self.scenes = [EndScene()]; self._lock = True
 

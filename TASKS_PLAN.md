@@ -1,5 +1,8 @@
 # TASKS_PLAN — plano de execução das tarefas do README
 
+> **Status (2026-10-12): executado.** T00–T50 estão implementadas e testadas (T51 ficou fora do escopo, como previsto);
+> ver `CHANGELOG.md` para o que cada tarefa entregou e as escolhas feitas. D8–D10 seguiram o padrão recomendado.
+
 Este documento transforma a seção **TODO** do `README.md` em um plano executável: corrige incoerências, ordena as
 tarefas por dependência e propõe, para cada uma, o que mudar, como testar, que arte é necessária e quem executa
 (Haiku/Sonnet, critério da seção 6.1 do `CLAUDE.md`). É uma **proposta**: os itens marcados **[DECISÃO]** precisam de
