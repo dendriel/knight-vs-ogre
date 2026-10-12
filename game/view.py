@@ -18,6 +18,7 @@ class View:
         load = lambda n: pygame.image.load(os.path.join(assets_dir, n + '.png')).convert_alpha()
         self.props = {n: load(n) for n in ('medieval_house', 'tree', 'well')}
         self.box = load('box')
+        self.pickup_img = {'potion': load('potion'), 'coins': load('coin_bag')}; self.coin_icon = load('coin')
         self.street = load('street_tile')
         self.street_h = self.street.get_height()
         self.font = pygame.font.Font(None, 16); self.font_big = pygame.font.Font(None, 20)
@@ -95,6 +96,12 @@ class View:
                 self.blit_char(surf, f.kind, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)))
         for f in sorted(world.fighters(), key=lambda q: q.kind != 'ogre'):
             self.blit_char(surf, f.kind, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)))
+        # layer order: scenery -> boxes -> bodies -> fighters -> pickups (in front of the characters) -> effects -> HUD
+        for p in world.pickups:                                     # items bob a little once they have landed
+            if -40 < p.x - cx < C.SCREEN_W + 40:
+                img = self.pickup_img[p.kind]; bob = int(round(1.4 * math.sin(p.t * 4))) if p.y <= 0 else 0
+                surf.blit(img, (int(round(p.x)) - cx - img.get_width() // 2,
+                                C.GROUND_Y - (img.get_height() - 2) - int(round(p.y)) - bob + oy))
         for v in world.vfx:
             if v['t'] >= 0:
                 k = int(v['t'] * self.timing['vfx'][v['name']])
@@ -125,7 +132,8 @@ class View:
         self._text(surf, 'HERÓI', 10, 6, (230, 240, 255), self.font_big)
         self._bar(surf, 10, 20, world.hero.hp, world.hero.max_hp, (84, 200, 96), 'left')
         self._text(surf, f'{world.hero.hp}', 156, 18, font=self.font_big)
-        self._text(surf, f'Derrotas: {world.hero_deaths}', 10, 38, (255, 220, 150))
+        surf.blit(self.coin_icon, (10, 37)); self._text(surf, f'{world.gold}', 22, 37, (255, 214, 80))
+        self._text(surf, f'Derrotas: {world.hero_deaths}', 10, 52, (255, 220, 150))
         self._text(surf, 'OGRO', C.SCREEN_W - 10, 6, (255, 220, 200), self.font_big, 'right')
         self._bar(surf, C.SCREEN_W - 10, 20, world.ogre.hp, world.ogre.max_hp, (222, 80, 60), 'right')
         self._text(surf, f'{world.ogre.hp}', C.SCREEN_W - 156, 18, font=self.font_big, align='right')

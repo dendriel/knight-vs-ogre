@@ -269,9 +269,93 @@ def make_box():
         d.point((cx + 1, cy + 1), fill=IRON_HL)
     return im
 
+# ===================== PICKUPS (small HUD/world items) =====================
+RED_HL = C(250, 150, 140); RED_L = C(222, 62, 62); RED = C(182, 34, 44); RED_D = C(120, 22, 34)
+GLASS_DK = C(70, 110, 150); GOLD_HL = C(255, 236, 150); GOLD_D = C(176, 120, 40); ROPE = C(196, 172, 120)
+
+def from_grid(rows, pal):
+    # one char per pixel, '.' = transparent; every row must have the same length
+    w = len(rows[0]); assert all(len(r) == w for r in rows), 'ragged grid'
+    im = Image.new('RGBA', (w, len(rows)), (0, 0, 0, 0)); px = im.load()
+    for y, r in enumerate(rows):
+        for x, ch in enumerate(r):
+            if ch != '.': px[x, y] = pal[ch]
+    return im
+
+def make_potion():
+    # 12x16 red health flask: wooden cork, glass neck and bulb, red liquid, light from top-left
+    pal = {'O': OUT, 'K': WL, 'k': WM, 'w': WD, 'G': GLASS, 'H': GLASS_HL, 'D': GLASS_DK,
+           'h': RED_HL, 'R': RED_L, 'M': RED, 'd': RED_D}
+    return from_grid([
+        "....OOOO....",
+        "...OKKkwO...",
+        "...OKkkwO...",
+        "..OHHGGGGO..",
+        ".OHGGGGGGDO.",
+        "OHGGGGGGGGDO",
+        "OGRRRRRRRRdO",
+        "OGhRRRRRRRdO",
+        "OGRRRRRRRRdO",
+        "OGhRRRRRRMdO",
+        "ORRRRRRRMMdO",
+        "ORRRRRMMMMdO",
+        "ORRRMMMMMMdO",
+        "ORMMMMMMMMdO",
+        ".OddddddddO.",
+        "..OOOOOOOO..",
+    ], pal)
+
+def make_coin():
+    # 8x8 gold coin icon: outline, lit top-left, dark bottom-right
+    pal = {'O': OUT, 'H': GOLD_HL, 'G': GOLD, 'D': GOLD_D}
+    return from_grid([
+        "..OOOO..",
+        ".OHGGDO.",
+        "OHGGGGDO",
+        "OGGGGGDO",
+        "OGGGGDDO",
+        "OGGDDDDO",
+        ".ODDDDO.",
+        "..OOOO..",
+    ], pal)
+
+def make_coin_bag():
+    # 16x16 cloth money bag: tied neck with rope, gold risco on the cloth, a coin peeking out at the base
+    W = H = 16
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    rows = {2: (4, 8), 3: (4, 8), 4: (3, 9), 5: (3, 9), 6: (2, 10), 7: (1, 11), 8: (1, 11), 9: (1, 11),
+            10: (1, 11), 11: (1, 11), 12: (1, 11), 13: (2, 10), 14: (3, 9)}
+    for y, (x0, x1) in rows.items():
+        for x in range(x0, x1 + 1):
+            col = WL if x <= x0 + 1 else (WD if x >= x1 - 1 else WM)
+            d.point((x, y), fill=col)
+    d.line([(3, 4), (9, 4)], fill=ROPE)                 # tie around the neck
+    d.line([(7, 5), (7, 6), (8, 7)], fill=ROPE)         # loose end of the string
+    d.line([(6, 8), (6, 11)], fill=GOLD)                # gold risco on the cloth
+    d.point((5, 9), fill=GOLD_D)
+    im = outline(im)
+    coin = make_coin_grid_7()
+    im.alpha_composite(coin, (9, 9))
+    return im
+
+def make_coin_grid_7():
+    # 7x7 coin used beside the bag (same palette as make_coin)
+    pal = {'O': OUT, 'H': GOLD_HL, 'G': GOLD, 'D': GOLD_D}
+    return from_grid([
+        "..OOO..",
+        ".OHGGDO",
+        "OHGGGDO",
+        "OGGGGDO",
+        "OGGGGDO",
+        "ODDDDDO",
+        "..OOO..",
+    ], pal)
+
 tree = make_tree(); house = make_house(); well = make_well(); street = make_street(); box = make_box()
+potion = make_potion(); coin_bag = make_coin_bag(); coin = make_coin()
 tree.save(f'{out}/tree.png'); house.save(f'{out}/medieval_house.png'); well.save(f'{out}/well.png'); street.save(f'{out}/street_tile.png')
 box.save(f'{out}/box.png')
+potion.save(f'{out}/potion.png'); coin_bag.save(f'{out}/coin_bag.png'); coin.save(f'{out}/coin.png')
 
 # preview scene with the knight for scale
 knight = None

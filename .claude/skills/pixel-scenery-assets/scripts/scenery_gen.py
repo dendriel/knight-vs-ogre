@@ -240,8 +240,122 @@ def make_street(seed=7):
     R(d, 0, 0, W * 3 - 1, 1, S4); R(d, 0, 2, W * 3 - 1, 2, S3); R(d, 0, 3, W * 3 - 1, 3, GAP)
     return big.crop((W, 0, 2 * W, H))
 
-tree = make_tree(); house = make_house(); well = make_well(); street = make_street()
+# ===================== BOX (24x24, wooden crate, front view) =====================
+def make_box():
+    W = H = 24
+    IRON_HL = C(84, 88, 106)
+    # background = outline colour; the 22x22 interior is painted over, so the 1 px frame stays OUT
+    im = Image.new('RGBA', (W, H), OUT); d = ImageDraw.Draw(im)
+    R(d, 1, 1, 22, 22, WD)
+    # three horizontal boards (rows 1-7, 9-14, 16-22), dark gaps between them
+    for (a, b) in ((1, 7), (9, 14), (16, 22)):
+        R(d, 1, a, 22, b, WM)
+        d.line([(1, a), (22, a)], fill=WL)          # top edge catches light
+        d.line([(1, b), (22, b)], fill=dk(WM, .8))  # bottom edge in shade
+        for gx in range(4 + a % 3, 21, 6): d.point((gx, (a + b) // 2), fill=dk(WM, .9))
+    px = im.load()
+    for y in range(1, 23):
+        for x in range(1, 23):
+            c = px[x, y]
+            if c == WD: continue
+            if x == 1 and c == WM: px[x, y] = WL        # left edge lit
+            if x == 22 or y == 22: px[x, y] = dk(c, .7) # right and bottom edges in shade
+    # diagonal cross brace (X)
+    d.line([(3, 2), (21, 20)], fill=WD, width=2)
+    d.line([(20, 2), (2, 20)], fill=WD, width=2)
+    # iron corner brackets with rivets
+    for (cx, cy) in ((1, 1), (20, 1), (1, 20), (20, 20)):
+        R(d, cx, cy, cx + 2, cy + 2, IRON)
+        d.point((cx + 1, cy + 1), fill=IRON_HL)
+    return im
+
+# ===================== PICKUPS (small HUD/world items) =====================
+RED_HL = C(250, 150, 140); RED_L = C(222, 62, 62); RED = C(182, 34, 44); RED_D = C(120, 22, 34)
+GLASS_DK = C(70, 110, 150); GOLD_HL = C(255, 236, 150); GOLD_D = C(176, 120, 40); ROPE = C(196, 172, 120)
+
+def from_grid(rows, pal):
+    # one char per pixel, '.' = transparent; every row must have the same length
+    w = len(rows[0]); assert all(len(r) == w for r in rows), 'ragged grid'
+    im = Image.new('RGBA', (w, len(rows)), (0, 0, 0, 0)); px = im.load()
+    for y, r in enumerate(rows):
+        for x, ch in enumerate(r):
+            if ch != '.': px[x, y] = pal[ch]
+    return im
+
+def make_potion():
+    # 12x16 red health flask: wooden cork, glass neck and bulb, red liquid, light from top-left
+    pal = {'O': OUT, 'K': WL, 'k': WM, 'w': WD, 'G': GLASS, 'H': GLASS_HL, 'D': GLASS_DK,
+           'h': RED_HL, 'R': RED_L, 'M': RED, 'd': RED_D}
+    return from_grid([
+        "....OOOO....",
+        "...OKKkwO...",
+        "...OKkkwO...",
+        "..OHHGGGGO..",
+        ".OHGGGGGGDO.",
+        "OHGGGGGGGGDO",
+        "OGRRRRRRRRdO",
+        "OGhRRRRRRRdO",
+        "OGRRRRRRRRdO",
+        "OGhRRRRRRMdO",
+        "ORRRRRRRMMdO",
+        "ORRRRRMMMMdO",
+        "ORRRMMMMMMdO",
+        "ORMMMMMMMMdO",
+        ".OddddddddO.",
+        "..OOOOOOOO..",
+    ], pal)
+
+def make_coin():
+    # 8x8 gold coin icon: outline, lit top-left, dark bottom-right
+    pal = {'O': OUT, 'H': GOLD_HL, 'G': GOLD, 'D': GOLD_D}
+    return from_grid([
+        "..OOOO..",
+        ".OHGGDO.",
+        "OHGGGGDO",
+        "OGGGGGDO",
+        "OGGGGDDO",
+        "OGGDDDDO",
+        ".ODDDDO.",
+        "..OOOO..",
+    ], pal)
+
+def make_coin_bag():
+    # 16x16 cloth money bag: tied neck with rope, gold risco on the cloth, a coin peeking out at the base
+    W = H = 16
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    rows = {2: (4, 8), 3: (4, 8), 4: (3, 9), 5: (3, 9), 6: (2, 10), 7: (1, 11), 8: (1, 11), 9: (1, 11),
+            10: (1, 11), 11: (1, 11), 12: (1, 11), 13: (2, 10), 14: (3, 9)}
+    for y, (x0, x1) in rows.items():
+        for x in range(x0, x1 + 1):
+            col = WL if x <= x0 + 1 else (WD if x >= x1 - 1 else WM)
+            d.point((x, y), fill=col)
+    d.line([(3, 4), (9, 4)], fill=ROPE)                 # tie around the neck
+    d.line([(7, 5), (7, 6), (8, 7)], fill=ROPE)         # loose end of the string
+    d.line([(6, 8), (6, 11)], fill=GOLD)                # gold risco on the cloth
+    d.point((5, 9), fill=GOLD_D)
+    im = outline(im)
+    coin = make_coin_grid_7()
+    im.alpha_composite(coin, (9, 9))
+    return im
+
+def make_coin_grid_7():
+    # 7x7 coin used beside the bag (same palette as make_coin)
+    pal = {'O': OUT, 'H': GOLD_HL, 'G': GOLD, 'D': GOLD_D}
+    return from_grid([
+        "..OOO..",
+        ".OHGGDO",
+        "OHGGGDO",
+        "OGGGGDO",
+        "OGGGGDO",
+        "ODDDDDO",
+        "..OOO..",
+    ], pal)
+
+tree = make_tree(); house = make_house(); well = make_well(); street = make_street(); box = make_box()
+potion = make_potion(); coin_bag = make_coin_bag(); coin = make_coin()
 tree.save(f'{out}/tree.png'); house.save(f'{out}/medieval_house.png'); well.save(f'{out}/well.png'); street.save(f'{out}/street_tile.png')
+box.save(f'{out}/box.png')
+potion.save(f'{out}/potion.png'); coin_bag.save(f'{out}/coin_bag.png'); coin.save(f'{out}/coin.png')
 
 # preview scene with the knight for scale
 knight = None
@@ -255,7 +369,7 @@ for x in range(0, W, 64): scene.alpha_composite(street, (x, TOP))
 G = TOP + 3
 def put(im, x, bottom_row=None):
     h = im.size[1]; scene.alpha_composite(im, (x, G - (h - 2)))
-put(house, 10); put(tree, 180); put(well, 300)
+put(house, 10); put(tree, 180); put(well, 300); put(box, 470)
 if knight: scene.alpha_composite(knight, (370, G - 60))
 scene.resize((W * 2, H * 2), Image.NEAREST).save(f'{out}/scene_preview.png')
 st = Image.new('RGBA', (256, 40))

@@ -86,7 +86,7 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 |---|---|
 | `knight_spritesheet` | idle(6fps), walk(10), run(12), attack_sword(12, golpe LATERAL), attack_axe(10), attack_bow(10), attack_crossbow(10), hurt(10), death(8), jump_up(12), jump_fall(10) |
 | `ogre_spritesheet` | idle(6), walk(10), attack(10, machado), hurt(10), death(8) |
-| `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6) |
+| `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6), heal(10), coin_glint(12) |
 
 - **Âncora**: coluna do quadril = 30 no frame normal, **33 quando espelhado** (63−30); linha do chão = 58 dentro do frame
   (no jogo `GROUND_Y = 217`). Posicione sempre por essa coluna, senão o sprite "pula" ao virar.
@@ -126,6 +126,18 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
   herói também não acerta de lá). O ogro não balança o machado no vazio.
 - **Ogro**: `OGRE_MAX_HP = 30` (3 golpes). Mantém a invulnerabilidade pós-dano (`OGRE_HURT_INVULN = True`, hurt +
   `OGRE_HURT_INVULN_EXTRA = 0.4` → 1,0 s no total; o herói usa `HURT_INVULN_EXTRA = 0.6`); com `False` ele morria rápido demais (o usuário pediu para voltar).
+
+### 4.2 Pickups e ouro
+
+- Ao morrer, o ogro sorteia (em `World.loot_rng`, fluxo separado da IA) uma poção (`POTION_DROP_CHANCE` 0,30; cura
+  `POTION_HEAL` 30) e uma bolsa de ouro (`COIN_BAG_DROP_CHANCE` 0,50; `COIN_BAG_COINS` 5–10). Os sorteios são independentes.
+- Só o herói coleta (`World._pickups`): alcance horizontal `PICKUP_RADIUS`, vertical `PICKUP_REACH_Y`. Poção com vida
+  cheia **não** é consumida (fica no chão). O ouro (`World.gold`) é do jogador e **não zera** quando o herói morre.
+- Itens não somem com o tempo; no máximo `PICKUP_MAX` no mundo (os mais antigos somem). Evento `('pickup', kind)`
+  emitido ao coletar. **Efeitos**: ouro toca `coin_glint` no herói + SFX `coin_pickup`; qualquer cura passa por
+  `World.heal(f, amount)` (efeito `heal` verde no personagem + evento `('heal', kind)` + SFX `heal`), então novos itens de
+  vida só chamam esse método. **Camadas** (view.py): cenário → caixas → corpos → lutadores → pickups → efeitos → HUD
+  (itens ficam à frente dos personagens). Sprites: `potion` 12x16, `coin_bag` 16x16, `coin` 8x8 (ícone do HUD).
 
 ## 6. Skills
 

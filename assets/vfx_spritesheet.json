@@ -215,6 +215,114 @@
         "w": 64,
         "h": 64
       }
+    },
+    {
+      "filename": "heal_0",
+      "frame": {
+        "x": 0,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "heal_1",
+      "frame": {
+        "x": 64,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "heal_2",
+      "frame": {
+        "x": 128,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "heal_3",
+      "frame": {
+        "x": 192,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "heal_4",
+      "frame": {
+        "x": 256,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "heal_5",
+      "frame": {
+        "x": 320,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "coin_glint_0",
+      "frame": {
+        "x": 0,
+        "y": 320,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "coin_glint_1",
+      "frame": {
+        "x": 64,
+        "y": 320,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "coin_glint_2",
+      "frame": {
+        "x": 128,
+        "y": 320,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "coin_glint_3",
+      "frame": {
+        "x": 192,
+        "y": 320,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "coin_glint_4",
+      "frame": {
+        "x": 256,
+        "y": 320,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "coin_glint_5",
+      "frame": {
+        "x": 320,
+        "y": 320,
+        "w": 64,
+        "h": 64
+      }
     }
   ],
   "animations": {
@@ -265,6 +373,30 @@
       ],
       "fps": 6,
       "loop": false
+    },
+    "heal": {
+      "frames": [
+        "heal_0",
+        "heal_1",
+        "heal_2",
+        "heal_3",
+        "heal_4",
+        "heal_5"
+      ],
+      "fps": 10,
+      "loop": false
+    },
+    "coin_glint": {
+      "frames": [
+        "coin_glint_0",
+        "coin_glint_1",
+        "coin_glint_2",
+        "coin_glint_3",
+        "coin_glint_4",
+        "coin_glint_5"
+      ],
+      "fps": 12,
+      "loop": false
     }
   },
   "meta": {
@@ -273,6 +405,6 @@
       64,
       64
     ],
-    "note": "sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; blood_splash: on the victim (flip with it); spirit: on a body lying on the ground. Same anchor as the character frames."
+    "note": "sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life (any healing item); coin_glint: on the hero when he picks up gold. Same anchor as the character frames."
   }
 }

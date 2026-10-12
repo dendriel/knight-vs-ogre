@@ -49,6 +49,15 @@ OGRE_REACH = (-12, 44)
 ACTIVE_FRAMES = (3, 4)             # the swing frames of both attack animations
 HALF_WIDTH = {'knight': 8, 'ogre': 10}
 
+# ---- pickups (dropped by ogres, only the hero can collect them) ---------------------------
+POTION_HEAL = 30                   # hp restored by a red potion (never above HERO_MAX_HP)
+POTION_DROP_CHANCE = 0.30          # chance that a dying ogre drops a potion
+COIN_BAG_DROP_CHANCE = 0.50        # chance that a dying ogre drops a bag of gold (rolled separately from the potion)
+COIN_BAG_COINS = (5, 10)           # coins in a bag (inclusive range)
+PICKUP_RADIUS = 14                 # horizontal distance (px) at which the hero picks an item up
+PICKUP_REACH_Y = 24                # vertical tolerance (px) between the hero's feet and the item
+PICKUP_MAX = 30                    # items kept in the world (oldest vanish)
+
 # ---- ogre AI ------------------------------------------------------------------------------
 OGRE_ATTACK_DIST = 38              # distance at which the ogre stops walking and prepares to attack
 OGRE_WAIT_BEFORE_ATTACK = (0.35, 0.65)   # random pause (seconds) before each swing: the player's window

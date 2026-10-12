@@ -185,4 +185,64 @@ for _ in range(int(2 / DT)):
 f = w.ogre.facing; w.hero.x = 40.0; w.update(DT, Inputs())      # swing is active: direction stays locked
 assert w.ogre.facing == f
 print('17 ok: ogre turns during the wind-up, direction locked during the swing')
+# ============================ pickups ============================
+def kill_ogre(w):
+    w.ogre.hp = 10; w._hit(w.hero, w.ogre)
+    assert w.ogre.state == 'dead'
+
+# 18) drop chances: forced 100% / 0%, and the rates are close to the configured ones over many ogres
+old = (C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE)
+C.POTION_DROP_CHANCE = 1.0; C.COIN_BAG_DROP_CHANCE = 1.0
+w = fresh(0); w.ogre.x = 200.0; kill_ogre(w)
+kinds = sorted(p.kind for p in w.pickups); assert kinds == ['coins', 'potion'], kinds
+bag = [p for p in w.pickups if p.kind == 'coins'][0]; assert 5 <= bag.amount <= 10
+assert [p for p in w.pickups if p.kind == 'potion'][0].amount == 30
+C.POTION_DROP_CHANCE = 0.0; C.COIN_BAG_DROP_CHANCE = 0.0
+w = fresh(0); w.ogre.x = 200.0; kill_ogre(w); assert w.pickups == []
+C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE = old
+w = fresh(0); n_pot = n_bag = 0; amounts = set()
+for _ in range(2000):
+    w.pickups.clear(); w._drop_loot(0.0)
+    n_pot += any(p.kind == 'potion' for p in w.pickups)
+    for p in w.pickups:
+        if p.kind == 'coins': n_bag += 1; amounts.add(p.amount)
+assert abs(n_pot / 2000 - 0.30) < 0.04, n_pot
+assert amounts == set(range(5, 11)), amounts
+print('18 ok: potion %.0f%% of ogres, bag always 5-10 coins' % (n_pot / 20))
+
+# 19) only the hero picks items up: potion heals 30 (capped), coins add to the gold counter, ogre standing on them does nothing
+from game.logic import Pickup
+w = fresh(0); w.hero.hp = 50; w.pickups = [Pickup('potion', 0, 30), Pickup('coins', 0, 7)]
+run(w, 0.05, Inputs()); assert w.hero.hp == 80 and w.gold == 7 and w.pickups == []
+w = fresh(0); w.hero.hp = 90; w.pickups = [Pickup('potion', 0, 30)]
+run(w, 0.05, Inputs()); assert w.hero.hp == 100 and w.pickups == []              # capped at max
+w = fresh(0); w.pickups = [Pickup('potion', 0, 30)]; run(w, 0.5, Inputs())       # full hp: potion stays
+assert len(w.pickups) == 1 and w.hero.hp == 100
+w = fresh(0); w.hero.x = 100.0; w.ogre.x = 0.0; w.pickups = [Pickup('coins', 0, 9), Pickup('potion', 0, 30)]; w.hero.hp = 10
+run(w, 0.5, Inputs()); assert w.gold == 0 and w.hero.hp == 10 and len(w.pickups) == 2     # ogre cannot collect
+print('19 ok: potion +30 (capped, kept at full hp), coins to the counter, only the hero collects')
+
+# 20) the item falls to the ground, can be collected only when close, and gold survives the hero's death
+w = fresh(0); w.pickups = [Pickup('coins', 200, 6)]; run(w, 1.0, Inputs())
+assert w.pickups[0].y == 0 and w.gold == 0
+w.hero.x = 195.0; run(w, 0.1, Inputs()); assert w.gold == 6
+w._hit(w.ogre, w.hero); w.hero.hp = 1; w.hero.invuln = 0; w._hit(w.ogre, w.hero)
+run(w, 3.0, Inputs()); assert w.hero.state != 'dead' and w.gold == 6
+w = fresh(0); w.hero.y = 3 * C.BOX_H; w.hero.grounded = True; w.pickups = [Pickup('coins', 0, 6)]
+w._pickups(DT); assert w.gold == 0 and len(w.pickups) == 1                  # hero high above (on boxes): out of reach
+print('20 ok: pickup lands, needs proximity (also vertical), gold survives hero deaths')
+
+# 21) effects and sounds: potion -> 'heal' effect on the hero + heal event; gold -> 'coin_glint' + pickup event; sounds exist
+w = fresh(0); w.hero.hp = 50; w.pickups = [Pickup('potion', 0, 30)]; w.events.clear(); run(w, 0.05, Inputs())
+assert [v['name'] for v in w.vfx] == ['heal'] and ('heal', 'knight') in w.events and w.hero.hp == 80
+w = fresh(0); w.pickups = [Pickup('coins', 0, 5)]; w.events.clear(); run(w, 0.05, Inputs())
+assert [v['name'] for v in w.vfx] == ['coin_glint'] and ('pickup', 'coins') in w.events
+w = fresh(0); w.hero.hp = 40; w.heal(w.hero, 999); assert w.hero.hp == 100                  # generic heal is capped too
+assert 'heal' in T['vfx'] and 'coin_glint' in T['vfx']
+from game.audio import SOUND_FOR
+sfx = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'sfx')
+for ev, kinds in SOUND_FOR.items():
+    for k, snd in kinds.items(): assert os.path.exists(os.path.join(sfx, snd + '.wav')), snd
+print('21 ok: heal / coin effects, events and sound files')
+
 print('ALL LOGIC TESTS PASSED')

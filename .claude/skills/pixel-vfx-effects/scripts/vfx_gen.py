@@ -167,14 +167,83 @@ def spirit(i):
             for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)): put(im, sx + dx, sy + dy, GH_GLOW, a2 * .8)
     return im
 
-EFFECTS = [('sword_slash', sword_slash, 12), ('axe_slash', axe_slash, 10), ('blood_splash', blood, 12), ('spirit', spirit, 6)]
+# ---- 5) heal: green light rising around the body (generic "recover life" effect). Symmetric around the hip column ----
+HL_CORE, HL_MID, HL_EDGE, HL_DARK = C(236, 255, 226), C(150, 238, 124), C(76, 196, 96), C(38, 134, 72)
+
+def plus(im, x, y, size, alpha):
+    arm = 1 if size == 1 else 2
+    for d in range(-arm, arm + 1):
+        put(im, x + d, y, HL_MID if d else HL_CORE, alpha); put(im, x, y + d, HL_MID if d else HL_CORE, alpha)
+    put(im, x - arm - 1, y, HL_EDGE, alpha * .7); put(im, x + arm + 1, y, HL_EDGE, alpha * .7)
+    put(im, x, y - arm - 1, HL_EDGE, alpha * .7); put(im, x, y + arm + 1, HL_EDGE, alpha * .7)
+
+def heal(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0)); cx = 30
+    # ring on the ground that expands and fades
+    rx = [5, 9, 12, 14, 15, 0][i]; al = [1, 1, .8, .55, .3, 0][i]
+    if rx:
+        for k in range(48):
+            a = k * math.tau / 48; put(im, cx + math.cos(a) * rx, 57 + math.sin(a) * rx * .28, HL_MID if k % 2 else HL_CORE, al)
+            put(im, cx + math.cos(a) * (rx - 2), 57 + math.sin(a) * (rx - 2) * .28, HL_EDGE, al * .7)
+    # streaks of light climbing the body (solid pixels; they leave from the feet and fade out towards the head)
+    for k, (ox, ln, y0) in enumerate(((-8, 7, 58), (-4, 10, 60), (0, 8, 56), (4, 11, 61), (8, 6, 57), (-11, 5, 54), (11, 5, 55))):
+        t = i - k * .3
+        if t < 0 or t > 4.4: continue
+        yb = y0 - 11 * t
+        for j in range(ln):
+            y = yb - j
+            if not (6 <= y <= 58): continue
+            col = HL_CORE if j < 2 else (HL_MID if j < ln - 3 else HL_EDGE)
+            put(im, cx + ox, y, col, 1.0 if t < 3 else .55)
+    # rising crosses
+    for k, (ox, y0, sz) in enumerate(((-10, 52, 2), (9, 46, 1), (-2, 55, 2), (13, 56, 1), (-14, 44, 1))):
+        t = i - k * .35
+        if t < 0 or t > 4.2: continue
+        a = 1.0 if t < 3 else .5
+        plus(im, cx + ox, y0 - 9 * t, sz, a)
+    # tiny sparkles
+    rnd = random.Random(31)
+    for k in range(10):
+        sx = cx + rnd.uniform(-13, 13); sy = rnd.uniform(28, 56) - 5 * i
+        if 4 <= sy <= 58 and (k + i) % 3:
+            put(im, sx, sy, HL_CORE, .9)
+            if k % 2: put(im, sx + 1, sy, HL_MID, .7)
+    return im
+
+# ---- 6) coin glint: golden star flash + coins/sparks bursting up (played on the hero when he picks up gold) ----
+GC_WHITE, GC_LIGHT, GC_GOLD, GC_DARK = C(255, 255, 240), C(255, 240, 150), C(255, 204, 64), C(214, 140, 36)
+
+def coin_glint(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0)); cx, cy = 30, 36
+    arm = [3, 6, 7, 4, 2, 0][i]                                       # 4-point star flash
+    for d in range(1, arm + 1):
+        col = GC_WHITE if d <= 2 else (GC_LIGHT if d <= 4 else GC_GOLD)
+        for dx, dy in ((d, 0), (-d, 0), (0, d), (0, -d)): put(im, cx + dx, cy + dy, col)
+    if arm: put(im, cx, cy, GC_WHITE)
+    if 1 <= i <= 3:
+        for dx, dy in ((1, 1), (-1, 1), (1, -1), (-1, -1)): put(im, cx + dx, cy + dy, GC_LIGHT)
+    # sparks fly out and up with a little gravity
+    rnd = random.Random(17)
+    for k in range(9):
+        a = rnd.uniform(-math.pi * .95, -math.pi * .05); v = rnd.uniform(3.2, 6.5); t = i
+        x = cx + math.cos(a) * v * t; y = cy - 3 + math.sin(a) * v * t + .9 * t * t
+        if i == 0 or y > 58: continue
+        al = 1 if i < 4 else .5
+        col = (GC_LIGHT, GC_GOLD, GC_GOLD, GC_DARK)[k % 4]
+        put(im, x, y, col, al); put(im, x + 1, y, col, al)
+        if k % 3 == 0: put(im, x, y + 1, GC_DARK, al); put(im, x + 1, y + 1, GC_DARK, al)
+    return im
+
+EFFECTS = [('sword_slash', sword_slash, 12), ('axe_slash', axe_slash, 10), ('blood_splash', blood, 12), ('spirit', spirit, 6),
+           ('heal', heal, 10), ('coin_glint', coin_glint, 12)]
 
 if __name__ == '__main__':
     out = sys.argv[1] if len(sys.argv) > 1 else './out'; os.makedirs(out, exist_ok=True)
     sheet = Image.new('RGBA', (F * 6, F * len(EFFECTS)), (0, 0, 0, 0))
     atlas = {'frames': [], 'animations': {}, 'meta': {'image': 'vfx_spritesheet.png', 'frame_size': [64, 64], 'note':
              'sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; '
-             'blood_splash: on the victim (flip with it); spirit: on a body lying on the ground. Same anchor as the character frames.'}}
+             'blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life '
+             '(any healing item); coin_glint: on the hero when he picks up gold. Same anchor as the character frames.'}}
     for r, (name, fn, fps) in enumerate(EFFECTS):
         for i in range(6):
             sheet.alpha_composite(fn(i), (i * F, r * F))

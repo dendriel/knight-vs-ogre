@@ -97,8 +97,23 @@ def spawn_ogre():          # low horn-like blast announcing the new enemy
     return finish(horn, peak=0.55)
 
 
+# ---- pickups ---------------------------------------------------------------------------------------------------
+def coin_pickup():         # classic two-note "ding-ding" with a bright ring
+    parts = [(env_exp(tone(f, 0.30, shape='square', duty=.5), 0.07), 1.0, d) for f, d in ((988, 0.0), (1319, 0.07))]
+    ring = env_exp(tone(2637, 0.30, shape='sine'), 0.10)
+    return finish(mix(parts + [(ring, 0.25, 0.07)]), peak=0.45)
+
+
+def heal():                # soft rising shimmer: a major arpeggio of bells with a warm pad underneath
+    notes = [523, 659, 784, 1047]
+    bells = [(env_exp(mix([(tone(f, 0.55), 1.0, 0), (tone(f * 2, 0.55), 0.25, 0)]), 0.16, attack=0.01), 1.0, i * 0.075)
+             for i, f in enumerate(notes)]
+    pad = env_hump(lowpass(tone(262, 0.7, 330, 'tri'), 1200), power=1.2, peak=0.4)
+    return finish(mix(bells + [(pad, 0.35, 0)]), peak=0.6)
+
+
 SOUNDS = {f.__name__: f for f in (sword_swing, axe_swing, hit_knight, hit_ogre, hurt_knight, hurt_ogre,
-                                  death_knight, death_ogre, spawn_hero, spawn_ogre)}
+                                  death_knight, death_ogre, spawn_hero, spawn_ogre, coin_pickup, heal)}
 
 
 def main():

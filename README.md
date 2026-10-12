@@ -18,6 +18,7 @@ Para gerar um `.exe`: `build_exe.bat` (resultado em `dist\KnightVsOgre.exe`).
 - Caixas: da para pular em cima delas (a escada de 3 niveis deixa o heroi fora do alcance do ogro).
 - Ao ser atingido o personagem toca "hurt" e nao pode andar nem atacar. Depois o heroi fica um instante invulneravel (o ogro nao).
 - O golpe so acerta nos frames de impacto da animacao (o rastro da arma mostra onde).
+- Itens: cada ogro derrotado tem 30% de chance de derrubar uma pocao vermelha (+30 de vida) e 50% de derrubar uma bolsa de 5 a 10 moedas de ouro. So o heroi pega (basta chegar perto); o ouro aparece no HUD abaixo da vida e nao zera quando o heroi morre.
 - Ogro morreu: o corpo fica no chao e outro ogro entra pela direita. Heroi morreu: outro heroi nasce na esquerda.
 - Contadores de derrotas de cada lado ficam abaixo das barras de vida.
 - O cenario e infinito (casas, arvores e pocos sao gerados por "fatias" conforme a camera anda).

@@ -62,6 +62,13 @@ class Fighter:
     def can_act(self): return self.state in ('idle', 'walk')
 
 
+class Pickup:
+    """An item lying in the world. kind: 'potion' | 'coins'. y = height above the ground; it pops up and falls."""
+    def __init__(self, kind, x, amount=0):
+        self.kind, self.x, self.amount = kind, float(x), amount
+        self.y = 14.0; self.vy = 90.0; self.t = 0.0
+
+
 class World:
     def __init__(self, timing, seed=1):
         self.timing = timing; self.rng = random.Random(seed)
@@ -70,6 +77,8 @@ class World:
         self._jump_held = False; self._box_cache = {}
         self.corpses = []; self.vfx = []
         self.hero_deaths = 0; self.ogre_deaths = 0
+        self.pickups = []; self.gold = 0                   # gold belongs to the player, so it survives hero deaths
+        self.loot_rng = random.Random(seed + 1000)         # separate stream: drops never disturb the AI's random sequence
         self.hero_timer = None; self.ogre_timer = None
         self.cam_off = C.SCREEN_W / 2 - C.START_HERO_SCREEN_X     # hero starts on the left, camera glides to center
         self.shake = 0.0; self.time = 0.0
@@ -132,6 +141,7 @@ class World:
         self._knockback(dt)
         for f in self.fighters(): self._physics(f, dt)
         self._attacks()
+        self._pickups(dt)
         self._timeouts()
         self._respawns(dt)
         for v in self.vfx: v['t'] += dt
@@ -215,6 +225,7 @@ class World:
         if tgt.hp <= 0:
             tgt.set_state('dead'); tgt.invuln = 999.0
             self.events.append(('death', tgt.kind))
+            if tgt is self.ogre: self._drop_loot(tgt.x)
             self.add_vfx('spirit', tgt.x, tgt.x > atk.x, delay=C.SPIRIT_DELAY, y=tgt.y)
             if tgt is self.hero: self.hero_deaths += 1; self.hero_timer = C.RESPAWN_DELAY
             else: self.ogre_deaths += 1; self.ogre_timer = C.RESPAWN_DELAY
@@ -224,6 +235,37 @@ class World:
             if tgt is self.hero: tgt.invuln = tgt.duration(self.timing) + C.HURT_INVULN_EXTRA
             elif C.OGRE_HURT_INVULN: tgt.invuln = tgt.duration(self.timing) + C.OGRE_HURT_INVULN_EXTRA
             if tgt is self.ogre: self.ai_wait = None
+
+    def heal(self, f, amount):
+        """Restores life (capped at max_hp) with the heal effect and sound. Any healing item should go through here."""
+        f.hp = min(f.max_hp, f.hp + amount)
+        self.add_vfx('heal', f.x, f.facing < 0, y=f.y)
+        self.events.append(('heal', f.kind))
+
+    def _drop_loot(self, x):
+        r = self.loot_rng; items = []
+        if r.random() < C.POTION_DROP_CHANCE: items.append(Pickup('potion', 0, C.POTION_HEAL))
+        if r.random() < C.COIN_BAG_DROP_CHANCE: items.append(Pickup('coins', 0, r.randint(*C.COIN_BAG_COINS)))
+        for i, p in enumerate(items):
+            p.x = x + (i - (len(items) - 1) / 2) * 16        # side by side when both drop
+            self.pickups.append(p)
+        del self.pickups[:-C.PICKUP_MAX]
+
+    def _pickups(self, dt):
+        g = 2 * C.JUMP_HEIGHT / C.JUMP_RISE_TIME ** 2; h = self.hero; keep = []
+        for p in self.pickups:
+            p.t += dt
+            if p.y > 0 or p.vy > 0:                            # pop up, then fall to the ground
+                p.y += p.vy * dt - 0.5 * g * dt * dt; p.vy -= g * dt
+                if p.y <= 0: p.y = 0.0; p.vy = 0.0
+            if (h.state != 'dead' and abs(h.x - p.x) <= C.PICKUP_RADIUS and abs(h.y - p.y) <= C.PICKUP_REACH_Y
+                    and not (p.kind == 'potion' and h.hp >= h.max_hp)):          # a potion is not wasted on a full bar
+                if p.kind == 'potion': self.heal(h, p.amount)
+                else:
+                    self.gold += p.amount; self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)
+                self.events.append(('pickup', p.kind)); continue
+            keep.append(p)
+        self.pickups = keep
 
     def _timeouts(self):
         for f in self.fighters():
