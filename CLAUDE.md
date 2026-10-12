@@ -39,7 +39,7 @@ game/audio.py           toca os SFX a partir de `world.events` (falha em silênc
 assets/                 spritesheets (png + json) e cenário (png) usados pelo jogo
 assets/sfx/             efeitos sonoros .wav (gerados por código, ver skill game-audio-synthesis)
 assets/music/           trilha .wav em loop (`music_gen.py` da mesma skill regenera)
-tests/                  test_logic.py (67 testes), test_scenes.py, test_fuzz.py, real_pygame_smoke.py, simulate.py, fake_pygame.py (stand-in em Pillow)
+tests/                  test_logic.py (69 testes), test_scenes.py, test_fuzz.py, real_pygame_smoke.py, simulate.py, fake_pygame.py (stand-in em Pillow)
 art_tools/              geradores da arte (ver seção 5); build_assets.py regenera tudo em assets/ (knight/ogre/enemy/class/vfx/theme/proj/icons_gen)
 .claude/skills/         4 skills do projeto (carregadas automaticamente pelo Claude Code, ver seção 6)
 install_skills.py       OPCIONAL: instala as skills também como skills pessoais (~/.claude/skills)
@@ -214,7 +214,7 @@ constante de `config.py` e o valor antes → depois), Arte, Contrato de arte (li
 ## 7. O que foi e o que NÃO foi testado (leia antes de mexer)
 
 **Testado automaticamente** (rode tudo antes de commitar; os três primeiros não precisam de janela):
-- `tests/test_logic.py` (67 testes, inclui o contrato arte × dados): dano/hurt/invulnerabilidade, vários inimigos, ataques como dados, projéteis e
+- `tests/test_logic.py` (69 testes, inclui o contrato arte × dados): dano/hurt/invulnerabilidade, vários inimigos, ataques como dados, projéteis e
   áreas, poções, combo, machado/arco/besta, armadura, barra de combo e especial, fichas e elites, cada inimigo, fases
   (encontros, arena, boss, derrota, renascer), curva de dificuldade, classes, secundário, loja/bombas, mapa de áudio.
 - `tests/test_scenes.py`: pilha de telas com o stand-in Pillow (título, classe, pausa, comandos, derrota, conclusão,

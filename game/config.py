@@ -301,8 +301,8 @@ LOB_RADIUS = 12.0                  # landing zone half-width (px), plus the targ
 # ---- HUD (positions of the fixed parts; the slots below the life bar stack automatically) --------
 HUD = dict(name=(10, 6), hp_bar=(10, 20), hp_num=(156, 18))
 COMBO_BAR_MAX = 100                # points (damage dealt / taken, weighted below) that fill the combo meter (T12)
-COMBO_GAIN_DEALT = 1.5             # meter points per point of damage the hero deals
-COMBO_GAIN_TAKEN = 1.0             # meter points per point of damage the hero takes
+COMBO_GAIN_DEALT = 0.5             # meter points per point of damage the hero deals (was 1.5: the special takes 3x longer to be ready)
+COMBO_GAIN_TAKEN = 1.0 / 3          # meter points per point of damage the hero takes (was 1.0)
 SPECIAL_HOLD_MIN = 0.25            # seconds the attack button must be held (with a full meter) to charge the special
 SPECIAL_DAMAGE = 30                # per hit (was 15: doubled); the spin hits twice (60 = more than a whole ogre)
 SPECIAL_RADIUS = 56                # px each side of the hero

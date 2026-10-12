@@ -1127,6 +1127,9 @@ class World:
         h = self.hero
         lo, hi = (0.0, st.length) if self.arena is None else (self.arena[0] + C.ARENA_WALL_MARGIN, self.arena[1] - C.ARENA_RIGHT_WALL)
         if h.state != 'dead': h.x = max(lo, min(hi, h.x))
+        elo, ehi = (0.0, st.length) if self.arena is None else (self.arena[0] + C.ARENA_WALL_MARGIN, self.arena[1] - C.ARENA_WALL_MARGIN)
+        for e in self.enemies:                                    # nobody flees where the hero cannot follow (locked arena / path ends)
+            if e.state != 'dead': e.x = max(elo, min(ehi, e.x))
         self.diff = d = st.difficulty(st.progress(h.x))
         self.max_attackers = d['max_attackers']
         while self.next_enc < len(st.encounters) and h.x >= st.trigger_x(st.encounters[self.next_enc]):

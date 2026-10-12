@@ -61,6 +61,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - `COMBO_END_DELAY` = 0,5 s (novo): depois do último golpe de qualquer combo do herói ele não ataca por esse tempo; um clique nesse intervalo é ignorado.
 - `MAGE_STROKE_GAP` = 0,12 s (novo): descanso entre os golpes da cadeia do mago (ritmo um pouco mais lento).
 - Especiais: `SPECIAL_SLOW` = 3 (duram 3x mais: giro 0,33 → 1,0 s, chuva 0,55 → 1,64 s, rajada 0,6 → 1,8 s, tempestade 0,55 → 1,64 s) e o dano dobra: `SPECIAL_DAMAGE` 15 → 30 (por golpe, 2 golpes), `RAIN_DAMAGE` 8 → 16, `VOLLEY_DAMAGE` 10 → 20, `STORM_DAMAGE` 10 → 20. Os projéteis das rajadas foram redistribuídos dentro da animação (`RAIN_T0/DT`, `VOLLEY_T0/DT`, `STORM_T0/DT`): antes parte deles era cortada porque a animação acabava antes do último. `SPECIAL_INVULN_MAX` = 1,0 s (a invulnerabilidade do especial não triplica junto).
+- Correção do entendimento do item anterior: o especial deve **demorar mais para ficar disponível**, não só durar mais. `COMBO_GAIN_DEALT` 1,5 → 0,5 e `COMBO_GAIN_TAKEN` 1,0 → 1/3 (a barra enche 3x mais devagar). A animação 3x mais longa e o dano dobrado foram mantidos; `SPECIAL_HOLD_MIN` (segurar para carregar) não mudou.
 
 ### Arte
 - T04: novos sprites de projétil (`proj_arrow` + variantes inclinadas `u45/u90/d45/d90`, `proj_bolt`, `proj_knife`, `proj_fireball`, `proj_rock`) gerados por `art_tools/proj_gen.py` e desenhados em camada própria (com sombra no chão).
@@ -162,6 +163,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - Bug: **um golpe acertava o escudeiro com o escudo erguido** quando o herói estava sobreposto a ele (a checagem de frente usava o sinal da distância). Um atacante a até `GUARD_BACK_MARGIN` 14 px atrás do quadril ainda conta como de frente.
 - O desgaste das armas só acontece quando o golpe/tiro **acerta** algo (antes cobrava ao atacar, mesmo no ar).
 - A barra de durabilidade do HUD agora é relativa à durabilidade máxima (`WEAPON_DURABILITY`): arma nova = 100% (antes aparecia 30% por dividir por 100).
+- Bug: **inimigos fugiam para fora da tela travada** (arena do chefe e pontas do percurso), onde o herói não conseguia alcançá-los (arqueiro e kobold mantêm distância). Em fase os inimigos vivos agora ficam dentro de `[0, comprimento]` e, na arena, dentro da tela (`ARENA_WALL_MARGIN` de cada lado).
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

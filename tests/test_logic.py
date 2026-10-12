@@ -89,7 +89,8 @@ print('6 ok: ogre waited %.2fs in range before its first swing' % first)
 w = World(T); w.roster = [(0, 'ogre', 1)]; seen = set(); ogre_hit_hero = False
 for n in range(int(90 / DT)):
     hp0 = w.hero.hp
-    w.update(DT, bot_fighter(w)); seen.add(w.hero.hp); seen.add(w.ogre.hp)
+    w.update(DT, bot_fighter(w))
+    if w.ogre_deaths < 8 and not any(e.elite for e in w.enemies): seen.add(w.hero.hp); seen.add(w.ogre.hp)   # (elites: odd numbers)
     if w.hero.hp < hp0 and w.hero.state != 'dead': ogre_hit_hero = True
 assert all(v % 10 == 0 for v in seen)
 assert ogre_hit_hero or w.hero_deaths > 0, 'spamming must not make the hero untouchable'
@@ -1347,5 +1348,24 @@ w = World(T, hero_class='mage'); w.enemies = []; w.update(DT, Inputs(attack=True
 assert ('fireball', 'knight') in w.events and not any(e[0] == 'shoot' for e in w.events)
 assert ATTACKS['mg_3']['shoot']['sprite'] == 'fireball_big' and ATTACKS['mg_1']['shoot']['sprite'] == 'fireball'
 print('67 ok: fireball sound event + bigger 3rd fireball')
+
+# 68) the combo bar takes 3x longer to fill (the special is rarer): 30 damage dealt = 15 points of the 100
+w = fresh(0); o = Fighter('ogre', 40, -1); o.hp = o.max_hp = 99; w.enemies = [o]
+for _ in range(3): o.invuln = 0; w._hit(w.hero, o)
+assert abs(w.combo - 30 * C.COMBO_GAIN_DEALT) < 1e-9 and C.COMBO_GAIN_DEALT == 0.5 and abs(C.COMBO_GAIN_TAKEN - 1 / 3) < 1e-9
+print('68 ok: combo bar gains /3 (special 3x slower to become available)')
+
+# 69) in a locked arena (and at the ends of the path) enemies cannot leave the screen: the hero could never reach them
+from game.logic import World as _W
+w = _W(T, stage=STAGES[CAMPAIGN[0]]); st = w.stage; w.next_enc = len(st.encounters); w.queue.clear()
+w.hero.x = st.length - C.SCREEN_W + C.ARENA_ENTER_MARGIN + 5; w.update(DT, Inputs()); assert w.arena is not None
+a0, a1 = w.arena
+runner = Fighter('archer', a1 - 5, 1); runner.ai_cooldown = 99; w.enemies.append(runner)
+runner.x = a1 + 200; w.update(DT, Inputs()); assert runner.x <= a1 - C.ARENA_WALL_MARGIN + 1e-6, runner.x
+runner.x = a0 - 300; w.update(DT, Inputs()); assert runner.x >= a0 + C.ARENA_WALL_MARGIN - 1e-6, runner.x
+w = _W(T, stage=STAGES[CAMPAIGN[0]]); r = Fighter('kobold', -80, 1); r.ai_cooldown = 99; w.enemies = [r]; w.update(DT, Inputs())
+assert r.x >= 0.0
+dead = Fighter('ogre', -500, 1); dead.state = 'dead'; w.enemies.append(dead); w.update(DT, Inputs()); assert dead.x == -500   # bodies stay
+print('69 ok: enemies are kept inside the locked arena / the path')
 
 print('ALL LOGIC TESTS PASSED')

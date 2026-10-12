@@ -40,7 +40,7 @@ Armas pickup (machado, arco, besta) servem a qualquer classe (tecla E). Depois d
 - Itens soltos pelos inimigos: pocao (vai para o inventario, ate 3; tecla 1 cura 30), bolsa de ouro, armadura (barra
   azul, 50 pontos: desconta o dano antes da vida), machado / arco / besta (durabilidade, voltam a espada quando
   quebram). O heroi que morre perde a arma e a armadura; ouro e pocoes ficam.
-- Barra de combo (laranja): enche com o dano causado (x1,5) e recebido (x1,0); zera ao usar o especial e quando o
+- Barra de combo (laranja): enche com o dano causado (x0,5) e recebido (x0,33): o especial demora 3x mais para ficar disponivel; zera ao usar o especial e quando o
   heroi morre.
 - **Inimigos**: ogro, soldado, lanceiro (alcance longo, zona morta colado), arqueiro (flecha em parabola com marcador no
   chao), escudeiro (bloqueia de frente; 3 golpes quebram a defesa por 2,5 s; a besta quebra com 1 tiro; machado e especial ignoram o escudo), orc, goblin (bando), kobold (pedras em
