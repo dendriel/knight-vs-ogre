@@ -61,8 +61,8 @@ dificuldade ficam em `game/stages.py`.
 - `game/logic.py` regras (sem pygame, testavel) | `game/stages.py` fases, temas, curva | `game/config.py` numeros
 - `game/view.py` desenho, HUD e parallax | `game/scenes.py` telas | `game/ui.py` menu | `game/audio.py` sons
 - `assets/` spritesheets (png + json), cenario, projeteis, icones, sons | `art_tools/` geradores da arte
-- `tests/` `test_logic.py` (regras), `test_scenes.py` (telas), `real_pygame_smoke.py` (pygame real, sem janela),
-  `simulate.py` (grava GIFs)
+- `tests/` `test_logic.py` (regras), `test_scenes.py` (telas), `test_fuzz.py` (teclas aleatorias), `real_pygame_smoke.py`
+  (pygame real, sem janela), `simulate.py` (grava GIFs)
 
 ## Status do plano (`TASKS_PLAN.md`)
 Todas as tarefas T00-T50 foram implementadas (ver `CHANGELOG.md`), exceto T51 (persistencia em arquivo, fora do

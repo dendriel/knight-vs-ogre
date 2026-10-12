@@ -1082,4 +1082,32 @@ for name in ('ogre_captain', 'minotaur_lord', 'black_knight'):
     if name == 'minotaur_lord': assert {'charge', 'dash'} <= seen, seen
 print('51 ok: boss AIs run (captain slam, lord charge, black knight combo)')
 
+# 52) art contract vs data: every animation / effect the rules can ask for exists in the sheet that would draw it
+from game.logic import WEAPONS
+def attack_chain(aid):
+    out = []
+    while aid and aid not in out: out.append(aid); aid = ATTACKS[aid].get('next')
+    return out
+problems = []
+for kind, d in FIGHTER_DEFS.items():
+    sheets = [d['sheet']] + ([WEAPONS[w]['sheet'] for w in WEAPONS] if kind == 'knight' else [])
+    ids = attack_chain(d['primary']) + (attack_chain(d['secondary']) if d.get('secondary') else []) + ([d['special']] if d.get('special') else [])
+    if kind == 'knight': ids += [WEAPONS[w]['attack'] for w in WEAPONS]
+    if kind == 'black_knight': ids = attack_chain('bk_1')
+    for sh in sheets:
+        if sh not in T: problems.append((kind, 'no sheet', sh)); continue
+        names = set(d['anim'].values()) | ({'jump_up', 'jump_fall'} if d['hero'] else set())
+        names |= {ATTACKS[a]['anim'] for a in ids}
+        if d['hero']: names |= {'attack_special'}
+        for n in names:
+            if n not in T[sh]: problems.append((kind, sh, n))
+    for a in ids:
+        sl = ATTACKS[a].get('slash')
+        if sl and sl not in T['vfx']: problems.append((kind, 'vfx', sl))
+        if ATTACKS[a].get('area') and ATTACKS[a]['area']['vfx'] not in T['vfx']: problems.append((kind, 'area vfx', a))
+for n in ('heal', 'coin_glint', 'blood_splash', 'spirit', 'charge', 'spin_slash', 'block_spark', 'fire_burst', 'stone_spikes'):
+    if n not in T['vfx']: problems.append(('vfx row', n))
+assert not problems, problems
+print('52 ok: every animation and effect the data refers to exists in its sheet (%d kinds)' % len(FIGHTER_DEFS))
+
 print('ALL LOGIC TESTS PASSED')

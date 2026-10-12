@@ -123,6 +123,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - Teste 50: todo evento emitido por `logic.py` tem som (ou está na lista de mudos).
 - `build_exe.bat` validado de verdade: o PyInstaller gera `KnightVsOgre.exe` (≈19 MB) e ele abre campanha, modo infinito e título sem erro (testado em modo headless). Scripts das skills sincronizados com `art_tools/`. `README.md` e `CLAUDE.md` reescritos para o estado final; `TASKS_PLAN.md` marcado como executado.
 - Novo `tests/test_fuzz.py` (60 s de teclas aleatórias, poções, bombas e renascimentos para cada classe no modo infinito e nas três fases, em várias posições, incluindo os chefes) e teste 51 (cada chefe roda a própria IA).
+- Teste 52: contrato arte × dados (toda animação e efeito que `FIGHTER_DEFS`/`ATTACKS` pedem existe no sheet que desenharia).
 
 ### Correções
 - `Game.run` (o laço principal) estava sobrescrito pelo atributo `self.run` (estado da run, T37): o jogo empacotado quebrava com 'dict object is not callable' ao iniciar. Atributo renomeado para `run_state`; achado ao rodar o executável do PyInstaller. Novos testes cobrem o laço principal (`Game.run`) com o stand-in e com o pygame real.
