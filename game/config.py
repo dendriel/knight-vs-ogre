@@ -103,6 +103,7 @@ CONTROLS = [
     ('Setas / A D', 'Andar'),
     ('Espaço', 'Pular'),
     ('Mouse esquerdo', 'Atacar (segurar repete)'),
+    ('1', 'Beber poção'),
     ('M', 'Liga / desliga o som'),
     ('F11', 'Tela cheia'),
     ('Esc', 'Menu'),

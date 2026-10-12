@@ -136,7 +136,7 @@ class World:
         self.timing = timing; self.rng = random.Random(seed)
         self.hero = Fighter('knight', 0.0, +1)
         self.enemies = [Fighter('ogre', C.START_OGRE_OFFSET, -1)]
-        self.features = set()                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
+        self.features = {'potions'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
         self.potions = 0; self.combo = 0                   # inventory / combo meter (T10, T12)
         self.spawn_target = 1                              # endless mode keeps this many enemies in the world (T02)
         self._jump_held = False; self._box_cache = {}
@@ -225,6 +225,7 @@ class World:
             f.t += dt; f.invuln = max(0.0, f.invuln - dt)
         for f in self.corpses: f.t += dt
         self.shake = max(0.0, self.shake - dt)
+        if inp.potion_pressed: self.drink_potion()
         self._hero_control(dt, inp)
         for e in self.enemies: self._enemy_ai(e, dt)
         self._knockback(dt)
@@ -399,6 +400,13 @@ class World:
                     self._hit(a.owner, tgt, at=dict(damage=a.damage, knockback=a.knockback), src_x=(a.x0 + a.x1) / 2)
         self.areas = [a for a in self.areas if a.t <= a.delay + a.duration]
 
+    def drink_potion(self):
+        """Key 1: spends one stored potion to heal. Does nothing with a full life bar, an empty pouch or a dead hero."""
+        h = self.hero
+        if self.potions <= 0 or h.state == 'dead' or h.hp >= h.max_hp: return False
+        self.potions -= 1; self.heal(h, C.POTION_HEAL); self.events.append(('potion', 'knight'))
+        return True
+
     def start_attack(self, f, attack_id):
         f.attack_id = attack_id; f.set_state('attack')
 
@@ -425,8 +433,8 @@ class World:
                 p.y += p.vy * dt - 0.5 * g * dt * dt; p.vy -= g * dt
                 if p.y <= 0: p.y = 0.0; p.vy = 0.0
             if (h.state != 'dead' and abs(h.x - p.x) <= C.PICKUP_RADIUS and abs(h.y - p.y) <= C.PICKUP_REACH_Y
-                    and not (p.kind == 'potion' and h.hp >= h.max_hp)):          # a potion is not wasted on a full bar
-                if p.kind == 'potion': self.heal(h, p.amount)
+                    and not (p.kind == 'potion' and self.potions >= C.POTION_MAX_STOCK)):   # full pouch: stays on the floor
+                if p.kind == 'potion': self.potions += 1                  # stored; drinking is a key press (T10)
                 else:
                     self.gold += p.amount; self.stats['gold_gained'] += p.amount; self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)
                 self.events.append(('pickup', p.kind)); continue

@@ -213,14 +213,15 @@ print('18 ok: potion %.0f%% of ogres, bag always 5-10 coins' % (n_pot / 20))
 # 19) only the hero picks items up: potion heals 30 (capped), coins add to the gold counter, ogre standing on them does nothing
 from game.logic import Pickup
 w = fresh(0); w.hero.hp = 50; w.pickups = [Pickup('potion', 0, 30), Pickup('coins', 0, 7)]
-run(w, 0.05, Inputs()); assert w.hero.hp == 80 and w.gold == 7 and w.pickups == []
-w = fresh(0); w.hero.hp = 90; w.pickups = [Pickup('potion', 0, 30)]
-run(w, 0.05, Inputs()); assert w.hero.hp == 100 and w.pickups == []              # capped at max
-w = fresh(0); w.pickups = [Pickup('potion', 0, 30)]; run(w, 0.5, Inputs())       # full hp: potion stays
-assert len(w.pickups) == 1 and w.hero.hp == 100
+run(w, 0.05, Inputs()); assert w.hero.hp == 50 and w.potions == 1 and w.gold == 7 and w.pickups == []   # T10: stored
+w.update(DT, Inputs(potion_pressed=True)); assert w.hero.hp == 80 and w.potions == 0                      # key 1 heals
+w = fresh(0); w.hero.hp = 90; w.potions = 1; w.update(DT, Inputs(potion_pressed=True))
+assert w.hero.hp == 100 and w.potions == 0                                                              # capped at max
+w = fresh(0); w.pickups = [Pickup('potion', 0, 30)]; run(w, 0.5, Inputs())       # full hp: still picked up (stored)
+assert w.pickups == [] and w.potions == 1 and w.hero.hp == 100
 w = fresh(0); w.hero.x = 100.0; w.ogre.x = 0.0; w.pickups = [Pickup('coins', 0, 9), Pickup('potion', 0, 30)]; w.hero.hp = 10
-run(w, 0.5, Inputs()); assert w.gold == 0 and w.hero.hp == 10 and len(w.pickups) == 2     # ogre cannot collect
-print('19 ok: potion +30 (capped, kept at full hp), coins to the counter, only the hero collects')
+run(w, 0.5, Inputs()); assert w.gold == 0 and w.hero.hp == 10 and len(w.pickups) == 2 and w.potions == 0   # ogre cannot collect
+print('19 ok: potion stored (key 1 heals +30, capped), coins to the counter, only the hero collects')
 
 # 20) the item falls to the ground, can be collected only when close, and gold survives the hero's death
 w = fresh(0); w.pickups = [Pickup('coins', 200, 6)]; run(w, 1.0, Inputs())
@@ -234,7 +235,8 @@ print('20 ok: pickup lands, needs proximity (also vertical), gold survives hero 
 
 # 21) effects and sounds: potion -> 'heal' effect on the hero + heal event; gold -> 'coin_glint' + pickup event; sounds exist
 w = fresh(0); w.hero.hp = 50; w.pickups = [Pickup('potion', 0, 30)]; w.events.clear(); run(w, 0.05, Inputs())
-assert [v['name'] for v in w.vfx] == ['heal'] and ('heal', 'knight') in w.events and w.hero.hp == 80
+w.update(DT, Inputs(potion_pressed=True))
+assert [v['name'] for v in w.vfx] == ['heal'] and ('heal', 'knight') in w.events and w.hero.hp == 80 and ('potion', 'knight') in w.events
 w = fresh(0); w.pickups = [Pickup('coins', 0, 5)]; w.events.clear(); run(w, 0.05, Inputs())
 assert [v['name'] for v in w.vfx] == ['coin_glint'] and ('pickup', 'coins') in w.events
 w = fresh(0); w.hero.hp = 40; w.heal(w.hero, 999); assert w.hero.hp == 100                  # generic heal is capped too
@@ -331,5 +333,18 @@ w.add_area(w.hero, 30, 100, 10, delay=0.3, duration=0.2)
 run(w, 0.2, Inputs()); assert [e.hp for e in w.enemies] == [30, 30, 30]               # not yet
 run(w, 0.5, Inputs()); assert [e.hp for e in w.enemies] == [20, 20, 30]
 print('25 ok: straight / pierce / lob (dodgeable) projectiles and area hits')
+
+# 26) T10: potion inventory: limit 10 (the 11th stays on the floor), drink heals 30 only when needed, survives death
+w = fresh(0); w.potions = C.POTION_MAX_STOCK; w.pickups = [Pickup('potion', 0, 30)]; run(w, 0.5, Inputs())
+assert w.potions == 10 and len(w.pickups) == 1                      # full pouch: stays on the floor
+w.potions = 9; run(w, 0.1, Inputs()); assert w.potions == 10 and w.pickups == []
+w.hero.hp = 100; assert not w.drink_potion() and w.potions == 10    # full life: not consumed
+w.hero.hp = 40; assert w.drink_potion() and w.hero.hp == 70 and w.potions == 9
+w.hero.hp = 90; w.drink_potion(); assert w.hero.hp == 100 and w.potions == 8      # never above the maximum
+w = fresh(0); w.hero.hp = 10; assert not w.drink_potion() and w.hero.hp == 10     # empty pouch
+w.potions = 4; w.hero.invuln = 0; w._hit(w.ogre, w.hero); w.hero.hp = 1; w.hero.invuln = 0; w._hit(w.ogre, w.hero)
+assert w.hero.state == 'dead' and not w.drink_potion()                            # dead hero cannot drink
+run(w, 3.0, Inputs()); assert w.hero.state != 'dead' and w.potions == 4           # stock survives the new hero
+print('26 ok: potion inventory (limit 10, key 1, only when hurt, survives death)')
 
 print('ALL LOGIC TESTS PASSED')

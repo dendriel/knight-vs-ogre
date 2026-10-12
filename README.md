@@ -10,6 +10,7 @@ Para gerar um `.exe`: `build_exe.bat` (resultado em `dist\KnightVsOgre.exe`).
 ## Controles
 - Setas esquerda/direita ou A / D: andar
 - Espaco: pular
+- 1: beber uma pocao do inventario
 - Botao esquerdo do mouse: atacar com a espada (golpe lateral); da para andar enquanto ataca
 - M: liga/desliga o som | F11: tela cheia
 - Esc: menu (continuar, ver comandos, reiniciar fase, sair); navegue com as setas + Enter ou com o mouse
@@ -19,7 +20,7 @@ Para gerar um `.exe`: `build_exe.bat` (resultado em `dist\KnightVsOgre.exe`).
 - Caixas: da para pular em cima delas (a escada de 3 niveis deixa o heroi fora do alcance do ogro).
 - Ao ser atingido o personagem toca "hurt" e nao pode andar nem atacar. Depois o heroi fica um instante invulneravel (o ogro nao).
 - O golpe so acerta nos frames de impacto da animacao (o rastro da arma mostra onde).
-- Itens: cada ogro derrotado tem 30% de chance de derrubar uma pocao vermelha (+30 de vida) e 50% de derrubar uma bolsa de 5 a 10 moedas de ouro. So o heroi pega (basta chegar perto); o ouro aparece no HUD abaixo da vida e nao zera quando o heroi morre.
+- Itens: cada ogro derrotado tem 30% de chance de derrubar uma pocao vermelha e 50% de derrubar uma bolsa de 5 a 10 moedas de ouro. So o heroi pega (basta chegar perto). A pocao vai para o inventario (ate 10; com 10 ela fica no chao) e a tecla 1 bebe uma (+30 de vida, so se estiver ferido). O ouro e as pocoes aparecem no HUD, nao zeram quando o heroi morre.
 - Ogro morreu: o corpo fica no chao e outro ogro entra pela direita. Heroi morreu: outro heroi nasce na esquerda.
 - Contadores de derrotas de cada lado ficam abaixo das barras de vida.
 - O cenario e infinito (casas, arvores e pocos sao gerados por "fatias" conforme a camera anda).
@@ -46,7 +47,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 - [x] T05 entrada ampliada, cenas e menu do Esc (continuar, ver comandos, reiniciar fase, sair) | [x] T06 HUD em slots
 
 ### Cavaleiro
-- [ ] T10 pocoes no inventario (ate 10, tecla 1; **substitui** o "consumir ao pegar")
+- [x] T10 pocoes no inventario (ate 10, tecla 1; **substitui** o "consumir ao pegar")
 - [ ] T11 combo de 3 golpes (sistema unico, serve a todas as classes) **(arte)**
 - [ ] T13 machado como pickup, com durabilidade e efeito proprio (mais dano/alcance, golpe mais lento) **(arte)**
 - [ ] T15 armadura (o dano desconta dela antes da vida)
