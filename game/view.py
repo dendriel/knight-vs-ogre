@@ -30,7 +30,7 @@ class View:
         self.clouds = self._make_clouds()
         self.hills_far = self._make_hills(70, (98, 156, 156), seed=3, amp=(20, 9, 5))
         self.hills_near = self._make_hills(44, (78, 134, 110), seed=9, amp=(13, 6, 3))
-        self.slots = {}; self.boxes = {}
+        self.slots = {}; self.boxes = {}; self.tinted = {}
 
     # ------------------------------------------------------------------ assets
     def _load_sheet(self, sheet):
@@ -64,9 +64,15 @@ class View:
         return s
 
     # ------------------------------------------------------------------ drawing
-    def blit_char(self, surf, sheet, anim, idx, wx, cx, flip, oy=0):
+    def blit_char(self, surf, sheet, anim, idx, wx, cx, flip, oy=0, tint=None):
         left = int(round(wx - cx)) - (C.ANCHOR_X_FLIP if flip else C.ANCHOR_X)
-        surf.blit(self.frames[(sheet, anim, flip)][idx], (left, C.GROUND_Y - 60 + oy))
+        img = self.frames[(sheet, anim, flip)][idx]
+        if tint:                                              # elite variants: colour multiplied over the sprite (cached)
+            key = (sheet, anim, flip, idx, tint)
+            if key not in self.tinted:
+                t = img.copy(); t.fill(tint, special_flags=pygame.BLEND_RGB_MULT); self.tinted[key] = t
+            img = self.tinted[key]
+        surf.blit(img, (left, C.GROUND_Y - 60 + oy))
 
     def _strip(self, surf, strip, parallax, cx, y):
         off = -int(cx * parallax) % STRIP_W
@@ -100,7 +106,8 @@ class View:
             if -80 < f.x - cx < C.SCREEN_W + 80:
                 self.blit_char(surf, f.sheet, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)))
         for f in sorted(world.fighters(), key=lambda q: q is not world.hero):
-            self.blit_char(surf, f.sheet, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)))
+            self.blit_char(surf, f.sheet, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)),
+                           tint=f.mods.get('tint'))
         # layer order: scenery -> boxes -> bodies -> fighters -> pickups (in front of the characters) -> effects -> HUD
         for p in world.pickups:                                     # items bob a little once they have landed
             if -40 < p.x - cx < C.SCREEN_W + 40:
@@ -168,7 +175,7 @@ class View:
         self._text(surf, f'{h.hp}', *P['hp_num'], font=self.font_big)
         y = P['hp_bar'][1] + 16
         x0 = P['hp_bar'][0]
-        if 'armor' in feats:                                     # blue bar under the life bar
+        if 'armor' in feats and h.armor > 0:                     # blue bar under the life bar (only while there is armor)
             self._small_bar(surf, x0, y, 140, 6, h.armor / max(1, h.armor_max), (96, 150, 235))
             if h.armor > 0:
                 surf.blit(self.icons['armor'], (x0 + 146, y - 3))

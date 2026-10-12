@@ -9,6 +9,14 @@ from . import config as C
 AI_DEFAULT = dict(attack_dist=C.OGRE_ATTACK_DIST, wait=C.OGRE_WAIT_BEFORE_ATTACK, cooldown=C.OGRE_COOLDOWN,
                   retaliate=C.OGRE_RETALIATE_WAIT, patience=C.OGRE_PATIENCE_DIST)
 
+# Elite variants (T26): modifiers over any fighter def. speed/hp/damage multiply; wait/cooldown scale the AI pauses.
+# `tint` is a colour the view multiplies over the sprite, so elites need no new art.
+ELITE_MODS = {
+    'veteran': dict(speed=1.25, hp=1.0, damage=1.0, wait=0.7, cooldown=0.85, tint=(110, 160, 255)),
+    'brute': dict(speed=0.95, hp=1.6, damage=1.5, wait=1.0, cooldown=1.0, tint=(255, 100, 90)),
+    'agile': dict(speed=1.4, hp=0.7, damage=1.0, wait=0.8, cooldown=0.8, tint=(255, 235, 90)),
+}
+
 # One entry per kind of fighter: everything that differs between a knight and an ogre lives here (T01).
 FIGHTER_DEFS = {
     'knight': dict(hero=True, max_hp=C.HERO_MAX_HP, speed=C.HERO_SPEED, half_width=8, sheet='knight', ai=None,
@@ -85,9 +93,14 @@ class Inputs:
 
 
 class Fighter:
-    def __init__(self, kind, x, facing, hp=None, invuln=0.0):
+    def __init__(self, kind, x, facing, hp=None, invuln=0.0, elite=None):
         self.defn = FIGHTER_DEFS[kind]; self.max_hp = self.defn['max_hp']
         self.ai_p = dict(AI_DEFAULT, **self.defn.get('ai_params', {}))
+        self.elite = elite; self.mods = ELITE_MODS.get(elite, {}); self.token = False
+        if self.mods:                                           # elites: more / less life, shorter pauses
+            self.max_hp = max(1, int(round(self.max_hp * self.mods['hp'])))
+            self.ai_p['wait'] = tuple(v * self.mods['wait'] for v in self.ai_p['wait'])
+            self.ai_p['cooldown'] = tuple(v * self.mods['cooldown'] for v in self.ai_p['cooldown'])
         if hp is None: hp = self.max_hp
         self.kind, self.x, self.facing, self.hp, self.invuln = kind, float(x), facing, hp, invuln
         self.state = 'idle'; self.t = 0.0
@@ -112,7 +125,7 @@ class Fighter:
     def is_hero(self): return self.defn['hero']
 
     @property
-    def speed(self): return self.defn['speed']      # (elite variants multiply it, T26)
+    def speed(self): return self.defn['speed'] * self.mods.get('speed', 1.0)
 
     @property
     def airborne(self): return not self.grounded
@@ -187,6 +200,7 @@ class World:
         self.enemies = [Fighter('ogre', C.START_OGRE_OFFSET, -1)]
         self.features = {'potions', 'weapon', 'armor', 'combo'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
         self.potions = 0; self.combo = 0                   # inventory / combo meter (T10, T12)
+        self.max_attackers = C.MAX_ATTACKERS               # tokens (T26)
         self.spawn_target = 1                              # endless mode keeps this many enemies in the world (T02)
         self._jump_held = False; self._box_cache = {}
         self.corpses = []; self.vfx = []
@@ -337,6 +351,21 @@ class World:
         """Dispatches to the behaviour named by FIGHTER_DEFS[kind]['ai'] (T20): _ai_melee, and the ones added later."""
         getattr(self, '_ai_' + o.defn['ai'])(o, dt)
 
+    def spawn_enemy(self, kind, x, facing=-1, elite=None):
+        e = Fighter(kind, x, facing, elite=elite); e.ai_cooldown = 0.6
+        self.enemies.append(e); self.events.append(('spawn', kind))
+        return e
+
+    def free_tokens(self):
+        """Attack tokens left: only `max_attackers` enemies may prepare / throw a blow at once (T26)."""
+        return self.max_attackers - sum(1 for e in self.enemies if e.token and e.state != 'dead')
+
+    def wait_rank(self, o):
+        """How many other token-less enemies are closer to the hero than `o` (0 = first in line)."""
+        d = abs(o.x - self.hero.x)
+        return sum(1 for e in self.enemies if e is not o and e.state != 'dead' and not e.token
+                   and (abs(e.x - self.hero.x), id(e)) < (d, id(o)))
+
     def _ai_prelude(self, o, dt):
         """Shared first steps of every behaviour. Returns the hero when the enemy is free to decide something."""
         h = self.hero
@@ -355,13 +384,19 @@ class World:
         if h is None: return
         p = o.ai_p; dist = abs(h.x - o.x)
         reachable = abs(h.y - o.y) <= C.VERTICAL_REACH
-        if dist > p['attack_dist']:                        # approach
+        need = p['attack_dist']
+        if not o.token and self.free_tokens() <= 0:        # crowd: no free attack token, keep a standoff distance (T26)
+            need += C.STANDOFF_BASE + C.STANDOFF_STEP * self.wait_rank(o)
+        if dist > need:                                    # approach
             o.x += o.facing * o.speed * dt
             if o.state != 'walk': o.set_state('walk')
-            if dist > p['attack_dist'] + p['patience']: o.ai_wait = None   # hero ran away: forget the plan
+            if dist > p['attack_dist'] + p['patience']: o.ai_wait = None; o.token = False   # hero ran away: forget the plan
             return
         if o.state != 'idle': o.set_state('idle')
-        if not reachable: o.ai_wait = None; return         # hero too high: the enemy just waits below him
+        if not reachable: o.ai_wait = None; o.token = False; return   # hero too high: the enemy just waits below him
+        if not o.token:
+            if self.free_tokens() <= 0: return             # still waiting for a turn
+            o.token = True
         if o.ai_cooldown <= 0:                             # in range: pause first, then swing
             if o.ai_wait is None: o.ai_wait = self.rng.uniform(*p['wait'])
             o.ai_wait -= dt
@@ -418,11 +453,12 @@ class World:
         """A connected blow. `at` = ATTACKS-like dict (damage, knockback); `src_x` = where it came from (a projectile
         or an area hit instead of the attacker's own position)."""
         at = at or ATTACKS[atk.attack_id]; sx = atk.x if src_x is None else src_x
-        self.apply_damage(atk, tgt, at['damage'])
+        self.apply_damage(atk, tgt, int(round(at['damage'] * atk.mods.get('damage', 1.0))))
         self.add_vfx('blood_splash', tgt.x, tgt.x > sx, y=tgt.y)
         self.shake = C.SHAKE_TIME
         self.events.append(('hit', tgt.kind))
         tgt.chain = None; tgt.combo_next = None                  # a hit breaks the combo
+        tgt.token = False
         dirn = 1 if tgt.x >= sx else -1
         tgt.facing = -dirn                                   # turns toward the attacker, recoils backwards
         tgt.kb_dir = dirn; tgt.kb_t = C.KNOCKBACK_TIME; tgt.kb_speed = at['knockback'] / C.KNOCKBACK_TIME
@@ -564,6 +600,7 @@ class World:
                 if f.is_hero and was_attack and nxt:
                     if queued: self.start_attack(f, queued); continue              # chained: no gap between strokes
                     f.chain = (self.time, nxt)                                       # a click in the next 0.15 s still chains
+                f.token = False
                 if not f.is_hero:
                     if was_attack: f.ai_cooldown = self.rng.uniform(*f.ai_p['cooldown'])
                     else: f.ai_cooldown = 0.0; f.ai_wait = self.rng.uniform(*f.ai_p['retaliate'])

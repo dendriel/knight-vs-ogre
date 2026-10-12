@@ -3,7 +3,7 @@ recorded in an environment without pygame or a screen. It implements just the ca
 import types
 from PIL import Image, ImageDraw, ImageFont
 
-SRCALPHA = 1; RESIZABLE = 2; FULLSCREEN = 4
+SRCALPHA = 1; RESIZABLE = 2; FULLSCREEN = 4; BLEND_RGB_MULT = 4096
 QUIT, KEYDOWN, KEYUP = 256, 768, 769
 
 
@@ -34,7 +34,11 @@ class Surface:
     def copy(self): return Surface(self.img.copy())
     def subsurface(self, rect): x, y, w, h = rect; return Surface(self.img.crop((x, y, x + w, y + h)))
     def blit(self, src, dest): self.img.paste(src.img, (int(dest[0]), int(dest[1])), src.img)
-    def fill(self, color, rect=None):
+    def fill(self, color, rect=None, special_flags=0):
+        if special_flags == BLEND_RGB_MULT:                      # multiply RGB, keep alpha (used for elite tints)
+            r, g, b, a = self.img.split()
+            m = [i.point(lambda v, k=c: v * k // 255) for i, c in zip((r, g, b), color[:3])]
+            self.img = Image.merge('RGBA', (*m, a)); return
         if rect is None: self.img.paste(_rgba(color), (0, 0, self.img.width, self.img.height))
         else:
             x, y, w, h = rect; x, y = int(x), int(y)
@@ -80,7 +84,7 @@ def _events():
     out = list(EVENTS); EVENTS.clear(); return out
 
 N = types.SimpleNamespace
-module = N(SRCALPHA=SRCALPHA, RESIZABLE=RESIZABLE, FULLSCREEN=FULLSCREEN, QUIT=QUIT, KEYDOWN=KEYDOWN, KEYUP=KEYUP,
+module = N(BLEND_RGB_MULT=BLEND_RGB_MULT, SRCALPHA=SRCALPHA, RESIZABLE=RESIZABLE, FULLSCREEN=FULLSCREEN, QUIT=QUIT, KEYDOWN=KEYDOWN, KEYUP=KEYUP,
            K_LEFT=K_LEFT, K_RIGHT=K_RIGHT, K_UP=K_UP, K_DOWN=K_DOWN, K_a=K_a, K_d=K_d, K_w=K_w, K_s=K_s,
            K_SPACE=K_SPACE, K_ESCAPE=K_ESCAPE, K_F11=K_F11, K_m=K_m, K_RETURN=K_RETURN, K_1=K_1, K_2=K_2,
            MOUSEBUTTONDOWN=MOUSEBUTTONDOWN, MOUSEMOTION=MOUSEMOTION, Surface=Surface,

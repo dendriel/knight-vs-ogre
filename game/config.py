@@ -128,6 +128,11 @@ OGRE_PATIENCE_DIST = 22            # if the hero steps back less than this, the 
 OGRE_COOLDOWN = (0.8, 1.3)         # random rest (seconds) after a swing
 OGRE_RETALIATE_WAIT = (0.05, 0.18) # shorter pause when the ogre has just recovered from a hit (its strike must land inside its own invulnerable window, or button mashing becomes a stun-lock)
 
+# ---- crowds (T26) -------------------------------------------------------------------------
+MAX_ATTACKERS = 2                  # enemies allowed to prepare / throw a blow at the same time (the rest circle and wait)
+STANDOFF_STEP = 8                  # px: each waiting enemy keeps this much more distance than the one closer to the hero
+STANDOFF_BASE = 14                 # px beyond OGRE_ATTACK_DIST where the first waiting enemy stops
+
 # ---- spawning / camera --------------------------------------------------------------------
 RESPAWN_DELAY = 1.6                # seconds between a death and the new fighter appearing
 SPIRIT_DELAY = 0.45                # the spirit leaves the body this long after the death starts

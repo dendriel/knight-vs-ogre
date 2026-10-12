@@ -59,7 +59,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 - [x] T14 arco e besta como pickups (projetil, durabilidade) **(arte)**
 
 ### Inimigos
-- [x] T20 IA modular | T26 fichas de ataque e elites (veterano, bruto, agil)
+- [x] T20 IA modular | [x] T26 fichas de ataque e elites (veterano, bruto, agil)
 - [ ] T22 cavaleiro inimigo | T21 lanceiro | T23 arqueiro (tiro em parabola com marcador) | T24 cavaleiro com escudo
 - [ ] T25 monstros de fantasia (orc, goblin, kobold, minotauro) **(arte)**
 

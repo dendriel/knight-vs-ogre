@@ -553,4 +553,34 @@ assert w.enemies[0].ai_p['attack_dist'] == 70 and Fighter('ogre', 0, 1).ai_p['at
 del FIGHTER_DEFS['far_ogre']
 print('32 ok: AI parameters come from FIGHTER_DEFS (ai + ai_params)')
 
+# 33) T26: attack tokens (a crowd never has more than max_attackers swinging / preparing) and elite variants
+w = World(T, seed=3); w.cam_off = 0; w.hero.x = 0.0; w.hero.invuln = 0
+w.enemies = [Fighter('ogre', 40 + 6 * i, -1) for i in range(5)]; w.spawn_target = 5
+for e in w.enemies: e.ai_cooldown = 0.0
+peak = 0; holders = set()
+for _ in range(int(25 / DT)):
+    w.hero.hp = 100; w.hero.invuln = 0                        # keep the hero alive and passive: only the crowd is measured
+    w.update(DT, Inputs())
+    att = sum(1 for e in w.enemies if e.state == 'attack')
+    tok = sum(1 for e in w.enemies if e.token and e.state != 'dead')
+    peak = max(peak, att, tok)
+    for e in w.enemies:
+        if e.state == 'attack': holders.add(id(e))
+assert peak <= w.max_attackers, peak
+assert len(holders) >= 3, 'turns rotate: everyone eventually gets to attack'
+# the token is returned on death and on hurt; with a single enemy nothing changes
+w = World(T); e = w.enemies[0]; e.token = True; w.hero.x = 0.0
+e.invuln = 0; w._hit(w.hero, e); assert e.token is False
+assert w.free_tokens() == w.max_attackers
+# elites: faster / sturdier / harder hitting, same art (tint), shorter pauses
+base = Fighter('ogre', 0, 1); vet = Fighter('ogre', 0, 1, elite='veteran'); bru = Fighter('ogre', 0, 1, elite='brute'); agi = Fighter('ogre', 0, 1, elite='agile')
+assert vet.speed > base.speed and vet.ai_p['wait'][0] < base.ai_p['wait'][0]
+assert bru.max_hp > base.max_hp and bru.hp == bru.max_hp
+assert agi.speed > vet.speed and agi.max_hp < base.max_hp
+w = fresh(0); b = Fighter('ogre', 40, -1, elite='brute'); b.ai_cooldown = 99; w.enemies = [b]; w.hero.invuln = 0
+w.start_attack(b, 'ogre_axe'); run(w, 0.5, Inputs()); assert w.hero.hp == 100 - 15, w.hero.hp      # brute: 10 * 1.5
+assert vet.mods['tint'] and bru.mods['tint'] != vet.mods['tint']
+w = World(T); x = w.spawn_enemy('ogre', 300, elite='veteran'); assert x in w.enemies and x.elite == 'veteran'
+print('33 ok: attack tokens cap the crowd, elites are faster / sturdier / harder')
+
 print('ALL LOGIC TESTS PASSED')
