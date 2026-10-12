@@ -254,7 +254,7 @@ class View:
         """Hero panel in the left corner (slots stack top to bottom and only exist when their feature does), enemy
         panel in the right corner like a fighting game. Positions live in config.HUD."""
         h = world.hero; P = C.HUD; feats = world.features
-        self._text(surf, 'HERÓI', *P['name'], (230, 240, 255), self.font_big)
+        self._text(surf, h.defn.get('label', 'HERÓI'), *P['name'], (230, 240, 255), self.font_big)
         self._bar(surf, P['hp_bar'][0], P['hp_bar'][1], h.hp, h.max_hp, (84, 200, 96), 'left')
         self._text(surf, f'{h.hp}', *P['hp_num'], font=self.font_big)
         y = P['hp_bar'][1] + 16

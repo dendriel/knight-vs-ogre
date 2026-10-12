@@ -22,6 +22,7 @@ ELITE_MODS = {
 # One entry per kind of fighter: everything that differs between a knight and an ogre lives here (T01).
 FIGHTER_DEFS = {
     'knight': dict(hero=True, max_hp=C.HERO_MAX_HP, speed=C.HERO_SPEED, half_width=8, sheet='knight', ai=None,
+                   voice='knight', jump=1.0, special='special', secondary=None,
                    anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, primary='sword',
                    slash='sword_slash', reach=C.KNIGHT_REACH, label='HERÓI'),
     'ogre_captain': dict(hero=False, boss=True, max_hp=C.CAPTAIN_MAX_HP, speed=C.CAPTAIN_SPEED, half_width=18,
@@ -83,6 +84,11 @@ FIGHTER_DEFS = {
                  anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='ogre_axe',
                  slash='axe_slash', reach=C.OGRE_REACH, label='OGRO'),
 }
+
+# Playable classes (T40): the id is a FIGHTER_DEFS key with hero=True. Everything a class changes is data there:
+# max_hp, speed, jump (height multiplier), sheet, anim map, primary (id of the first attack of its combo chain), secondary,
+# special, label and `blurb`. The three extra classes are added below (T42-T44).
+CLASSES = ['knight']
 
 # Every attack is data (T03). Adding one = one entry here + one row in a sprite sheet.
 #   anim: sheet row | damage | reach: (from, to) in front of the hip | active: frames that can hit | slash_frame: frame
@@ -219,6 +225,11 @@ class Fighter:
     def is_hero(self): return self.defn['hero']
 
     @property
+    def voice(self):
+        """Name the audio layer uses for this fighter's events (all hero classes sound like 'knight' for now)."""
+        return self.defn.get('voice', self.kind)
+
+    @property
     def speed(self): return self.defn['speed'] * self.mods.get('speed', 1.0)
 
     @property
@@ -288,9 +299,9 @@ class AreaHit:
 
 
 class World:
-    def __init__(self, timing, seed=1, stage=None):
+    def __init__(self, timing, seed=1, stage=None, hero_class='knight'):
         self.timing = timing; self.rng = random.Random(seed)
-        self.hero = Fighter('knight', 0.0, +1)
+        self.hero = Fighter(hero_class, 0.0, +1)
         self.enemies = [Fighter('ogre', C.START_OGRE_OFFSET, -1)]
         self.features = {'potions', 'weapon', 'armor', 'combo'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
         self.potions = 0; self.combo = 0                   # inventory / combo meter (T10, T12)
@@ -426,21 +437,22 @@ class World:
         if h.state not in ('idle', 'walk', 'attack', 'charge'): return                # hurt / dead: no control
         dx = (1 if inp.right else 0) - (1 if inp.left else 0)
         if jump_edge and h.grounded:
-            h.vy = 2 * C.JUMP_HEIGHT / C.JUMP_RISE_TIME; h.grounded = False; h.air_phase = None
-            self.events.append(('jump', 'knight'))
+            h.vy = 2 * C.JUMP_HEIGHT / C.JUMP_RISE_TIME * math.sqrt(h.defn.get('jump', 1.0))   # class jump = height multiplier
+            h.grounded = False; h.air_phase = None
+            self.events.append(('jump', h.voice))
         full = self.combo >= C.COMBO_BAR_MAX
         if h.state == 'charge':                                                       # holding with a full bar
             h.charge_fx -= dt
             if h.charge_fx <= 0: h.charge_fx = 0.4; self.add_vfx('charge', h.x, h.facing < 0, y=h.y)
             if not inp.attack:                                                        # released: fire the special
-                self.combo = 0; self.start_attack(h, 'special'); h.invuln = max(h.invuln, h.duration(self.timing))
-                self.events.append(('special', 'knight')); return
+                self.combo = 0; self.start_attack(h, h.defn['special']); h.invuln = max(h.invuln, h.duration(self.timing))
+                self.events.append(('special', h.voice)); return
             h.x += dx * h.defn['speed'] * C.CHARGE_MOVE_FACTOR * dt
             return
         if h.state in ('idle', 'walk') and inp.attack and full and 'combo' in self.features:
             h.charge_t += dt                                                          # the swing waits to see if it is a hold
             if h.charge_t >= C.SPECIAL_HOLD_MIN:
-                h.set_state('charge'); h.charge_fx = 0.0; self.events.append(('charge', 'knight')); return
+                h.set_state('charge'); h.charge_fx = 0.0; self.events.append(('charge', h.voice)); return
             if dx: h.facing = dx; h.x += dx * h.defn['speed'] * dt
             return
         if h.charge_t > 0 and h.state in ('idle', 'walk'):                            # released early: it was a plain click
@@ -635,7 +647,7 @@ class World:
                     self.shoot(atk, damage=at['damage'], knockback=at['knockback'], **at['shoot'])
                 else:
                     if at['slash']: self.add_vfx(at['slash'], atk.x, atk.facing < 0, y=atk.y)   # (None: the sprite has its own trail)
-                    self.events.append(('swing', atk.kind))
+                    self.events.append(('swing', atk.voice))
             if at.get('rehit') and idx >= at['rehit'] and not atk.rehit_done:
                 atk.rehit_done = True; atk.hit_set = []                    # multi-hit moves (the spin) hit again here
             if tgt in atk.hit_set or idx not in at['active']: continue         # one hit per target per swing
@@ -676,7 +688,7 @@ class World:
         self.apply_damage(atk, tgt, int(round(at['damage'] * atk.mods.get('damage', 1.0))))
         self.add_vfx('blood_splash', tgt.x, tgt.x > sx, y=tgt.y)
         self.shake = C.SHAKE_TIME
-        self.events.append(('hit', tgt.kind))
+        self.events.append(('hit', tgt.voice))
         tgt.chain = None; tgt.combo_next = None                  # a hit breaks the combo
         tgt.token = False
         dirn = 1 if tgt.x >= sx else -1
@@ -684,14 +696,14 @@ class World:
         tgt.kb_dir = dirn; tgt.kb_t = C.KNOCKBACK_TIME; tgt.kb_speed = at['knockback'] / C.KNOCKBACK_TIME
         if tgt.hp <= 0:
             tgt.set_state('dead'); tgt.invuln = 999.0
-            self.events.append(('death', tgt.kind))
+            self.events.append(('death', tgt.voice))
             if tgt is not self.hero: self.stats['kills'] += 1
             if not tgt.is_hero: self._drop_loot(tgt.x, boss=bool(tgt.defn.get('boss'))); tgt.respawn_t = C.RESPAWN_DELAY
             self.add_vfx('spirit', tgt.x, tgt.x > sx, delay=C.SPIRIT_DELAY, y=tgt.y)
             if tgt is self.hero: self.hero_deaths += 1; self.hero_timer = C.RESPAWN_DELAY; self.combo = 0   # D2: dies with the hero
             else: self.ogre_deaths += 1
         else:
-            self.events.append(('hurt', tgt.kind))
+            self.events.append(('hurt', tgt.voice))
             tgt.set_state('hurt')
             if tgt is self.hero: tgt.invuln = tgt.duration(self.timing) + C.HURT_INVULN_EXTRA
             elif C.OGRE_HURT_INVULN: tgt.invuln = tgt.duration(self.timing) + C.OGRE_HURT_INVULN_EXTRA
@@ -709,7 +721,7 @@ class World:
             tgt = self.hero if not owner.is_hero else (self.ogre or self.hero)
             p.tx = tgt.x; p.ty = tgt.y
             p.facing = 1 if p.tx >= x else -1
-        self.projectiles.append(p); self.events.append(('shoot', owner.kind))
+        self.projectiles.append(p); self.events.append(('shoot', owner.voice))
         return p
 
     def add_area(self, owner, x0, x1, damage, delay=0.0, duration=0.1, **kw):
@@ -759,7 +771,7 @@ class World:
         """Key 1: spends one stored potion to heal. Does nothing with a full life bar, an empty pouch or a dead hero."""
         h = self.hero
         if self.potions <= 0 or h.state == 'dead' or h.hp >= h.max_hp: return False
-        self.potions -= 1; self.heal(h, C.POTION_HEAL); self.events.append(('potion', 'knight'))
+        self.potions -= 1; self.heal(h, C.POTION_HEAL); self.events.append(('potion', h.voice))
         return True
 
     # ------------------------------------------------------------------ run state / revive (T37)
@@ -784,7 +796,7 @@ class World:
         self.gold -= C.REVIVE_COST; self.stats['revives'] += 1
         h.hp = h.max_hp; h.set_state('idle'); h.invuln = C.REVIVE_INVULN; h.kb_t = 0.0
         self.combo = 0; self.defeated = False; self.hero_timer = None
-        self.add_vfx('heal', h.x, h.facing < 0, y=h.y); self.events.append(('revive', 'knight'))
+        self.add_vfx('heal', h.x, h.facing < 0, y=h.y); self.events.append(('revive', h.voice))
         return True
 
     def start_attack(self, f, attack_id):
@@ -800,7 +812,7 @@ class World:
         """Restores life (capped at max_hp) with the heal effect and sound. Any healing item should go through here."""
         f.hp = min(f.max_hp, f.hp + amount)
         self.add_vfx('heal', f.x, f.facing < 0, y=f.y)
-        self.events.append(('heal', f.kind))
+        self.events.append(('heal', f.voice))
 
     def _drop_loot(self, x, boss=False):
         r = self.loot_rng; items = []
@@ -889,7 +901,7 @@ class World:
         if (not self.stage_clear and self.next_enc >= len(st.encounters) and not self.queue and h.state != 'dead'
                 and (not st.boss or self.boss_dead)
                 and not any(e.state != 'dead' for e in self.enemies) and h.x >= st.length - C.STAGE_FINISH_DIST):
-            self.stage_clear = True; self.events.append(('stage_clear', 'knight'))
+            self.stage_clear = True; self.events.append(('stage_clear', h.voice))
 
     def _start_arena(self):
         """The boss fight: the last screen of the path closes (camera eases to it), the boss walks in from the right."""
@@ -917,9 +929,9 @@ class World:
             elif self.hero_timer <= 0:
                 self.hero_timer = None; old_cam = self.cam_x(); self.bury(self.hero)
                 nx = old_cam + C.HERO_SPAWN_MARGIN
-                self.hero = Fighter('knight', nx, +1, invuln=C.SPAWN_INVULN)
+                self.hero = Fighter(self.hero.kind, nx, +1, invuln=C.SPAWN_INVULN)
                 self.cam_off = old_cam - (nx - C.SCREEN_W / 2)      # camera keeps its place, then glides
-                self.events.append(('spawn', 'knight'))
+                self.events.append(('spawn', self.hero.voice))
         for e in list(self.enemies):                       # bury the dead after RESPAWN_DELAY
             if e.respawn_t is not None:
                 e.respawn_t -= dt

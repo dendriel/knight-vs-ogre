@@ -98,6 +98,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T31: `SummaryScene`, `EndScene`, `Game.after_summary()` (a loja da T50 entra aqui); cena 8.
 - T33: `THEMES` (cores, parallax, chão, tabelas de props por paridade de fatia) e `PROP_PLACE` em `stages.py`; `slot_props(slot, seed, theme)` e a View montam tudo a partir do tema (o tema `village` reproduz o sorteio original); `World.theme_id`. Decoração de parallax `castle`.
 - T32: `World.arena/boss/boss_dead`, `_start_arena()`, `_summon()`, IA `boss` (`boss_id`: captain / minotaur_lord / black_knight), `defn['charge']` sobrescreve os parâmetros da investida, `chain_chance` encadeia golpes de inimigos, `_drop_loot(boss=True)`; câmera de fase = base (seguir ou arena) + `cam_off` que desliza. Teste 43.
+- T40: classes como dados: `CLASSES` + entradas `FIGHTER_DEFS` com `hero=True` (vida, velocidade, `jump` = multiplicador de altura, `special`, `secondary`, `label`, `voice` para o áudio); `World(hero_class=...)`; o respawn mantém a classe; eventos usam `Fighter.voice`. O cavaleiro é a entrada 0 (comportamento idêntico). Teste 44.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

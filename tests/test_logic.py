@@ -1,7 +1,7 @@
 import os, random, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from game import config as C
-from game.logic import World, Inputs, load_timing, Fighter
+from game.logic import World, Inputs, load_timing, Fighter, CLASSES
 
 T = load_timing(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets'))
 DT = 1 / 60
@@ -865,5 +865,25 @@ assert seen[:3] == ['bk_1', 'bk_2', 'bk_3'], seen
 for name in ('ogre_captain', 'minotaur_lord', 'black_knight'):
     assert Fighter(name, 0, 1).sheet == name and name in T
 print('43 ok: boss arena (gate, locked screen, walls, summon at half life, loot, release) and boss behaviours')
+
+# 44) T40: classes are data: a class changes life / speed / jump height; respawn keeps the class
+FIGHTER_DEFS['tank'] = dict(FIGHTER_DEFS['knight'], max_hp=150, speed=90.0, jump=1.5, label='TANQUE')
+w = World(T, hero_class='tank'); w.cam_off = 0; w.ogre.x = 5000.0; w.ai_cooldown = 99
+assert w.hero.kind == 'tank' and w.hero.max_hp == 150 and w.hero.hp == 150 and w.hero.defn['label'] == 'TANQUE'
+x0 = w.hero.x; run(w, 1.0, Inputs(right=True)); assert abs((w.hero.x - x0) - 90.0) < 3
+w2 = World(T); w2.cam_off = 0; w2.ogre.x = 5000.0; w2.ai_cooldown = 99
+top1 = top2 = 0.0
+for ww, name in ((w, 1), (w2, 2)):
+    ww.update(DT, Inputs(jump=True)); t = 0.0
+    for _ in range(int(1.5 / DT)):
+        ww.update(DT, Inputs()); t = max(t, ww.hero.y)
+    if name == 1: top1 = t
+    else: top2 = t
+assert abs(top2 - C.JUMP_HEIGHT) < 2.0 and abs(top1 - 1.5 * C.JUMP_HEIGHT) < 3.0, (top1, top2)
+w.hero.hp = 1; w.hero.invuln = 0; w._hit(w.ogre, w.hero); run(w, C.RESPAWN_DELAY + 0.3, Inputs())
+assert w.hero.kind == 'tank' and w.hero.hp == 150 and w.hero_deaths == 1
+assert CLASSES[0] == 'knight' and all(FIGHTER_DEFS[c]['hero'] for c in CLASSES)
+del FIGHTER_DEFS['tank']
+print('44 ok: classes are data (life, speed, jump height) and survive respawn')
 
 print('ALL LOGIC TESTS PASSED')
