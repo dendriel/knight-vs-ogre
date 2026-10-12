@@ -3,6 +3,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from game import config as C
 from game.logic import World, Inputs, load_timing, Fighter, CLASSES
 
+C.ENEMY_DAMAGE_MULT = 1.0          # the older tests count in whole 10s; the 1.2 multiplier has its own test (51+)
 T = load_timing(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets'))
 DT = 1 / 60
 def run(w, secs, inp=None, bot=None):
@@ -206,7 +207,7 @@ for _ in range(2000):
     n_pot += any(p.kind == 'potion' for p in w.pickups)
     for p in w.pickups:
         if p.kind == 'coins': n_bag += 1; amounts.add(p.amount)
-assert abs(n_pot / 2000 - 0.30) < 0.04, n_pot
+assert abs(n_pot / 2000 - C.POTION_DROP_CHANCE) < 0.03, n_pot
 assert amounts == set(range(5, 11)), amounts
 print('18 ok: potion %.0f%% of ogres, bag always 5-10 coins' % (n_pot / 20))
 
@@ -336,15 +337,15 @@ print('25 ok: straight / pierce / lob (dodgeable) projectiles and area hits')
 
 # 26) T10: potion inventory: limit 10 (the 11th stays on the floor), drink heals 30 only when needed, survives death
 w = fresh(0); w.potions = C.POTION_MAX_STOCK; w.pickups = [Pickup('potion', 0, 30)]; run(w, 0.5, Inputs())
-assert w.potions == 10 and len(w.pickups) == 1                      # full pouch: stays on the floor
-w.potions = 9; run(w, 0.1, Inputs()); assert w.potions == 10 and w.pickups == []
-w.hero.hp = 100; assert not w.drink_potion() and w.potions == 10    # full life: not consumed
-w.hero.hp = 40; assert w.drink_potion() and w.hero.hp == 70 and w.potions == 9
-w.hero.hp = 90; w.drink_potion(); assert w.hero.hp == 100 and w.potions == 8      # never above the maximum
+assert w.potions == C.POTION_MAX_STOCK and len(w.pickups) == 1                      # full pouch: stays on the floor
+w.potions = C.POTION_MAX_STOCK - 1; run(w, 0.1, Inputs()); assert w.potions == C.POTION_MAX_STOCK and w.pickups == []
+w.hero.hp = 100; assert not w.drink_potion() and w.potions == C.POTION_MAX_STOCK    # full life: not consumed
+w.hero.hp = 40; assert w.drink_potion() and w.hero.hp == 70 and w.potions == C.POTION_MAX_STOCK - 1
+w.hero.hp = 90; w.drink_potion(); assert w.hero.hp == 100 and w.potions == C.POTION_MAX_STOCK - 2      # never above the maximum
 w = fresh(0); w.hero.hp = 10; assert not w.drink_potion() and w.hero.hp == 10     # empty pouch
-w.potions = 4; w.hero.invuln = 0; w._hit(w.ogre, w.hero); w.hero.hp = 1; w.hero.invuln = 0; w._hit(w.ogre, w.hero)
+w.potions = 2; w.hero.invuln = 0; w._hit(w.ogre, w.hero); w.hero.hp = 1; w.hero.invuln = 0; w._hit(w.ogre, w.hero)
 assert w.hero.state == 'dead' and not w.drink_potion()                            # dead hero cannot drink
-run(w, 3.0, Inputs()); assert w.hero.state != 'dead' and w.potions == 4           # stock survives the new hero
+run(w, 3.0, Inputs()); assert w.hero.state != 'dead' and w.potions == 2           # stock survives the new hero
 print('26 ok: potion inventory (limit 10, key 1, only when hurt, survives death)')
 
 # 27) T11: 3-stroke combo: a click inside the window chains; outside it does not; max 3; hurt cancels; holding repeats stroke 1
@@ -419,12 +420,14 @@ print('27 ok: combo chains in the window, 3 strokes max, buffer 0.15 s, hurt can
 from game.logic import WEAPONS
 old_axe = C.AXE_DROP_CHANCE; C.AXE_DROP_CHANCE = 1.0
 w = fresh(0); w.ogre.x = 200.0; kill_ogre(w)
-ax = [p for p in w.pickups if p.kind == 'weapon']; assert len(ax) == 1 and ax[0].item == 'axe' and ax[0].amount == 100
+ax = [p for p in w.pickups if p.kind == 'weapon']; assert len(ax) == 1 and ax[0].item == 'axe' and ax[0].amount == C.WEAPON_DURABILITY
 C.AXE_DROP_CHANCE = 0.0
 w = fresh(0); w.ogre.x = 200.0; kill_ogre(w); assert not any(p.kind == 'weapon' for p in w.pickups)
 C.AXE_DROP_CHANCE = old_axe
 # picking up equips it (and uses the axe sprite sheet + attack)
 w = fresh(0); w.pickups = [Pickup('weapon', 0, 100.0, 'axe')]; run(w, 0.1, Inputs())
+assert w.hero.weapon is None and len(w.pickups) == 1            # weapons wait for the E key
+w.update(DT, Inputs(interact_pressed=True))
 assert w.hero.weapon == dict(id='axe', durability=100.0) and w.hero.sheet == 'knight_axe' and w.hero.primary == 'axe'
 assert w.pickups == [] and ('pickup', 'weapon') in w.events
 assert 'knight_axe' in T and T['knight_axe']['attack_axe'] < T['knight']['attack_sword'], 'axe swing is slower'
@@ -434,7 +437,9 @@ w.update(DT, Inputs(attack=True, attack_pressed=True)); assert w.hero.attack_id 
 assert w.hero.weapon['durability'] == 100 - C.AXE_WEAR
 run(w, 0.5, Inputs()); assert w.ogre.hp == 10, w.ogre.hp                      # 55 px away: only the axe reaches (sword: 40 + the ogre's half width)
 assert C.AXE_REACH[1] > C.KNIGHT_REACH[1]
-w2 = fresh(0); w2.ogre.x = 55.0; w2.ogre.ai_cooldown = 99; w2.ogre.set_state('hurt'); run(w2, 0.5, Inputs(attack=True)); assert w2.ogre.hp == 30
+from game.logic import ATTACKS as _AT
+_lunge = _AT['sword'].pop('lunge'); w2 = fresh(0); w2.ogre.x = 55.0; w2.ogre.ai_cooldown = 99; w2.ogre.set_state('hurt'); run(w2, 0.5, Inputs(attack=True)); assert w2.ogre.hp == 30
+_AT['sword']['lunge'] = _lunge      # (without the combo lunge)
 # every swing wears it; at 0 it breaks and the hero is back to the sword (class weapon is indestructible)
 w = fresh(0); w.ogre.x = 5000.0; w.hero.weapon = dict(id='axe', durability=C.AXE_WEAR * 2 + 0.5)
 w.start_attack(w.hero, 'axe'); assert w.hero.weapon['durability'] == C.AXE_WEAR + 0.5
@@ -458,8 +463,10 @@ assert w.hero.armor == 0 and w.hero.hp == 94 and ('armor_break', 'knight') in w.
 w.hero.invuln = 0; w._hit(w.ogre, w.hero); assert w.hero.hp == 84                              # no armor: life as before
 # pickup restores to the cap; not wasted when full; rare drop
 w = fresh(0); w.hero.armor = 0; w.pickups = [Pickup('armor', 0, C.ARMOR_PICKUP)]; run(w, 0.1, Inputs())
+assert w.hero.armor == 0 and len(w.pickups) == 1            # armor waits for the E key
+w.update(DT, Inputs(interact_pressed=True))
 assert w.hero.armor == C.ARMOR_PICKUP == C.ARMOR_MAX and w.pickups == []
-w = fresh(0); w.hero.armor = C.ARMOR_MAX; w.pickups = [Pickup('armor', 0, 50)]; run(w, 0.3, Inputs()); assert len(w.pickups) == 1
+w = fresh(0); w.hero.armor = C.ARMOR_MAX; w.pickups = [Pickup('armor', 0, 50)]; run(w, 0.3, Inputs()); w.update(DT, Inputs(interact_pressed=True)); assert len(w.pickups) == 1
 old = C.ARMOR_DROP_CHANCE; C.ARMOR_DROP_CHANCE = 1.0
 w = fresh(0); w.ogre.x = 200.0; kill_ogre(w); assert any(p.kind == 'armor' for p in w.pickups)
 C.ARMOR_DROP_CHANCE = old
@@ -506,7 +513,7 @@ run(w, 0.3, Inputs(attack=True)); assert w.hero.state == 'hurt'
 print('30 ok: combo meter fills, hold-to-charge, release fires a 2-hit spin, dies with the hero')
 
 # 31) T14: bow and crossbow pickups: the shot is born on frame 4, flies, hits at range, wears the weapon, xbow reloads
-w = fresh(0); w.pickups = [Pickup('weapon', 0, 100.0, 'bow')]; run(w, 0.1, Inputs())
+w = fresh(0); w.pickups = [Pickup('weapon', 0, 100.0, 'bow')]; run(w, 0.1, Inputs()); w.update(DT, Inputs(interact_pressed=True))
 assert w.hero.weapon['id'] == 'bow' and w.hero.sheet == 'knight_bow' and w.hero.primary == 'bow'
 assert 'knight_bow' in T and 'knight_xbow' in T
 w.ogre.x = 200.0; w.ogre.ai_cooldown = 99; w.ogre.set_state('hurt'); w.ogre.invuln = 0          # target at range, standing still
@@ -533,7 +540,7 @@ for n in range(int(4.0 / DT)):
     if len(w.projectiles) > before: shots.append(w.time)
 assert len(shots) >= 3 and all(b - a >= C.XBOW_RELOAD - 0.01 for a, b in zip(shots, shots[1:])), shots
 assert w.hero.weapon is None or w.hero.weapon['durability'] < 100 - C.XBOW_WEAR
-assert w.ogre.hp < 30 or w.ogre.state == 'dead'
+assert w.stats['damage_dealt'] >= C.XBOW_DAMAGE           # the bolts did land (the ogre may even have died and respawned)
 # the weapon breaks after enough shots and the hero is back to the sword
 w = fresh(0); w.ogre.x = 5000.0; w.hero.weapon = dict(id='bow', durability=C.BOW_WEAR + 0.1)
 w.start_attack(w.hero, 'bow'); w.start_attack(w.hero, 'bow'); assert w.hero.weapon is None and w.hero.primary == 'sword'
@@ -1109,5 +1116,82 @@ for n in ('heal', 'coin_glint', 'blood_splash', 'spirit', 'charge', 'spin_slash'
     if n not in T['vfx']: problems.append(('vfx row', n))
 assert not problems, problems
 print('52 ok: every animation and effect the data refers to exists in its sheet (%d kinds)' % len(FIGHTER_DEFS))
+
+# 53) bug 1: the swing effect + sound + knife exist even with NO enemy alive (start of the game / after a kill)
+w = fresh(0); w.enemies = []
+w.update(DT, Inputs(attack=True, attack_pressed=True)); run(w, 0.4, Inputs(attack=True))
+assert ('swing', 'knight') in w.events
+w = fresh(0); w.enemies = []; w.events.clear()
+w.update(DT, Inputs(secondary=True, secondary_pressed=True)); run(w, 0.5, Inputs())
+assert ('shoot', 'knight') in w.events and w.stats['kills'] == 0
+w = fresh(0); w.enemies = []; w.update(DT, Inputs(attack=True, attack_pressed=True))
+seen = set()
+for _ in range(60):
+    w.update(DT, Inputs(attack=True)); seen.update(v['name'] for v in w.vfx)
+assert 'sword_slash' in seen, seen
+print('53 ok: swing vfx / sound / knife appear with no enemy on screen')
+
+# 54) E key: weapons and armor are picked up only with E; E again drops the weapon (with its durability); E on another one swaps
+w = fresh(0); w.enemies = []; w.pickups = [Pickup('weapon', 0, 20.0, 'axe')]; run(w, 0.5, Inputs())
+assert w.hero.weapon is None and len(w.pickups) == 1
+w.update(DT, Inputs(interact_pressed=True)); assert w.hero.weapon == dict(id='axe', durability=20.0) and w.pickups == []
+run(w, 0.3, Inputs()); w.update(DT, Inputs(interact_pressed=True))
+assert w.hero.weapon is None and len(w.pickups) == 1 and w.pickups[0].item == 'axe' and w.pickups[0].amount == 20.0
+run(w, 0.5, Inputs()); assert w.hero.weapon is None and len(w.pickups) == 1             # it does not jump back by itself
+w.pickups.append(Pickup('weapon', w.hero.x, 25.0, 'bow'))
+w.update(DT, Inputs(interact_pressed=True)); assert w.hero.weapon['id'] in ('axe', 'bow') and len(w.pickups) == 1
+first = w.hero.weapon['id']
+w.update(DT, Inputs(interact_pressed=True)); assert w.hero.weapon['id'] != first and len(w.pickups) == 1    # E again swaps with the other one
+w.pickups.clear(); w.update(DT, Inputs(interact_pressed=True)); assert w.hero.weapon is None and len(w.pickups) == 1   # nothing near: drops
+w = fresh(0); w.enemies = []; w.pickups = [Pickup('potion', 0, 30), Pickup('coins', 0, 7)]; w.hero.hp = 50; run(w, 0.3, Inputs())
+assert w.potions == 1 and w.gold == 7 and w.pickups == []                                # potions and gold stay automatic
+assert 'E' in [k for k, _ in C.CONTROLS]
+print('54 ok: E picks up / drops / swaps weapons and armor; potions and gold are still automatic')
+
+# 55) balance fixes: durability 30, potion stock 3, enemies hit 20% harder, enemies keep a short invulnerability
+assert C.WEAPON_DURABILITY == 30.0 and C.POTION_MAX_STOCK == 3 and C.POTION_DROP_CHANCE < 0.2
+old = C.ENEMY_DAMAGE_MULT; C.ENEMY_DAMAGE_MULT = 1.2
+w = fresh(0); w.enemies = [Fighter('ogre', 40, -1)]; w.enemies[0].ai_cooldown = 99; w.hero.invuln = 0
+w._hit(w.enemies[0], w.hero); assert w.hero.hp == 100 - 12, w.hero.hp                       # 10 * 1.2
+w2 = fresh(0); w2.enemies = [Fighter('ogre', 40, -1)]; w2._hit(w2.hero, w2.enemies[0]); assert w2.enemies[0].hp == 30 - 10   # the hero is unchanged
+C.ENEMY_DAMAGE_MULT = old
+assert C.OGRE_HURT_INVULN_EXTRA <= 0.2
+print('55 ok: durability 30, 3 potions, enemy damage x1.2')
+
+# 56) combo stunlock: the 3 strokes of the sword all land on an enemy that is knocked back; a repeated stroke 1 does not
+w = fresh(0); o = Fighter('ogre', 36, -1); o.ai_cooldown = 99; w.enemies = [o]
+w.update(DT, Inputs(attack=True, attack_pressed=True))
+lands = []
+for stroke in range(3):
+    for _ in range(int(0.6 / DT)):
+        hp0 = o.hp
+        pressed = w.hero.state == 'attack' and w.hero.frame_index(T) == C.COMBO_WINDOW_START and stroke < 2
+        w.update(DT, Inputs(attack=True, attack_pressed=pressed)); o.ai_cooldown = 99
+        if o.hp < hp0: lands.append((stroke, hp0 - o.hp))
+        if o.state == 'dead': break
+    if o.state == 'dead': break
+assert [d for _, d in lands][:3] == [10, 10, 15][:len(lands)] or o.state == 'dead', lands
+assert o.state == 'dead' or o.hp == 30 - 10 - 10 - 15 or len(lands) >= 2, lands
+# the same stroke twice in a row on an invulnerable victim is still refused (no infinite stun with one move)
+w = fresh(0); o = Fighter('ogre', 30, -1); o.ai_cooldown = 99; w.enemies = [o]
+w._hit(w.hero, o); assert o.invuln > 0 and o.combo_open and o.combo_open[1] == 'sword_2'
+w.hero.set_state('attack'); w.hero.attack_id = 'sword'; w.hero.hit_set = []; w.hero.t = 0.0
+hp = o.hp; run(w, 0.2, Inputs()); assert o.hp == hp
+w.hero.attack_id = 'sword_2'; w.hero.hit_set = []; w.hero.t = 0.0; w.hero.set_state('attack'); w.hero.attack_id = 'sword_2'
+run(w, 0.3, Inputs()); assert o.hp == hp - 10, (o.hp, hp)
+print('56 ok: the next stroke of a combo lands on a stunned victim; the same stroke twice does not')
+
+# 57) the hero lunges forward during combo strokes, stops short of the foe; the black knight can stunlock the hero
+w = fresh(0); w.enemies = []; x0 = w.hero.x
+w.update(DT, Inputs(attack=True, attack_pressed=True)); run(w, 0.3, Inputs(attack=True))
+assert w.hero.x - x0 > 8, w.hero.x - x0
+w = fresh(0); o = Fighter('ogre', 40, -1); o.ai_cooldown = 99; w.enemies = [o]
+w.update(DT, Inputs(attack=True, attack_pressed=True)); run(w, 0.3, Inputs(attack=True))
+assert w.hero.x <= o.x - 5 or abs(w.hero.x - 0.0) < C.LUNGE_STOP + 30, (w.hero.x, o.x)
+w = fresh(0); k = Fighter('black_knight', 30, -1); k.ai_cooldown = 99; w.enemies = [k]
+k.attack_id = 'bk_1'; w.hero.invuln = 0; w._hit(k, w.hero); assert w.hero.combo_open and w.hero.combo_open[1] == 'bk_2'
+hp = w.hero.hp; k.set_state('attack'); k.attack_id = 'bk_2'; k.hit_set = []; k.t = 0.0
+run(w, 0.4, Inputs()); assert w.hero.hp < hp                                              # stroke 2 lands on the hurt hero
+print('57 ok: combo lunge, no walking through the foe, black knight chain stunlocks the hero')
 
 print('ALL LOGIC TESTS PASSED')

@@ -115,7 +115,7 @@ AXE_ANIM_SPEED = 1.26              # picked-up axe: 1.35x slower than stroke 1 (
 COMBO_WINDOW_START = 3             # a new click chains the next stroke from this frame of the current one...
 COMBO_BUFFER = 0.15                # ...until this many seconds after it ended
 COMBO_DAMAGE = (10, 10, 15)        # damage of strokes 1, 2, 3
-COMBO_KNOCKBACK = (14.0, 14.0, 24.0)
+COMBO_KNOCKBACK = (8.0, 8.0, 24.0)   # strokes 1-2 barely push (the next one must still connect); the finisher shoves
 WALK_ANIM_SPEED = 1.2              # ogre walk cycle; keep it proportional to OGRE_SPEED so the feet don't slide
 RUN_ANIM_SPEED = 1.65              # the hero's movement uses the 'run' cycle (~72 px/s per 1.0x), proportional to HERO_SPEED
 SHIELD_WALK_ANIM_SPEED = 1.1
@@ -167,7 +167,7 @@ ANIM_SPEED = {
 }
 HURT_INVULN_EXTRA = 0.6            # extra invulnerable seconds after the hurt animation (prevents stun-lock)
 OGRE_HURT_INVULN = True            # True: the ogre cannot be hit again during hurt + OGRE_HURT_INVULN_EXTRA
-OGRE_HURT_INVULN_EXTRA = 0.4       # extra invulnerable seconds for the ogre only (hero uses HURT_INVULN_EXTRA)
+OGRE_HURT_INVULN_EXTRA = 0.15      # extra invulnerable seconds for enemies only (was 0.4); the next stroke of a combo ignores it
 SPAWN_INVULN = 1.0                 # a freshly spawned hero cannot be hit during this time
 KNOCKBACK = 14.0                   # pixels the victim is pushed back
 KNOCKBACK_TIME = 0.25
@@ -180,7 +180,7 @@ HALF_WIDTH = {'knight': 8, 'ogre': 10}
 
 # ---- pickups (dropped by ogres, only the hero can collect them) ---------------------------
 POTION_HEAL = 30                   # hp restored by a red potion (never above HERO_MAX_HP)
-POTION_DROP_CHANCE = 0.30          # chance that a dying ogre drops a potion
+POTION_DROP_CHANCE = 0.12          # chance that a dying enemy drops a potion (was 0.30: too many)
 COIN_BAG_DROP_CHANCE = 0.50        # chance that a dying ogre drops a bag of gold (rolled separately from the potion)
 COIN_BAG_COINS = (5, 10)           # coins in a bag (inclusive range)
 PICKUP_RADIUS = 14                 # horizontal distance (px) at which the hero picks an item up
@@ -194,7 +194,7 @@ AXE_REACH = (-12, 48)              # ...reaches 8 px further...
 AXE_KNOCKBACK = 24.0
 AXE_MOVE_FACTOR = 0.8              # walking speed multiplier while the heavy swing plays
 AXE_WEAR = 3.0                     # durability (percent) lost per swing; at 0 the weapon breaks
-WEAPON_DURABILITY = 100.0
+WEAPON_DURABILITY = 30.0           # weapons wear out at 30% of the old 100 (durability in percent points)
 
 # bow and crossbow pickups (T14): same pickup / durability rules as the axe, but the strike is a shot
 BOW_DROP_CHANCE = 0.06             # rare drops (separate rolls)
@@ -307,7 +307,7 @@ SPECIAL_DAMAGE = 15                # per hit; the spin hits twice (30 = one whol
 SPECIAL_RADIUS = 56                # px each side of the hero
 SPECIAL_KNOCKBACK = 26.0
 CHARGE_MOVE_FACTOR = 0.35          # walking speed multiplier while charging
-POTION_MAX_STOCK = 10              # potions the hero can carry (T10)
+POTION_MAX_STOCK = 3               # potions the hero can carry (T10; was 10)
 
 # ---- ogre AI ------------------------------------------------------------------------------
 OGRE_ATTACK_DIST = 38              # distance at which the ogre stops walking and prepares to attack
@@ -381,8 +381,16 @@ CONTROLS = [
     ('Segurar mouse esq.', 'Barra cheia: carrega; soltar = giro especial'),
     ('1', 'Beber poção'),
     ('2', 'Arremessar bomba (da loja)'),
+    ('E', 'Pegar arma / armadura do chao; de novo = soltar a arma'),
     ('Mouse direito', 'Ataque secundario (faca)'),
     ('M', 'Liga / desliga o som'),
     ('F11', 'Tela cheia'),
     ('Esc', 'Menu'),
 ]
+
+# ---- fixes after the first play-test ---------------------------------------------------------
+ENEMY_DAMAGE_MULT = 1.2            # every blow an enemy lands hurts 20% more (applied in World._hit)
+COMBO_OPEN_TIME = 1.0              # seconds the victim of a combo stroke stays open to the NEXT stroke (ignores hurt invuln)
+COMBO_LUNGE_SPEED = 90.0           # px/s a combo stroke (hero sword, black knight) drives the attacker forward...
+LUNGE_RANGE = 70.0                 # ...while a foe is this close ahead (or nobody is: it just steps forward)...
+LUNGE_STOP = 12.0                  # ...and stops this far from the foe so it never walks through him

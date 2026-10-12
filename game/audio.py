@@ -18,7 +18,7 @@ SOUND_FOR = {
     'spawn': {'knight': 'spawn_hero', 'ogre': 'spawn_ogre'},
     'pickup': {'coins': 'coin_pickup', 'potion': 'coin_pickup', 'weapon': 'coin_pickup', 'armor': 'coin_pickup'},
     'heal': 'heal',                                                # any life recovery
-    'potion': 'gulp', 'jump': 'jump',
+    'potion': 'gulp', 'jump': 'jump', 'drop': 'impact',
     'shoot': 'shoot', 'throw': 'throw', 'impact': 'impact', 'explosion': 'explosion', 'spikes': 'spikes',
     'block': 'block', 'armor_hit': 'armor_hit', 'armor_break': 'armor_break', 'break': 'weapon_break',
     'charge': 'charge', 'special': 'special', 'telegraph': 'telegraph',

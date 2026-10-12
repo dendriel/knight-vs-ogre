@@ -19,6 +19,7 @@ A lista que o jogo mostra em "Ver comandos" vem de `CONTROLS` em `game/config.py
 - Botao direito do mouse: ataque secundario da classe (infinito, so tem recarga)
 - Segurar o botao esquerdo com a barra de combo cheia: carrega; soltar dispara o especial da classe
 - 1: beber uma pocao | 2: arremessar uma bomba (comprada na loja)
+- E: pegar arma / armadura do chao (potions e ouro sao automaticos); E de novo, sem nada por perto, solta a arma
 - M: liga/desliga o som | F11: tela cheia | Esc: menu (continuar, comandos, reiniciar fase, sair)
 
 ## Classes
@@ -36,7 +37,7 @@ Armas pickup (machado, arco, besta) valem so para o cavaleiro.
   "hurt", nao pode andar nem atacar e fica um instante invulneravel.
 - O golpe so acerta nos frames de impacto da animacao e dentro da faixa vertical do atacante (caixas de 2 ou 3 niveis
   deixam o heroi fora do alcance dos corpo a corpo).
-- Itens soltos pelos inimigos: pocao (vai para o inventario, ate 10; tecla 1 cura 30), bolsa de ouro, armadura (barra
+- Itens soltos pelos inimigos: pocao (vai para o inventario, ate 3; tecla 1 cura 30), bolsa de ouro, armadura (barra
   azul, 50 pontos: desconta o dano antes da vida), machado / arco / besta (durabilidade, voltam a espada quando
   quebram). O heroi que morre perde a arma e a armadura; ouro e pocoes ficam.
 - Barra de combo (laranja): enche com o dano causado (x1,5) e recebido (x1,0); zera ao usar o especial e quando o

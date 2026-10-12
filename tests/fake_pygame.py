@@ -12,7 +12,7 @@ class Event:
     def __init__(self, type, **kw): self.type = type; self.__dict__.update(kw)
 
 K_LEFT, K_RIGHT, K_UP, K_DOWN, K_a, K_d, K_w, K_s, K_SPACE, K_ESCAPE, K_F11, K_m = range(1000, 1012)
-K_RETURN, K_1, K_2 = range(1012, 1015)
+K_RETURN, K_1, K_2, K_e = range(1012, 1016)
 MOUSEBUTTONDOWN, MOUSEMOTION = 1025, 1024
 MOUSE_RIGHT = 'mouse-right'   # put it in PRESSED to simulate the right button held
 MOUSE_POS = [0, 0]
@@ -86,7 +86,7 @@ def _events():
 N = types.SimpleNamespace
 module = N(BLEND_RGB_MULT=BLEND_RGB_MULT, SRCALPHA=SRCALPHA, RESIZABLE=RESIZABLE, FULLSCREEN=FULLSCREEN, QUIT=QUIT, KEYDOWN=KEYDOWN, KEYUP=KEYUP,
            K_LEFT=K_LEFT, K_RIGHT=K_RIGHT, K_UP=K_UP, K_DOWN=K_DOWN, K_a=K_a, K_d=K_d, K_w=K_w, K_s=K_s,
-           K_SPACE=K_SPACE, K_ESCAPE=K_ESCAPE, K_F11=K_F11, K_m=K_m, K_RETURN=K_RETURN, K_1=K_1, K_2=K_2,
+           K_SPACE=K_SPACE, K_ESCAPE=K_ESCAPE, K_F11=K_F11, K_m=K_m, K_RETURN=K_RETURN, K_1=K_1, K_2=K_2, K_e=K_e,
            MOUSEBUTTONDOWN=MOUSEBUTTONDOWN, MOUSEMOTION=MOUSEMOTION, Surface=Surface,
            init=lambda: None, quit=lambda: None,
            display=N(set_caption=lambda s: None, set_mode=_set_mode, get_surface=lambda: _state['screen'], flip=_flip),

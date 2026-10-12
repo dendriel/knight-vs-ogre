@@ -36,7 +36,7 @@ class Game:
         self.run_start = dict(self.run_state)                              # snapshot at the start of the stage (D9)
         self.scenes = [PlayScene()]                                 # scene stack: the last one is on top
         self._scale, self._off = 1, (0, 0)                          # window -> internal canvas mapping (set by present())
-        self._prev = dict(attack=False, secondary=False, potion=False, bomb=False); self._attack_t = 0.0; self._lock = False
+        self._prev = dict(attack=False, secondary=False, potion=False, bomb=False, interact=False); self._attack_t = 0.0; self._lock = False
         self.cur = Inputs()
         if start == 'title': self.scenes = [TitleScene()]
         else: self.start(start)
@@ -100,7 +100,7 @@ class Game:
         """Raw keyboard / mouse -> Inputs with levels, press edges and how long the attack button has been held."""
         k = pygame.key.get_pressed(); m = pygame.mouse.get_pressed()
         attack, secondary, potion = bool(m[0]), bool(len(m) > 2 and m[2]), bool(k[pygame.K_1])
-        bomb = bool(k[pygame.K_2])
+        bomb = bool(k[pygame.K_2]); interact = bool(k[pygame.K_e])
         if self._lock:                                              # a click that closed a menu must not swing the sword
             if not (attack or secondary): self._lock = False
             attack = secondary = False
@@ -111,9 +111,10 @@ class Game:
         i.secondary_pressed = secondary and not self._prev['secondary']
         i.potion_pressed = potion and not self._prev['potion']
         i.bomb_pressed = bomb and not self._prev['bomb']
+        i.interact_pressed = interact and not self._prev['interact']
         self._attack_t = self._attack_t + dt if attack else 0.0
         i.attack_held_t = self._attack_t
-        self._prev.update(attack=attack, secondary=secondary, potion=potion, bomb=bomb)
+        self._prev.update(attack=attack, secondary=secondary, potion=potion, bomb=bomb, interact=interact)
         self.cur = i
 
     def inputs(self): return self.cur

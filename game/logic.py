@@ -239,6 +239,9 @@ ATTACKS = {
                      slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
                      wear=0.0, next=None),
 }
+for _k in ('sword', 'sword_2', 'sword_3', 'bk_1', 'bk_2', 'bk_3'):      # melee combos drive the attacker forward
+    ATTACKS[_k]['lunge'] = C.COMBO_LUNGE_SPEED
+for _k in ('bk_1', 'bk_2'): ATTACKS[_k]['knockback'] = C.COMBO_KNOCKBACK[0]
 ANIM = {k: d['anim'] for k, d in FIGHTER_DEFS.items()}          # (aliases kept for old code / tests)
 SLASH = {k: d['slash'] for k, d in FIGHTER_DEFS.items()}
 REACH = {k: d['reach'] for k, d in FIGHTER_DEFS.items()}
@@ -261,11 +264,13 @@ class Inputs:
     """What the player does this frame. `attack` is the level (button held); the *_pressed / *_released flags are edges
     computed by main.py; attack_held_t = seconds the attack button has been held (T05)."""
     def __init__(self, left=False, right=False, attack=False, jump=False, secondary=False, attack_pressed=False,
-                 attack_released=False, attack_held_t=0.0, secondary_pressed=False, potion_pressed=False, bomb_pressed=False):
+                 attack_released=False, attack_held_t=0.0, secondary_pressed=False, potion_pressed=False, bomb_pressed=False,
+                 interact_pressed=False):
         self.left, self.right, self.attack, self.jump = left, right, attack, jump
         self.secondary, self.attack_pressed, self.attack_released = secondary, attack_pressed, attack_released
         self.attack_held_t, self.secondary_pressed, self.potion_pressed = attack_held_t, secondary_pressed, potion_pressed
         self.bomb_pressed = bomb_pressed
+        self.interact_pressed = interact_pressed          # E: pick up / drop weapon or armor
 
 
 class Fighter:
@@ -290,6 +295,7 @@ class Fighter:
         self.hit_set = []                                       # targets already hit by the current swing
         self.charge_cd = 0.0; self.dash_t = 0.0; self.dash_hit = False; self.summoned = False
         self.rehit_done = False; self.cd = {}                    # cd: attack id -> time it can be used again
+        self.combo_open = None                                  # (attacker, its next stroke id, expiry time): hit by a combo stroke
         self.combo_next = None; self.chain = None               # queued next stroke / (time, id) just after a stroke ended
         self.ai_wait = None; self.ai_cooldown = 0.6             # enemy AI state (per fighter, so many enemies can coexist)
         self.respawn_t = None                                   # enemies: countdown (after death) until the body is buried
@@ -357,6 +363,7 @@ class Projectile:
     """Something in flight (T04). kind 'straight': flies level in the facing direction and hits the first target on its
     path (within VERTICAL_REACH of the shooter's feet). kind 'lob': a parabola over the sky towards where the target
     stood at launch (tx, ty); it hurts whatever is inside the landing zone when it comes down, so the hero can dodge."""
+    attack_id = None                                          # ATTACKS id that fired it (combo stunlock identity)
     def __init__(self, kind, owner, x, base_y, facing, damage, sprite, speed=240.0, max_range=260.0, pierce=False,
                  knockback=C.KNOCKBACK, tx=None, flight=0.9, apex=60.0, radius=14.0, chest=C.PROJ_CHEST, explode=None):
         self.kind, self.owner, self.x, self.x0, self.base_y, self.facing = kind, owner, float(x), float(x), base_y, facing
@@ -496,13 +503,14 @@ class World:
         if inp.bomb_pressed: self.throw_bomb()
         self._hero_control(dt, inp)
         for e in self.enemies: self._enemy_ai(e, dt)
+        self._lunges(dt)
         self._knockback(dt)
         for f in self.fighters(): self._physics(f, dt)
         self._attacks()
         self._bursts(dt)
         self._projectiles(dt)
         self._areas(dt)
-        self._pickups(dt)
+        self._pickups(dt, inp.interact_pressed)
         self._timeouts()
         self._respawns(dt)
         self._stage(dt)
@@ -721,9 +729,7 @@ class World:
                 f.x += f.kb_dir * f.kb_speed * dt; f.kb_t -= dt
 
     def _attacks(self):
-        hits = []
-        pairs = [(self.hero, e) for e in self.enemies] + [(e, self.hero) for e in self.enemies]
-        for atk, tgt in pairs:
+        for atk in self.fighters():                                  # trail / sound / projectile: need no target (fix)
             if atk.state != 'attack': continue
             idx = atk.frame_index(self.timing)
             at = ATTACKS[atk.attack_id]
@@ -743,14 +749,39 @@ class World:
                     self.events.append(('swing', atk.voice))
             if at.get('rehit') and idx >= at['rehit'] and not atk.rehit_done:
                 atk.rehit_done = True; atk.hit_set = []                    # multi-hit moves (the spin) hit again here
+        hits = []
+        pairs = [(self.hero, e) for e in self.enemies] + [(e, self.hero) for e in self.enemies]
+        for atk, tgt in pairs:
+            if atk.state != 'attack': continue
+            idx = atk.frame_index(self.timing)
+            at = ATTACKS[atk.attack_id]
             if tgt in atk.hit_set or idx not in at['active']: continue         # one hit per target per swing
-            if tgt.state == 'dead' or (tgt.invuln > 0 and not at.get('ignore_invuln')): continue
+            if tgt.state == 'dead' or (not self._open_to(atk, atk.attack_id, tgt) and not at.get('ignore_invuln')): continue
             if abs(atk.y - tgt.y) > C.VERTICAL_REACH: continue          # too high / low for the swing to connect
             lo, hi = at['reach']
             a0, a1 = (atk.x + lo, atk.x + hi) if atk.facing > 0 else (atk.x - hi, atk.x - lo)
             if a0 <= tgt.x + tgt.hw and a1 >= tgt.x - tgt.hw:
                 atk.hit_done = True; atk.hit_set.append(tgt); hits.append((atk, tgt))
         for atk, tgt in hits: self._hit(atk, tgt)          # applied together, so trades are possible
+
+    def _open_to(self, src, attack_id, tgt):
+        """Can `src` hit `tgt` with `attack_id` right now? Normally not while it is invulnerable, but the victim of a combo
+        stroke stays open to the NEXT stroke of the same chain (that is what makes a combo a stunlock)."""
+        if tgt.invuln <= 0: return True
+        co = tgt.combo_open
+        return bool(co and co[0] is src and co[1] == attack_id and co[2] >= self.time)
+
+    def _lunges(self, dt):
+        """Combo strokes (hero sword, black knight) drive the attacker forward until the last active frame, so the next
+        stroke still reaches a victim that was pushed back; it stops short of the foe (never walks through)."""
+        for f in self.fighters():
+            if f.state != 'attack': continue
+            at = ATTACKS[f.attack_id]; sp = at.get('lunge')
+            if not sp or f.frame_index(self.timing) > max(at['active']): continue
+            foes = [t for t in self.targets_of(f) if t.state != 'dead' and (t.x - f.x) * f.facing > 0
+                    and abs(t.x - f.x) < C.LUNGE_RANGE]
+            if foes and min(abs(t.x - f.x) for t in foes) <= C.LUNGE_STOP: continue
+            f.x += f.facing * sp * dt
 
     def apply_damage(self, atk, tgt, amount):
         """The single funnel for damage: stats now, armor / guard / combo meter plug in here later."""
@@ -778,11 +809,14 @@ class World:
             self.events.append(('block', tgt.kind)); self.shake = C.SHAKE_TIME * 0.5
             tgt.kb_dir = 1 if tgt.x >= sx else -1; tgt.kb_t = C.KNOCKBACK_TIME; tgt.kb_speed = C.BLOCK_KNOCKBACK / C.KNOCKBACK_TIME
             return False
-        self.apply_damage(atk, tgt, int(round(at['damage'] * atk.mods.get('damage', 1.0))))
+        mult = 1.0 if atk.is_hero else C.ENEMY_DAMAGE_MULT
+        self.apply_damage(atk, tgt, int(round(at['damage'] * atk.mods.get('damage', 1.0) * mult)))
         self.add_vfx('blood_splash', tgt.x, tgt.x > sx, y=tgt.y)
         self.shake = C.SHAKE_TIME
         self.events.append(('hit', tgt.voice))
         tgt.chain = None; tgt.combo_next = None                  # a hit breaks the combo
+        nxt = at.get('next')
+        tgt.combo_open = (atk, nxt, self.time + C.COMBO_OPEN_TIME) if nxt else None   # stunlock: next stroke still lands
         tgt.token = False
         dirn = 1 if tgt.x >= sx else -1
         tgt.facing = -dirn                                   # turns toward the attacker, recoils backwards
@@ -828,6 +862,7 @@ class World:
         """Fires a projectile from the owner's hand. For 'lob' pass nothing else: it is aimed at the hero's position."""
         x = owner.x + owner.facing * 14
         p = Projectile(kind, owner, x, owner.y, owner.facing, damage, sprite, **kw)
+        p.attack_id = owner.attack_id                                  # (combo stunlock identity)
         if kind == 'lob':
             tgt = self.hero if not owner.is_hero else (self.ogre or self.hero)
             p.tx = tgt.x; p.ty = tgt.y
@@ -848,10 +883,11 @@ class World:
             if p.kind == 'straight':
                 p.x += p.facing * p.speed * dt; p.height = p.chest
                 for tgt in targets:
-                    if tgt in p.hit_set or tgt.invuln > 0: continue
+                    if tgt in p.hit_set or not self._open_to(p.owner, p.attack_id, tgt): continue
                     if abs(p.x - tgt.x) > tgt.hw + 3 or abs(p.base_y - tgt.y) > C.VERTICAL_REACH: continue
                     p.hit_set.append(tgt)
-                    self._hit(p.owner, tgt, at=dict(damage=p.damage, knockback=p.knockback), src_x=p.x - p.facing * 8)
+                    self._hit(p.owner, tgt, at=dict(damage=p.damage, knockback=p.knockback,
+                                                    next=ATTACKS.get(p.attack_id, {}).get('next')), src_x=p.x - p.facing * 8)
                     if not p.pierce: p.done = True; break
                 if abs(p.x - p.x0) >= p.max_range: p.done = True
                 if p.done and p.explode: self._explode(p)
@@ -970,27 +1006,42 @@ class World:
             self.pickups.append(p)
         del self.pickups[:-C.PICKUP_MAX]
 
-    def _pickups(self, dt):
-        g = 2 * C.JUMP_HEIGHT / C.JUMP_RISE_TIME ** 2; h = self.hero; keep = []
+    MANUAL = ('weapon', 'armor')                         # these need the E key; potions and gold are collected by walking
+
+    def _pickups(self, dt, interact=False):
+        g = 2 * C.JUMP_HEIGHT / C.JUMP_RISE_TIME ** 2; h = self.hero; keep = []; took = False; swapped = []
         for p in self.pickups:
             p.t += dt
             if p.y > 0 or p.vy > 0:                            # pop up, then fall to the ground
                 p.y += p.vy * dt - 0.5 * g * dt * dt; p.vy -= g * dt
                 if p.y <= 0: p.y = 0.0; p.vy = 0.0
+            manual = p.kind in self.MANUAL
             if (h.state != 'dead' and abs(h.x - p.x) <= C.PICKUP_RADIUS and abs(h.y - p.y) <= C.PICKUP_REACH_Y
+                    and (interact and not took if manual else True)
                     and not (p.kind == 'potion' and self.potions >= C.POTION_MAX_STOCK)    # full pouch: stays on the floor
                     and not (p.kind == 'armor' and h.armor >= h.armor_max)                 # full armor: not wasted
                     and not (p.kind == 'weapon' and h.kind != 'knight')):                  # only the knight has weapon sheets
                 if p.kind == 'potion': self.potions += 1                  # stored; drinking is a key press (T10)
                 elif p.kind == 'armor':
                     h.armor = min(h.armor_max, max(h.armor, p.amount)); self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)
-                elif p.kind == 'weapon':                                 # replaces whatever the hero holds (T13)
+                elif p.kind == 'weapon':                                 # swaps with whatever the hero holds (T13)
+                    if h.weapon: swapped.append(self._drop_weapon(h))
                     h.weapon = dict(id=p.item, durability=p.amount); self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)
                 else:
                     self.gold += p.amount; self.stats['gold_gained'] += p.amount; self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)
+                if manual: took = True
                 self.events.append(('pickup', p.kind)); continue
             keep.append(p)
+        keep += swapped
+        if interact and not took and h.weapon and h.state not in ('dead', 'hurt'):   # E with nothing to take: let go (no weapon trap)
+            keep.append(self._drop_weapon(h)); self.events.append(('drop', 'weapon'))
         self.pickups = keep
+
+    def _drop_weapon(self, h):
+        """The held weapon falls at the hero's feet as a pickup (with its remaining durability)."""
+        p = Pickup('weapon', h.x + h.facing * 6, h.weapon['durability'], h.weapon['id'])
+        h.weapon = None
+        return p
 
     def _timeouts(self):
         for f in self.fighters():

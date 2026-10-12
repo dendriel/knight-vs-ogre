@@ -204,6 +204,9 @@ class View:
                 img = self.icons[p.item] if p.kind == 'weapon' else (self.icons['armor'] if p.kind == 'armor' else self.pickup_img[p.kind]); bob = int(round(1.4 * math.sin(p.t * 4))) if p.y <= 0 else 0
                 surf.blit(img, (int(round(p.x)) - cx - img.get_width() // 2,
                                 C.GROUND_Y - (img.get_height() - 2) - int(round(p.y)) - bob + oy))
+                if (p.kind in ('weapon', 'armor') and p.y <= 0 and world.hero.state != 'dead'
+                        and abs(world.hero.x - p.x) <= C.PICKUP_RADIUS):         # the item waits for the E key
+                    self._text(surf, 'E', int(round(p.x)) - cx - 2, C.GROUND_Y - img.get_height() - 12 + oy, (255, 240, 120))
         self._projectiles(surf, world, cx, oy)
         for v in world.vfx:
             if v['t'] >= 0:

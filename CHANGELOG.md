@@ -36,11 +36,20 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T43: nova classe **Besteiro** (armadura ferrugem): `XBOWMAN_MAX_HP` 110, `CROSSBOWMAN_SPEED` 105 (a mais lenta), pulo 0,9x. Primário = **besta** com combo de 3 virotes (dano 14 / 14 / 22, a 3ª atravessa; mira mais lenta no 1º; só reinicia a cadeia `XBOW_HERO_RELOAD` 0,8 s depois do 1º virote); secundário = **machado pequeno** (dano 12, ignora escudo, recarga 0,6 s); especial = **rajada de virotes** (`VOLLEY_COUNT` 6 virotes perfurantes de dano 10).
 - T44: nova classe **Mago** (túnica violeta, chapéu pontudo, cajado): `MAGE_MAX_HP` 70 (a mais frágil), `MAGE_SPEED` 115. Primário = **bolas de fogo** em combo de 3 (dano 12 / 12 / 16; a 3ª explode num raio de `FIREBALL_EXPLOSION` 36 px com dano 10 nos vizinhos); secundário = **espinhos de pedra** (área à frente de 22 a 104 px, dano 14 em todos, atraso 0,12 s, recarga 1,4 s); especial = **tempestade de fogo** (`STORM_COUNT` 12 bolas de fogo caindo num raio de 170 px dos dois lados, dano 10, com explosão no chão).
 - T50: **loja** entre as fases (depois da conclusão, antes da seguinte; também ao reiniciar a fase pela derrota ou pelo Esc, com o snapshot do início da fase — se houver ouro para comprar algo): poção 25, armadura 60 (`SHOP_PRICES`), arma pickup só para o cavaleiro (machado 70, arco 80, besta 100) e **bomba** 30 (consumível arremessável, **tecla 2**, `BOMB_DAMAGE` 25 num raio de 40, estoque `BOMB_MAX_STOCK` 5 — D8); o que se compra entra equipado na fase. O fluxo completo é Título → Classe → Fase 1 → Conclusão → Loja → Fase 2 → … → Fim. O modo infinito não tem loja.
+- **Tecla E**: armas (machado, arco, besta) e armadura no chão só são coletadas com **E** (poções e ouro continuam automáticos). Com uma arma na mão, **E** sem nada ao alcance a **solta** (o item cai aos pés com a durabilidade que restava); **E** junto de outra arma troca (a antiga cai no chão). Um 'E' amarelo aparece sobre o item quando o herói está ao alcance. Evento `drop` → som `impact`; entrada em `CONTROLS`.
+- **Stunlock em combo**: o alvo atingido por um golpe de combo (espada do cavaleiro, arco/besta/cajado das classes, combo do Cavaleiro Negro) fica **aberto ao próximo golpe da mesma cadeia** por `COMBO_OPEN_TIME` mesmo dentro da invulnerabilidade do `hurt` (`World._open_to`; `Fighter.combo_open`). Vale para os dois lados: o herói pode ficar preso no combo do Cavaleiro Negro. Repetir o golpe 1 continua barrado pela invulnerabilidade (sem stunlock infinito).
+- **O herói avança durante o combo**: os golpes de espada (e `bk_1`..`bk_3`) empurram o atacante para frente a `COMBO_LUNGE_SPEED` até o último frame de impacto, parando a `LUNGE_STOP` px do alvo (nunca o atravessa), de modo que os golpes encadeados alcancem o alvo empurrado.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
 - T11: `OGRE_RETALIATE_WAIT` (0,15–0,35) → (0,05–0,18): com o golpe 1 mais lento, apertar sem parar travava o ogro (o revide dele caía fora da janela de invulnerabilidade); agora o revide acontece antes de ela acabar.
 - T12: constantes novas `COMBO_GAIN_DEALT` 1,5, `COMBO_GAIN_TAKEN` 1,0, `SPECIAL_DAMAGE` 15, `SPECIAL_RADIUS` 56, `SPECIAL_KNOCKBACK` 26, `SPECIAL_ANIM_SPEED` 1,5 (valores escolhidos, não pedidos).
+- `WEAPON_DURABILITY` 100 → 30 (as armas pickup duram 30% do que duravam; o desgaste por golpe `*_WEAR` não mudou).
+- `POTION_DROP_CHANCE` 0,30 → 0,12 (caía poção demais); `POTION_MAX_STOCK` 10 → 3.
+- `ENEMY_DAMAGE_MULT` = 1,2 (novo): todo golpe, flecha, pedra e investida de inimigo causa +20% (10 → 12, 15 → 18, 5 → 6). Não altera o herói.
+- `OGRE_HURT_INVULN_EXTRA` 0,4 → 0,15: os inimigos ficam menos tempo invulneráveis depois do `hurt`.
+- `COMBO_KNOCKBACK` (14, 14, 24) → (8, 8, 24): os golpes 1 e 2 empurram pouco; o cavaleiro negro (`bk_1`/`bk_2`) idem.
+- `COMBO_OPEN_TIME` 1,0 s, `COMBO_LUNGE_SPEED` 90 px/s, `LUNGE_RANGE` 70, `LUNGE_STOP` 12 (novos, ver Jogabilidade).
 
 ### Arte
 - T04: novos sprites de projétil (`proj_arrow` + variantes inclinadas `u45/u90/d45/d90`, `proj_bolt`, `proj_knife`, `proj_fireball`, `proj_rock`) gerados por `art_tools/proj_gen.py` e desenhados em camada própria (com sombra no chão).
@@ -128,6 +137,8 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 ### Correções
 - `Game.run` (o laço principal) estava sobrescrito pelo atributo `self.run` (estado da run, T37): o jogo empacotado quebrava com 'dict object is not callable' ao iniciar. Atributo renomeado para `run_state`; achado ao rodar o executável do PyInstaller. Novos testes cobrem o laço principal (`Game.run`) com o stand-in e com o pygame real.
 - Investida do Rei Minotauro: `dict(...)` recebia `cooldown` duas vezes (parâmetros padrão + `defn['charge']`) e derrubava o jogo ao chegar à arena da fase 2; achado pelo novo teste de ruído.
+- Bug: **o golpe do cavaleiro não tinha efeito nem som (e o ataque secundário não mostrava as facas) quando não havia inimigo vivo na tela** — o rastro, o SFX de `swing` e o disparo de projéteis estavam dentro do laço de pares herói × inimigo e só rodavam com alguém para acertar. Agora rodam para todo lutador em ataque (`World._attacks`).
+- Bug: **os golpes 2 e 3 do combo não acertavam** — o primeiro golpe empurrava o alvo (inimigo ou herói) para fora do alcance e a invulnerabilidade pós-`hurt` ainda barrava o encadeamento (ver Jogabilidade: stunlock em combo e avanço do herói).
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).
