@@ -23,6 +23,11 @@ FIGHTER_DEFS = {
     'knight': dict(hero=True, max_hp=C.HERO_MAX_HP, speed=C.HERO_SPEED, half_width=8, sheet='knight', ai=None,
                    anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, primary='sword',
                    slash='sword_slash', reach=C.KNIGHT_REACH, label='HERÓI'),
+    'archer': dict(hero=False, max_hp=C.ARCHER_MAX_HP, speed=C.ARCHER_SPEED, half_width=8, sheet='archer', ai='ranged_lob',
+                   anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='archer_shot',
+                   slash=None, reach=(0, 0), label='ARQUEIRO',
+                   ai_params=dict(attack_dist=C.ARCHER_KEEP_DIST, wait=C.ARCHER_WAIT, cooldown=C.ARCHER_COOLDOWN,
+                                  retreat_dist=C.ARCHER_TOO_CLOSE)),
     'spearman': dict(hero=False, max_hp=C.SPEARMAN_MAX_HP, speed=C.SPEARMAN_SPEED, half_width=8, sheet='spearman', ai='spear',
                      anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='spearman_thrust',
                      slash=None, reach=C.SPEARMAN_REACH, label='LANCEIRO',
@@ -76,6 +81,9 @@ ATTACKS = {
     'spearman_thrust': dict(anim='attack', damage=C.DAMAGE, reach=C.SPEARMAN_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                             slash=None, move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
                             wear=0.0, next=None),
+    'archer_shot': dict(anim='attack', damage=C.DAMAGE, reach=(0, 0), active=(), slash_frame=4, slash=None,
+                        move_factor=0.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0, wear=0.0, next=None,
+                        shoot=dict(kind='lob', sprite='arrow', flight=C.LOB_FLIGHT, apex=C.LOB_APEX, radius=C.LOB_RADIUS)),
     'ogre_axe': dict(anim='attack', damage=C.DAMAGE, reach=C.OGRE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                      slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
                      wear=0.0, next=None),
@@ -387,6 +395,29 @@ class World:
         d = abs(o.x - self.hero.x)
         return sum(1 for e in self.enemies if e is not o and e.state != 'dead' and not e.token
                    and (abs(e.x - self.hero.x), id(e)) < (d, id(o)))
+
+    def _ai_ranged_lob(self, o, dt):
+        """Archer: keeps its distance (steps back when pressed, walks closer when far) and lobs an arrow that lands where
+        the hero stood, so he has to move. No attack token: it never stands next to him."""
+        h = self._ai_prelude(o, dt)
+        if h is None: return
+        p = o.ai_p; dist = abs(h.x - o.x)
+        if dist < p['retreat_dist']:                       # too close: back away (the walk plays, facing the hero)
+            o.x -= o.facing * o.speed * 0.9 * dt
+            if o.state != 'walk': o.set_state('walk')
+            o.ai_wait = None
+            return
+        if dist > p['attack_dist'] + 24:                   # too far: approach
+            o.x += o.facing * o.speed * dt
+            if o.state != 'walk': o.set_state('walk')
+            o.ai_wait = None
+            return
+        if o.state != 'idle': o.set_state('idle')
+        if o.ai_cooldown <= 0:
+            if o.ai_wait is None: o.ai_wait = self.rng.uniform(*p['wait'])
+            o.ai_wait -= dt
+            if o.ai_wait <= 0:
+                o.ai_wait = None; self.start_attack(o, o.defn['primary'])
 
     def _ai_spear(self, o, dt): self._ai_melee(o, dt)       # same plan, other numbers (attack_dist / retreat_dist)
 

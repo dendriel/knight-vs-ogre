@@ -73,11 +73,20 @@ SPEARMAN = dict(
     GOLD=C(214, 176, 80), LEATH=C(100, 68, 40), LEATH_D=C(62, 42, 26))
 
 
+ARCHER = dict(
+    PN=dict(shade=C(78, 62, 40), base=C(156, 132, 88), hl=C(214, 194, 140)),     # tan leather
+    PF=dict(shade=C(48, 38, 26), base=C(104, 86, 58), hl=C(140, 118, 80)),
+    RED=C(214, 118, 40), RED_D=C(138, 70, 24),                                   # orange tabard and plume
+    GOLD=C(226, 188, 84), LEATH=C(108, 72, 44), LEATH_D=C(68, 46, 28))
+
+
 def build(out):
     # T22 soldier: the knight with an enemy palette; stroke 1 of the sword is its attack (frames 3-4 hit)
     write_sheet(out, 'soldier', human_rows(KG.atk_sword), SR.render, pal=SOLDIER)
     # T21 spearman: same rig, green palette, two-handed spear (carried tilted; thrust is the attack row)
     write_sheet(out, 'spearman', human_rows(KG.atk_spear, hold='spear'), SR.render, pal=SPEARMAN)
+    # T23 archer: bow carried in the melee rows, the bow-draw poses as the attack row (arrow leaves on frame 4)
+    write_sheet(out, 'archer', human_rows(KG.atk_bow, hold='bow'), SR.render, pal=ARCHER)
 
 
 if __name__ == '__main__':

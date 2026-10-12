@@ -619,4 +619,27 @@ for _ in range(int(8 / DT)):
 assert 48 <= abs(s.x - w.hero.x) <= 58, abs(s.x - w.hero.x)
 print('35 ok: spearman (long reach, dead zone, steps back, own stop distance)')
 
+# 36) T23: archer: stays ~170 px away, backs off when pressed, lobs an arrow (marker) that the hero can dodge
+a = Fighter('archer', 500, -1); assert a.max_hp == 15 and a.sheet == 'archer' and T['archer']['attack'] > 0
+w = fresh(0); w.enemies = [a]; a.ai_cooldown = 0
+for _ in range(int(14 / DT)):
+    w.update(DT, Inputs()); w.hero.hp = 100; w.hero.invuln = 99
+    if a.state == 'attack': break
+d = abs(a.x - w.hero.x); assert C.ARCHER_KEEP_DIST - 10 <= d <= C.ARCHER_KEEP_DIST + 30, d
+# the arrow is born on frame 4 and falls on the hero's position at launch
+w = fresh(0); w.hero.invuln = 0; a = Fighter('archer', 150, -1); w.enemies = [a]; a.ai_cooldown = 99
+w.start_attack(a, 'archer_shot'); lob = None
+for _ in range(int(2.5 / DT)):
+    w.update(DT, Inputs())
+    if lob is None and w.projectiles: lob = w.projectiles[0]; assert a.frame_index(T) == 4 and lob.kind == 'lob' and lob.tx == 0.0
+assert lob is not None and w.hero.hp == 90
+w = fresh(0); w.hero.invuln = 0; a = Fighter('archer', 150, -1); w.enemies = [a]; a.ai_cooldown = 99
+w.start_attack(a, 'archer_shot')
+for _ in range(int(2.5 / DT)): w.update(DT, Inputs(left=True))                    # walks away from the marker: dodged
+assert w.hero.hp == 100
+# pressed archer backs away
+w = fresh(0); a = Fighter('archer', 40, -1); w.enemies = [a]; a.ai_cooldown = 5
+x0 = a.x; run(w, 0.6, Inputs()); assert a.x > x0 + 15
+print('36 ok: archer keeps distance, lobbed arrow lands on the hero spot and can be dodged')
+
 print('ALL LOGIC TESTS PASSED')

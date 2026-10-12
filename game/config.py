@@ -12,6 +12,12 @@ ANCHOR_X_FLIP = 33
 HERO_MAX_HP = 100
 OGRE_MAX_HP = 30                   # 3 hits
 MAX_HP = HERO_MAX_HP               # (kept for old code/tests)
+ARCHER_MAX_HP = 15                 # fragile
+ARCHER_SPEED = 48.0
+ARCHER_KEEP_DIST = 170             # it tries to stay about this far from the hero
+ARCHER_TOO_CLOSE = 110             # closer than this and it backs away
+ARCHER_WAIT = (0.45, 0.8)          # aiming pause before the shot (the arrow lands 0.95 s later)
+ARCHER_COOLDOWN = (1.6, 2.4)       # rest between shots
 SPEARMAN_MAX_HP = 25               # 3 sword strokes
 SPEARMAN_SPEED = 52.0
 SPEARMAN_REACH = (18, 62)          # reach from 18 to 62 px: the start is the DEAD ZONE, too close and it misses
@@ -51,6 +57,8 @@ COMBO_DAMAGE = (10, 10, 15)        # damage of strokes 1, 2, 3
 COMBO_KNOCKBACK = (14.0, 14.0, 24.0)
 WALK_ANIM_SPEED = 1.2              # ogre walk cycle; keep it proportional to OGRE_SPEED so the feet don't slide
 RUN_ANIM_SPEED = 1.65              # the hero's movement uses the 'run' cycle (~72 px/s per 1.0x), proportional to HERO_SPEED
+ARCHER_WALK_ANIM_SPEED = 1.2
+ARCHER_ATTACK_ANIM_SPEED = 1.1        # draw and release (row fps 10): the arrow leaves on frame 4
 SPEAR_WALK_ANIM_SPEED = 1.25         # spearman walk cycle, proportional to SPEARMAN_SPEED (52)
 SPEAR_ATTACK_ANIM_SPEED = 1.3        # slow, telegraphed thrust (row fps 12)
 SOLDIER_WALK_ANIM_SPEED = 1.55      # soldier walk cycle, proportional to SOLDIER_SPEED (62)
@@ -63,6 +71,7 @@ ANIM_SPEED = {
     'ogre': {'attack': ATTACK_ANIM_SPEED, 'walk': WALK_ANIM_SPEED},
     'soldier': {'attack': SOLDIER_ATTACK_ANIM_SPEED, 'walk': SOLDIER_WALK_ANIM_SPEED},
     'spearman': {'attack': SPEAR_ATTACK_ANIM_SPEED, 'walk': SPEAR_WALK_ANIM_SPEED},
+    'archer': {'attack': ARCHER_ATTACK_ANIM_SPEED, 'walk': ARCHER_WALK_ANIM_SPEED},
     'vfx': {'sword_slash': KNIGHT_ATTACK_ANIM_SPEED, 'sword_slash_2': KNIGHT_COMBO2_ANIM_SPEED,
             'sword_slash_3': KNIGHT_COMBO3_ANIM_SPEED, 'axe_slash': ATTACK_ANIM_SPEED,
             'spin_slash': SPECIAL_ANIM_SPEED},
