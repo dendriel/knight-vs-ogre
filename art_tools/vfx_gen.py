@@ -306,10 +306,51 @@ def block_spark(i):
         put(im, cx + math.cos(a) * v * i * .6, cy + math.sin(a) * v * i * .6 + .5 * i * i * .2, GC_LIGHT if k % 2 else GC_GOLD, 1 if i < 4 else .5)
     return im
 
+# ---- 11) stone spikes: rock spikes bursting out of the ground in front of the caster (secondary of the mage) ----
+STONE = (C(214, 218, 226), C(160, 166, 182), C(112, 118, 136), C(70, 74, 92))
+
+def stone_spikes(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0))
+    hs = [3, 10, 17, 17, 11, 4][i]; al = [1, 1, 1, 1, .8, .5][i]
+    for k, x in enumerate((24, 36, 48, 58)):
+        h = hs - (k % 2) * 4
+        if h < 2: continue
+        for y in range(h):
+            w = max(1, int((h - y) * .45) + 1)
+            for dx in range(-w, w + 1):
+                col = STONE[0] if dx < -w // 2 else (STONE[1] if dx <= w // 2 else STONE[2])
+                put(im, x + dx, 58 - y, col, al)
+        put(im, x, 58 - h, STONE[3], al)
+    rnd = random.Random(8)
+    for k in range(8):                                                   # dust and chips
+        if i == 0: break
+        put(im, 20 + rnd.randint(0, 44) + i, 58 - rnd.randint(0, 4 + 3 * i), STONE[1], .8 if i < 4 else .4)
+    return im
+
+# ---- 12) fire burst: the explosion of a fireball (ground level, centred on the hip column) ----
+FIRE = (C(255, 250, 210), C(255, 214, 96), C(246, 138, 52), C(188, 66, 40))
+
+def fire_burst(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0)); cx, cy = 30, 50
+    r = [5, 11, 15, 16, 13, 8][i]; al = [1, 1, 1, .85, .6, .35][i]
+    for y in range(-r, r + 1):
+        for x in range(-r, r + 1):
+            d2 = x * x * .8 + y * y * 1.25
+            if d2 > r * r: continue
+            f = d2 / (r * r)
+            col = FIRE[0] if f < .15 else (FIRE[1] if f < .45 else (FIRE[2] if f < .8 else FIRE[3]))
+            put(im, cx + x, cy + y - r // 3, col, al)
+    rnd = random.Random(15)
+    for k in range(10):
+        a = rnd.uniform(0, math.tau); v = rnd.uniform(.8, 1.4) * (r + 3)
+        put(im, cx + math.cos(a) * v, cy - r // 3 + math.sin(a) * v * .8, FIRE[1] if k % 2 else FIRE[2], al)
+    return im
+
 EFFECTS = [('sword_slash', sword_slash, 12), ('axe_slash', axe_slash, 10), ('blood_splash', blood, 12), ('spirit', spirit, 6),
            ('heal', heal, 10), ('coin_glint', coin_glint, 12),
            ('sword_slash_2', sword_slash_2, 12), ('sword_slash_3', sword_slash_3, 12),
-           ('spin_slash', spin_slash, 12), ('charge', charge, 10), ('block_spark', block_spark, 14)]
+           ('spin_slash', spin_slash, 12), ('charge', charge, 10), ('block_spark', block_spark, 14),
+           ('stone_spikes', stone_spikes, 12), ('fire_burst', fire_burst, 14)]
 
 if __name__ == '__main__':
     out = sys.argv[1] if len(sys.argv) > 1 else './out'; os.makedirs(out, exist_ok=True)
@@ -317,7 +358,7 @@ if __name__ == '__main__':
     atlas = {'frames': [], 'animations': {}, 'meta': {'image': 'vfx_spritesheet.png', 'frame_size': [64, 64], 'note':
              'sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; '
              'blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life '
-             '(any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held; block_spark: on the front of a shielded defender. Same anchor as the character frames.'}}
+             '(any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held; block_spark: on the front of a shielded defender; stone_spikes: ground spikes in front of the mage; fire_burst: an explosion on the ground. Same anchor as the character frames.'}}
     for r, (name, fn, fps) in enumerate(EFFECTS):
         for i in range(6):
             sheet.alpha_composite(fn(i), (i * F, r * F))

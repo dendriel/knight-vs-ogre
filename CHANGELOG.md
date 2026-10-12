@@ -34,6 +34,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T42: nova classe **Arqueiro** (por enquanto `python main.py --class ranger`; a seleção chega na T45): `RANGER_MAX_HP` 80, `RANGER_SPEED` 135 (cavaleiro 120), pulo 1,1x. Primário = **arco** com combo de 3 flechas (dano 8 / 8 / 14; a 3ª atravessa os inimigos); secundário (botão direito) = **espada curta** (dano 10, recarga 0,45 s); especial (barra cheia, segurar e soltar) = **chuva de flechas** (`RAIN_COUNT` 10 flechas de dano 8 caindo de 60 a 230 px à frente, com marcador no chão; um golpe sofrido interrompe o resto). Armas pickup não valem para esta classe (sem arte).
 - T45: **tela de seleção de classe** depois de Campanha / Modo infinito: cartões lado a lado com o quadro `idle` ampliado, nome, 4 barras (vida, velocidade, dano, alcance) e os 3 ataques; ←/→ + Enter ou clique escolhem; Esc volta. `--class ranger` pula o menu.
 - T43: nova classe **Besteiro** (armadura ferrugem): `XBOWMAN_MAX_HP` 110, `CROSSBOWMAN_SPEED` 105 (a mais lenta), pulo 0,9x. Primário = **besta** com combo de 3 virotes (dano 14 / 14 / 22, a 3ª atravessa; mira mais lenta no 1º; só reinicia a cadeia `XBOW_HERO_RELOAD` 0,8 s depois do 1º virote); secundário = **machado pequeno** (dano 12, ignora escudo, recarga 0,6 s); especial = **rajada de virotes** (`VOLLEY_COUNT` 6 virotes perfurantes de dano 10).
+- T44: nova classe **Mago** (túnica violeta, chapéu pontudo, cajado): `MAGE_MAX_HP` 70 (a mais frágil), `MAGE_SPEED` 115. Primário = **bolas de fogo** em combo de 3 (dano 12 / 12 / 16; a 3ª explode num raio de `FIREBALL_EXPLOSION` 36 px com dano 10 nos vizinhos); secundário = **espinhos de pedra** (área à frente de 22 a 104 px, dano 14 em todos, atraso 0,12 s, recarga 1,4 s); especial = **tempestade de fogo** (`STORM_COUNT` 12 bolas de fogo caindo num raio de 170 px dos dois lados, dano 10, com explosão no chão).
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -59,6 +60,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T41: nova animação `throw` do cavaleiro (arremesso com a mão livre; a faca sai no frame 3) em todos os sheets do cavaleiro.
 - T42: `ranger_spritesheet` (couros verdes, arco em todas as linhas) com `attack_bow_2`, `attack_bow_3`, `attack_short` e `attack_special` (arco para o céu) — `art_tools/class_gen.py`.
 - T43: `crossbowman_spritesheet` (besta em todas as linhas) com `attack_crossbow_2`, `attack_crossbow_3`, `attack_axe_small` e `attack_special`.
+- T44: camada `staff` no rig (cajado com orbe), chapéu de mago, `mage_spritesheet` (`attack_staff`, `_2`, `_3`, `attack_stomp`, `attack_special`) e efeitos `stone_spikes` e `fire_burst`.
 
 ### Contrato de arte
 - T11: `knight_spritesheet` ganha as linhas 11 (`attack_sword_2`) e 12 (`attack_sword_3`), frames de golpe 3–4; `vfx_spritesheet` ganha as linhas 6 (`sword_slash_2`) e 7 (`sword_slash_3`). Linhas anteriores inalteradas pixel a pixel.
@@ -72,6 +74,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T32: sheets de chefe com **quadros de 96x96**; o json traz `meta.frame_size`, `anchor_x` (48) e `ground_row` (90) e a View desenha por essas âncoras (os de 64x64 seguem 30 / 58). O cavaleiro negro tem `attack_2`, `attack_3` e `guard` no final.
 - T41: `knight_spritesheet` (e `knight_axe/bow/xbow`) ganham a linha 14 `throw`.
 - T42: sheet de classe = linhas do `knight_spritesheet` + extras; `attack_special` é substituída pela da classe.
+- T44: `vfx_spritesheet` ganha as linhas 11 (`stone_spikes`) e 12 (`fire_burst`); `sprite_rig.held()` aceita `staff`.
 
 ### Áudio
 - T10: pegar poção reaproveita o SFX `coin_pickup`; beber usa o `heal` existente (evento `potion`).
@@ -112,6 +115,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T42: `ATTACKS[x].burst` + `World.timers/_bursts()` (peças atrasadas de um especial), `Projectile.fall`, `Game(hero_class)` e `--class`; teste 46.
 - T45: `SelectScene`; `Game.hero_class`; `FIGHTER_DEFS[x].stats/card/label/icon`; cena 6 estendida.
 - T43: `ATTACKS` `xb_1..3`, `small_axe`, `bolt_volley` (rajada via `burst` do tipo `shot`); teste 47.
+- T44: `Projectile.explode` + `World._explode()`, `ATTACKS[x].area` (caixa atrasada no frame do golpe), burst `rain` com `abs`; teste 48.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

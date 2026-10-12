@@ -169,6 +169,20 @@ def shield(c):
     return layer(f)
 
 
+def staff(h, a):
+    """Wizard staff (T44): a long wooden shaft with a curled head holding a glowing orb."""
+    dr = vec(a); n = (dr[1], -dr[0])
+    def P(t, s=0): return (h[0] + dr[0] * t + n[0] * s, h[1] + dr[1] * t + n[1] * s)
+    def f(d):
+        seg(d, P(-9), P(19), 2, WOOD)
+        d.line([rd(P(-9, .5)), rd(P(19, .5))], fill=WOOD_D, width=1)
+        d.line([rd(P(17, 2)), rd(P(22, 3)), rd(P(25, 1))], fill=WOOD, width=1)         # the curl
+        d.line([rd(P(17, -2)), rd(P(22, -3)), rd(P(25, -1))], fill=WOOD, width=1)
+        x, y = rd(P(22)); d.ellipse([x - 3, y - 3, x + 3, y + 3], fill=C(255, 120, 60))
+        d.ellipse([x - 2, y - 2, x + 1, y + 1], fill=C(255, 230, 150))
+    return layer(f)
+
+
 def trail(h, a0, a1, r):
     def f(d):
         for rr, col in ((r, TRAIL1), (r - 3, TRAIL2)):
@@ -195,6 +209,7 @@ def held(kind, pos, ang):
     if kind == 'sword': return [sword(pos, ang)]
     if kind == 'axe': return [axe(pos, ang)]
     if kind == 'spear': return [spear(pos, ang)]
+    if kind == 'staff': return [staff(pos, ang)]
     if kind == 'bow':
         bl, st, _ = bow(pos, 90 - ang, 0)                      # limbs along the direction the blade used to point
         return [bl, st]

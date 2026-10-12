@@ -83,6 +83,11 @@ FIGHTER_DEFS = {
                         anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, slash=None, reach=(0, 0),
                         label='BESTEIRO', icon='xbow', stats=dict(vida=5, vel=2, dano=5, alcance=4),
                         card=('Besta em combo de 3', 'Machado pequeno', 'Rajada de virotes')),
+    'mage': dict(hero=True, max_hp=C.MAGE_MAX_HP, speed=C.MAGE_SPEED, half_width=8, sheet='mage', ai=None,
+                 voice='knight', jump=1.0, special='fire_storm', secondary='spikes', primary='mg_1',
+                 anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, slash=None, reach=(0, 0),
+                 label='MAGO', icon='staff', stats=dict(vida=1, vel=3, dano=5, alcance=4),
+                 card=('Bolas de fogo em combo', 'Espinhos de pedra', 'Tempestade de fogo')),
     'spearman': dict(hero=False, max_hp=C.SPEARMAN_MAX_HP, speed=C.SPEARMAN_SPEED, half_width=8, sheet='spearman', ai='spear',
                      anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='spearman_thrust',
                      slash=None, reach=C.SPEARMAN_REACH, label='LANCEIRO',
@@ -100,7 +105,7 @@ FIGHTER_DEFS = {
 # Playable classes (T40): the id is a FIGHTER_DEFS key with hero=True. Everything a class changes is data there:
 # max_hp, speed, jump (height multiplier), sheet, anim map, primary (id of the first attack of its combo chain), secondary,
 # special, label and `blurb`. The three extra classes are added below (T42-T44).
-CLASSES = ['knight', 'ranger', 'crossbowman']
+CLASSES = ['knight', 'ranger', 'crossbowman', 'mage']
 
 # Every attack is data (T03). Adding one = one entry here + one row in a sprite sheet.
 #   anim: sheet row | damage | reach: (from, to) in front of the hip | active: frames that can hit | slash_frame: frame
@@ -163,6 +168,26 @@ ATTACKS = {
                         burst=[dict(t=0.1 + 0.07 * i, type='shot', damage=C.VOLLEY_DAMAGE,
                                     shoot=dict(kind='straight', sprite='bolt', speed=440.0, max_range=380.0, pierce=True))
                                for i in range(C.VOLLEY_COUNT)]),
+    'mg_1': dict(anim='attack_staff', damage=C.FIREBALL_DAMAGE[0], reach=(0, 0), active=(), slash_frame=3, slash=None,
+                 move_factor=0.5, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0, wear=0.0, next='mg_2',
+                 shoot=dict(kind='straight', sprite='fireball', speed=C.FIREBALL_SPEED[0], max_range=C.FIREBALL_RANGE)),
+    'mg_2': dict(anim='attack_staff_2', damage=C.FIREBALL_DAMAGE[1], reach=(0, 0), active=(), slash_frame=3, slash=None,
+                 move_factor=0.5, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0, wear=0.0, next='mg_3',
+                 shoot=dict(kind='straight', sprite='fireball', speed=C.FIREBALL_SPEED[1], max_range=C.FIREBALL_RANGE)),
+    'mg_3': dict(anim='attack_staff_3', damage=C.FIREBALL_DAMAGE[2], reach=(0, 0), active=(), slash_frame=3, slash=None,
+                 move_factor=0.4, knockback=C.KNOCKBACK * 1.5, guard_break=False, cooldown=0.0, wear=0.0, next=None,
+                 shoot=dict(kind='straight', sprite='fireball', speed=C.FIREBALL_SPEED[2], max_range=C.FIREBALL_RANGE,
+                            explode=C.FIREBALL_EXPLOSION)),
+    'spikes': dict(anim='attack_stomp', damage=C.SPIKES_DAMAGE, reach=(0, 0), active=(), slash_frame=3, slash=None,
+                   move_factor=0.3, knockback=C.KNOCKBACK * 1.2, guard_break=False, cooldown=C.SPIKES_COOLDOWN, wear=0.0,
+                   next=None, area=dict(frm=C.SPIKES_FROM_TO[0], to=C.SPIKES_FROM_TO[1], delay=C.SPIKES_DELAY, duration=0.2,
+                                        vfx='stone_spikes', vfx_offsets=(12, 48, 84))),
+    'fire_storm': dict(anim='attack_special', damage=C.STORM_DAMAGE, reach=(0, 0), active=(), slash_frame=99, slash=None,
+                       move_factor=0.0, knockback=C.KNOCKBACK, guard_break=True, cooldown=0.0, wear=0.0, next=None,
+                       burst=[dict(t=0.2 + 0.05 * i, type='rain', abs=True, damage=C.STORM_DAMAGE, sprite='fireball',
+                                   radius=C.STORM_RADIUS,
+                                   off=(-1 if i % 2 else 1) * C.STORM_SPAN * ((i // 2 + 1) / (C.STORM_COUNT // 2)))
+                              for i in range(C.STORM_COUNT)]),
     'short_sword': dict(anim='attack_short', damage=C.RANGER_SHORT_DAMAGE, reach=C.RANGER_SHORT_REACH, active=C.ACTIVE_FRAMES,
                         slash_frame=3, slash='sword_slash', move_factor=0.9, knockback=C.KNOCKBACK, guard_break=False,
                         cooldown=C.RANGER_SHORT_COOLDOWN, wear=0.0, next=None),
@@ -332,12 +357,13 @@ class Projectile:
     path (within VERTICAL_REACH of the shooter's feet). kind 'lob': a parabola over the sky towards where the target
     stood at launch (tx, ty); it hurts whatever is inside the landing zone when it comes down, so the hero can dodge."""
     def __init__(self, kind, owner, x, base_y, facing, damage, sprite, speed=240.0, max_range=260.0, pierce=False,
-                 knockback=C.KNOCKBACK, tx=None, flight=0.9, apex=60.0, radius=14.0, chest=C.PROJ_CHEST):
+                 knockback=C.KNOCKBACK, tx=None, flight=0.9, apex=60.0, radius=14.0, chest=C.PROJ_CHEST, explode=None):
         self.kind, self.owner, self.x, self.x0, self.base_y, self.facing = kind, owner, float(x), float(x), base_y, facing
         self.damage, self.sprite, self.speed, self.max_range, self.pierce = damage, sprite, speed, max_range, pierce
         self.knockback, self.tx, self.ty = knockback, tx, base_y
         self.flight, self.apex, self.radius, self.chest = flight, apex, radius, chest
         self.t = 0.0; self.height = chest; self.hit_set = []; self.done = False; self.fall = False
+        self.explode = explode               # (radius, damage): the projectile blows up where it ends / hits
 
 
 class AreaHit:
@@ -700,7 +726,14 @@ class World:
             at = ATTACKS[atk.attack_id]
             if idx >= at['slash_frame'] and not atk.slash_done:
                 atk.slash_done = True
-                if at.get('shoot'):                                         # bows: the arrow leaves the hand on this frame
+                if at.get('area'):                                          # the mage's spikes: a delayed box in front (T44)
+                    a = at['area']; x0 = atk.x + atk.facing * a['frm']; x1 = atk.x + atk.facing * a['to']
+                    self.add_area(atk, min(x0, x1), max(x0, x1), at['damage'], delay=a['delay'], duration=a['duration'],
+                                  knockback=at['knockback'])
+                    for off in a['vfx_offsets']:
+                        self.add_vfx(a['vfx'], atk.x + atk.facing * off, atk.facing < 0, delay=a['delay'], y=atk.y)
+                    self.events.append(('spikes', atk.voice))
+                elif at.get('shoot'):                                       # bows: the arrow leaves the hand on this frame
                     self.shoot(atk, damage=at['damage'], knockback=at['knockback'], **at['shoot'])
                 else:
                     if at['slash']: self.add_vfx(at['slash'], atk.x, atk.facing < 0, y=atk.y)   # (None: the sprite has its own trail)
@@ -776,7 +809,7 @@ class World:
             _, f, spec = t
             if f.state != 'attack': continue
             if spec['type'] == 'rain':
-                tx = f.x + f.facing * spec['off']
+                tx = f.x + (spec['off'] if spec.get('abs') else f.facing * spec['off'])
                 p = Projectile('lob', f, tx, f.y, f.facing, spec['damage'], spec['sprite'], tx=tx, flight=C.RAIN_FALL_TIME,
                                apex=0.0, radius=spec['radius'], chest=160.0)
                 p.fall = True; p.ty = f.y; self.projectiles.append(p)
@@ -818,17 +851,26 @@ class World:
                     self._hit(p.owner, tgt, at=dict(damage=p.damage, knockback=p.knockback), src_x=p.x - p.facing * 8)
                     if not p.pierce: p.done = True; break
                 if abs(p.x - p.x0) >= p.max_range: p.done = True
+                if p.done and p.explode: self._explode(p)
             else:                                                  # lob
                 u = min(1.0, p.t / p.flight)
                 p.x = p.x0 + (p.tx - p.x0) * u
                 p.height = p.chest * (1 - u) + 4 * p.apex * u * (1 - u)
                 if u >= 1.0:
                     p.done = True; self.events.append(('impact', 'lob'))
+                    if p.sprite == 'fireball': self.add_vfx('fire_burst', p.tx, False, y=p.ty)
                     for tgt in targets:
                         if tgt.invuln > 0 or abs(tgt.x - p.tx) > p.radius + tgt.hw or abs(tgt.y - p.ty) > C.VERTICAL_REACH:
                             continue
                         self._hit(p.owner, tgt, at=dict(damage=p.damage, knockback=p.knockback), src_x=p.tx - p.facing * 4)
         self.projectiles = [p for p in self.projectiles if not p.done and abs(p.x - self.hero.x) < 900]
+
+    def _explode(self, p):
+        """A fireball with `explode` hurts everyone around where it ended (the one it hit already took the blow)."""
+        r, dmg = p.explode
+        a = self.add_area(p.owner, p.x - r, p.x + r, dmg, delay=0.0, duration=0.1, knockback=C.KNOCKBACK)
+        a.hit_set = list(p.hit_set); a.base_y = p.base_y
+        self.add_vfx('fire_burst', p.x, False, y=p.base_y); self.events.append(('explosion', 'fire'))
 
     def _areas(self, dt):
         for a in self.areas:

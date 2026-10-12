@@ -90,6 +90,7 @@ SOLDIER_COOLDOWN = (0.7, 1.1)
 DAMAGE = 10                        # damage of every hit (both sides)
 HERO_SPEED = 120.0                 # pixels per second (was 84)
 OGRE_SPEED = 50.0
+MAGE_SPEED = 115.0                 # a little slower than the knight
 CROSSBOWMAN_SPEED = 105.0           # heavy armour: the slowest class
 RANGER_SPEED = 135.0               # the ranger is quicker than the knight (120); see the classes block below
 ATTACK_MOVE_FACTOR = 1.0           # hero speed multiplier while the attack animation plays (he can move and swing)
@@ -133,6 +134,8 @@ SPEAR_ATTACK_ANIM_SPEED = 1.3        # slow, telegraphed thrust (row fps 12)
 SOLDIER_WALK_ANIM_SPEED = 1.55      # soldier walk cycle, proportional to SOLDIER_SPEED (62)
 SOLDIER_ATTACK_ANIM_SPEED = KNIGHT_ATTACK_ANIM_SPEED   # same sword stroke as the hero's stroke 1 AND its slash effect
 ANIM_SPEED = {
+    'mage': {'attack_staff': 1.2, 'attack_staff_2': 1.8, 'attack_staff_3': 1.3, 'attack_stomp': 1.4, 'attack_special': 1.1,
+             'run': RUN_ANIM_SPEED * MAGE_SPEED / HERO_SPEED, 'jump_up': 1.6},
     'crossbowman': {'attack_crossbow': 0.9, 'attack_crossbow_2': 1.5, 'attack_crossbow_3': 1.2, 'attack_axe_small': 1.6,
                     'attack_special': 1.0, 'run': RUN_ANIM_SPEED * CROSSBOWMAN_SPEED / HERO_SPEED, 'jump_up': 1.6},
     'ranger': {'attack_bow': 1.1, 'attack_bow_2': 1.7, 'attack_bow_3': 1.3, 'attack_short': 2.0, 'attack_special': 1.1,
@@ -246,6 +249,20 @@ RAIN_SPAN = (60, 230)              # px in front of the ranger covered by the ra
 RAIN_FALL_TIME = 0.55
 RAIN_RADIUS = 16
 
+MAGE_MAX_HP = 70                   # the most fragile class
+FIREBALL_DAMAGE = (12, 12, 16)     # the 3rd fireball is bigger and explodes
+FIREBALL_SPEED = (210.0, 240.0, 200.0)
+FIREBALL_RANGE = 300.0
+FIREBALL_EXPLOSION = (36, 10)      # radius (px) and damage of the 3rd fireball's explosion (everyone nearby, once)
+SPIKES_DAMAGE = 14                 # secondary: stone spikes erupting in front (area, several targets)
+SPIKES_FROM_TO = (22, 104)
+SPIKES_DELAY = 0.12
+SPIKES_COOLDOWN = 1.4
+STORM_COUNT = 12                   # special: a rain of fireballs around the mage
+STORM_DAMAGE = 10
+STORM_SPAN = 170                   # px each side of the mage
+STORM_FALL_TIME = 0.6
+STORM_RADIUS = 22
 XBOWMAN_MAX_HP = 110
 XBOWMAN_JUMP = 0.9
 XBOW_HERO_DAMAGE = (14, 14, 22)    # chain of bolts: the 3rd is heavy and pierces

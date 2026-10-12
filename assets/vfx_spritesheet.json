@@ -593,6 +593,114 @@
         "w": 64,
         "h": 64
       }
+    },
+    {
+      "filename": "stone_spikes_0",
+      "frame": {
+        "x": 0,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "stone_spikes_1",
+      "frame": {
+        "x": 64,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "stone_spikes_2",
+      "frame": {
+        "x": 128,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "stone_spikes_3",
+      "frame": {
+        "x": 192,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "stone_spikes_4",
+      "frame": {
+        "x": 256,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "stone_spikes_5",
+      "frame": {
+        "x": 320,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "fire_burst_0",
+      "frame": {
+        "x": 0,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "fire_burst_1",
+      "frame": {
+        "x": 64,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "fire_burst_2",
+      "frame": {
+        "x": 128,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "fire_burst_3",
+      "frame": {
+        "x": 192,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "fire_burst_4",
+      "frame": {
+        "x": 256,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "fire_burst_5",
+      "frame": {
+        "x": 320,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
     }
   ],
   "animations": {
@@ -727,6 +835,30 @@
       ],
       "fps": 14,
       "loop": false
+    },
+    "stone_spikes": {
+      "frames": [
+        "stone_spikes_0",
+        "stone_spikes_1",
+        "stone_spikes_2",
+        "stone_spikes_3",
+        "stone_spikes_4",
+        "stone_spikes_5"
+      ],
+      "fps": 12,
+      "loop": false
+    },
+    "fire_burst": {
+      "frames": [
+        "fire_burst_0",
+        "fire_burst_1",
+        "fire_burst_2",
+        "fire_burst_3",
+        "fire_burst_4",
+        "fire_burst_5"
+      ],
+      "fps": 14,
+      "loop": false
     }
   },
   "meta": {
@@ -735,6 +867,6 @@
       64,
       64
     ],
-    "note": "sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life (any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held; block_spark: on the front of a shielded defender. Same anchor as the character frames."
+    "note": "sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life (any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held; block_spark: on the front of a shielded defender; stone_spikes: ground spikes in front of the mage; fire_burst: an explosion on the ground. Same anchor as the character frames."
   }
 }

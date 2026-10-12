@@ -123,6 +123,69 @@ def atk_axe_small(i):
     return p
 
 
+# ------------------------------------------------------------------ mage (T44)
+MAGE = dict(
+    PN=dict(shade=C(52, 36, 88), base=C(110, 80, 168), hl=C(176, 148, 226)),    # violet robe
+    PF=dict(shade=C(32, 22, 60), base=C(72, 52, 120), hl=C(110, 88, 166)),
+    RED=C(238, 196, 76), RED_D=C(176, 132, 40),                                  # golden sash / plume
+    GOLD=C(255, 226, 120), LEATH=C(86, 58, 42), LEATH_D=C(56, 38, 28))
+
+
+def mage_head(orig):
+    """Helmet head + a pointed wizard hat with a brim."""
+    def head(c, plume):
+        pl, hd = orig(c, plume); x, y = SR.rd(c)
+        def hat(d):
+            d.polygon([(x - 7, y - 4), (x + 7, y - 4), (x + 4, y - 7), (x + 1, y - 15), (x - 3, y - 8), (x - 4, y - 7)], fill=C(88, 60, 148))
+            d.polygon([(x - 7, y - 4), (x, y - 4), (x - 1, y - 12), (x - 4, y - 7)], fill=C(120, 88, 188))
+            d.line([(x - 7, y - 4), (x + 7, y - 4)], fill=C(54, 36, 92), width=2)
+            d.line([(x - 3, y - 6), (x + 4, y - 6)], fill=C(238, 196, 76))
+        hd.alpha_composite(SR.layer(hat))
+        return pl, hd
+    return head
+
+
+def _cast(i, hn, wang, hx, lean, hf, shift):
+    return dict(weapon='sword', hold='staff', hx=hx[i], footN=(CX_ + 7, GY_), footF=(CX_ - 6, GY_),
+                sink=[1, 1.5, 2, 2, 2.5, 1.5][i], lean=lean[i], handN=hn[i], wang=wang[i], handF=hf[i],
+                plume=[(-7, -1), (-8, 0), (-9, 0), (-9, 1), (-10, 1), (-8, 0)][i], flap=[0, -1, -1, -2, -3, -1][i], shift=shift[i])
+
+
+def atk_staff(i):
+    # cast: the staff is raised and thrust forward; the fireball leaves on frame 3
+    return _cast(i, [(6, 6), (2, -2), (0, -5), (7, -3), (8, -1), (6, 4)], [170, 185, 200, 110, 95, 125],
+                 [-1, -2, -3, 1, 2, 1], [0, -6, -10, 6, 10, 4], [(2, 9), (-1, 4), (-2, 0), (5, -1), (6, 0), (3, 7)],
+                 [0, 1, 2, -3, -5, -1])
+
+
+def atk_staff_2(i):
+    # 2nd cast: a quick flick of the staff
+    return _cast(i, [(6, 6), (4, 0), (5, -3), (8, -2), (8, 0), (6, 4)], [170, 160, 140, 100, 92, 120],
+                 [-1, 0, -1, 1, 2, 1], [0, -3, -5, 6, 8, 3], [(2, 9), (1, 6), (1, 4), (5, 0), (6, 1), (3, 7)],
+                 [0, 0, 1, -3, -5, -1])
+
+
+def atk_staff_3(i):
+    # 3rd cast: raised high, then a big forward cast (the larger fireball that explodes)
+    return _cast(i, [(6, 6), (3, -3), (2, -6), (8, -2), (9, 2), (7, 4)], [170, 190, 200, 115, 88, 120],
+                 [-1, -2, -3, 2, 3, 1], [0, -8, -12, 10, 14, 6], [(2, 9), (0, 0), (-1, -4), (5, -2), (7, 1), (3, 7)],
+                 [0, 1, 2, -4, -6, -1])
+
+
+def atk_stomp(i):
+    # secondary: the staff comes down on the ground in front (the spikes erupt on frame 3)
+    return _cast(i, [(6, 6), (2, -3), (1, -6), (8, 2), (8, 8), (7, 6)], [170, 190, 200, 70, 52, 70],
+                 [-1, -2, -3, 2, 3, 1], [0, -8, -12, 12, 16, 8], [(2, 9), (0, 2), (-1, -3), (5, 3), (6, 7), (3, 8)],
+                 [0, 1, 2, -3, -4, -1])
+
+
+def atk_storm(i):
+    # special: both arms raised high with the staff (frame 0 = the charge pose), then a slam that calls the storm
+    return _cast(i, [(4, -4), (4, -5), (5, -6), (8, -4), (10, 0), (6, 4)], [185, 190, 195, 170, 128, 118],
+                 [-1, -1, 0, 1, 2, 1], [-2, -4, -6, 4, 10, 4], [(2, -2), (2, -4), (2, -5), (4, -3), (6, 0), (3, 6)],
+                 [0, 0, 0, 0, -3, -3])
+
+
 def build(out):
     ranger_extra = [('attack_bow_2', atk_bow_2, 10), ('attack_bow_3', atk_bow_3, 10),
                     ('attack_short', lambda i: dict(atk_short(i)), 12), ('attack_special', atk_rain, 10)]
@@ -130,6 +193,9 @@ def build(out):
     xbow_extra = [('attack_crossbow_2', atk_xbow_2, 10), ('attack_crossbow_3', atk_xbow_3, 10),
                   ('attack_axe_small', atk_axe_small, 10), ('attack_special', atk_volley, 10)]
     write_class_sheet(out, 'crossbowman', xbow_extra, 'xbow', CROSSBOWMAN)
+    mage_extra = [('attack_staff', atk_staff, 12), ('attack_staff_2', atk_staff_2, 12), ('attack_staff_3', atk_staff_3, 12),
+                  ('attack_stomp', atk_stomp, 12), ('attack_special', atk_storm, 10)]
+    write_class_sheet(out, 'mage', mage_extra, 'staff', MAGE, head=mage_head)
 
 
 if __name__ == '__main__':

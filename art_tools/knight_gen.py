@@ -183,6 +183,13 @@ def carry(pose, weapon):
         pose = dict(pose, hold=weapon)                               # melee pose, bow / crossbow carried in the hand
         if weapon == 'xbow': pose['wang'] = (pose['wang'] + 2 * 165) / 3.0      # held more upright than a blade (stays inside the frame)
         if pose.get('wpos'): pose['wpos'] = (pose['wpos'][0] - 8, pose['wpos'][1] - 3)     # keep the lying weapon inside the frame
+    if weapon == 'staff' and pose['weapon'] == 'sword':
+        pose = dict(pose, hold='staff')                             # staff carried like a sword (taller than a blade: lower)
+        hn = pose.get('handN')
+        if hn: pose['handN'] = (min(hn[0], 7), max(hn[1], -3))      # keep the long staff inside the frame
+        if pose.get('wpos'): pose['wpos'] = (pose['wpos'][0] - 4, pose['wpos'][1] - 2)
+        if not pose.get('wback'): pose['wang'] = 150 if pose['wang'] < 150 else (260 if pose['wang'] > 260 else pose['wang'])
+        return pose
     if weapon == 'spear' and pose['weapon'] == 'sword':
         pose = dict(pose, weapon='spear')                            # carried tilted forward so it stays inside the frame
         if not pose.get('wback'): pose['wang'] = 132 + (pose['wang'] - 165) * 0.45

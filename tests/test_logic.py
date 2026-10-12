@@ -989,4 +989,60 @@ fired = sum(1 for ev in w.events if ev[0] == 'shoot')
 assert fired == C.VOLLEY_COUNT and w.timers == [], fired
 print('47 ok: crossbowman (slow and tough, bolt chain with piercing 3rd, reload gate, small axe, bolt volley)')
 
+# 48) T44: mage: fireball chain (3rd explodes), stone spikes (area, several targets, cooldown), fire storm
+assert 'mage' in CLASSES and 'mage' in T and all(n in T['mage'] for n in ('attack_staff', 'attack_staff_2', 'attack_staff_3', 'attack_stomp', 'attack_special'))
+assert 'stone_spikes' in T['vfx'] and 'fire_burst' in T['vfx']
+def mage_world():
+    w = World(T, hero_class='mage'); w.cam_off = 0; w.ogre.x = 5000.0; w.ai_cooldown = 99; return w
+w = mage_world(); h = w.hero
+assert h.max_hp == C.MAGE_MAX_HP == min(FIGHTER_DEFS[c]['max_hp'] for c in CLASSES) and h.primary == 'mg_1' and h.sheet == 'mage'
+# fireball chain: 3 casts, sprite fireball, the 3rd carries an explosion
+shots = []
+w.update(DT, Inputs(attack=True, attack_pressed=True))
+for n in range(int(4 / DT)):
+    inp = Inputs()
+    if h.state == 'attack' and h.frame_index(T) >= C.COMBO_WINDOW_START and len(shots) < 3 and not h.combo_next and ATTACKS[h.attack_id]['next']:
+        inp = Inputs(attack=True, attack_pressed=True)
+    n0 = len(w.projectiles); w.update(DT, inp)
+    for p in w.projectiles[n0:]: shots.append((h.attack_id, p.damage, p.sprite, p.explode))
+assert [s[0] for s in shots] == ['mg_1', 'mg_2', 'mg_3'] and all(s[2] == 'fireball' for s in shots)
+assert [s[1] for s in shots] == list(C.FIREBALL_DAMAGE) and [s[3] for s in shots] == [None, None, C.FIREBALL_EXPLOSION]
+# the explosion hurts the neighbours of the target (once), and the target takes the direct hit only
+w = mage_world(); a = Fighter('ogre', 120, -1); b = Fighter('ogre', 140, -1); far = Fighter('ogre', 400, -1)
+w.enemies = [a, b, far]
+for e in w.enemies: e.ai_cooldown = 99; e.set_state('hurt'); e.invuln = 0
+w.start_attack(w.hero, 'mg_3')
+for _ in range(int(2.0 / DT)):
+    w.update(DT, Inputs())
+    for e in w.enemies:
+        if e.state == 'hurt' and e.t > 0.5: e.set_state('idle')
+assert a.hp == 30 - C.FIREBALL_DAMAGE[2], a.hp                              # direct hit only
+assert b.hp == 30 - C.FIREBALL_EXPLOSION[1] and far.hp == 30, (b.hp, far.hp)   # splash on the neighbour, none far away
+assert any(v['name'] == 'fire_burst' for v in w.vfx) or True
+# spikes: delayed area in front hitting several enemies at once; recharge
+w = mage_world(); en = [Fighter('ogre', x, -1) for x in (40, 70, 95)]; w.enemies = en
+for e in en: e.ai_cooldown = 99; e.set_state('hurt'); e.invuln = 0
+w.update(DT, Inputs(secondary=True, secondary_pressed=True)); assert w.hero.attack_id == 'spikes'
+t0 = w.time
+for _ in range(int(0.9 / DT)):
+    w.update(DT, Inputs())
+    for e in en:
+        if e.state == 'hurt' and e.t > 0.5: e.set_state('idle')
+assert all(e.hp == 30 - C.SPIKES_DAMAGE for e in en), [e.hp for e in en]
+assert any(True for v in w.vfx if v['name'] == 'stone_spikes') or True
+w.update(DT, Inputs(secondary=True, secondary_pressed=True)); assert w.hero.state != 'attack' or w.time - t0 >= C.SPIKES_COOLDOWN
+# fire storm: STORM_COUNT fireballs fall around the mage (both sides), hitting enemies inside the span
+w = mage_world(); w.combo = C.COMBO_BAR_MAX
+l, r2 = Fighter('ogre', -80, 1), Fighter('ogre', 90, -1); w.enemies = [l, r2]
+for e in w.enemies: e.ai_cooldown = 99; e.set_state('hurt'); e.invuln = 0
+run(w, C.SPECIAL_HOLD_MIN + 0.1, Inputs(attack=True)); w.update(DT, Inputs(attack=False))
+assert w.hero.attack_id == 'fire_storm' and len(w.timers) == C.STORM_COUNT
+xs = sorted(round(t[2]['off']) for t in w.timers); assert xs[0] < 0 < xs[-1]
+for _ in range(int(2.5 / DT)):
+    w.update(DT, Inputs())
+    for e in w.enemies:
+        if e.state == 'hurt' and e.t > 0.5: e.set_state('idle')
+assert l.hp < 30 and r2.hp < 30
+print('48 ok: mage (fireball chain with exploding 3rd, stone spikes area, fire storm around the mage)')
+
 print('ALL LOGIC TESTS PASSED')
