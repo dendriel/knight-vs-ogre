@@ -156,7 +156,7 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 - **Alcance vertical**: um golpe só acerta se a diferença de altura dos pés ≤ `VERTICAL_REACH` (30 px; vale para os dois
   lados). Herói em 1 caixa (23) é atingido do chão; em 2 ou 3 caixas o ogro fica embaixo sem conseguir acertar (e o
   herói também não acerta de lá). O ogro não balança o machado no vazio.
-- **Ogro**: `OGRE_MAX_HP = 30` (3 golpes). Mantém a invulnerabilidade pós-dano (`OGRE_HURT_INVULN = True`, hurt +
+- **Ogro**: `OGRE_MAX_HP = 30` (3 golpes). A invulnerabilidade pós-dano dos inimigos foi DESLIGADA a pedido do usuário (`OGRE_HURT_INVULN = False`, ver CHANGELOG; antes hurt +
   `OGRE_HURT_INVULN_EXTRA = 0.4` → 1,0 s no total; o herói usa `HURT_INVULN_EXTRA = 0.6`); com `False` ele morria rápido demais (o usuário pediu para voltar).
 
 ### 4.2 Pickups e ouro

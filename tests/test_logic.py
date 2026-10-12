@@ -294,7 +294,7 @@ assert ATTACKS['sword']['damage'] == C.DAMAGE and ATTACKS['ogre_axe']['slash'] =
 ATTACKS['heavy'] = dict(ATTACKS['sword'], damage=25, knockback=40.0, slash='axe_slash')
 w = fresh(0); w.ogre.x = 30.0; w.ogre.invuln = 0
 w.start_attack(w.hero, 'heavy'); assert w.hero.state == 'attack' and w.hero.anim == 'attack_sword'
-run(w, 0.5, Inputs(attack=True))
+run(w, 0.5, Inputs())
 assert w.ogre.hp == 30 - 25 + 0 or w.ogre.state == 'dead' or w.ogre.hp == 5, w.ogre.hp
 assert any(v['name'] == 'axe_slash' for v in w.vfx) or w.ogre.hp == 5
 assert w.ogre.kb_speed == 40.0 / C.KNOCKBACK_TIME
@@ -1187,13 +1187,19 @@ for stroke in range(3):
     if o.state == 'dead': break
 assert [d for _, d in lands][:3] == [10, 10, 15][:len(lands)] or o.state == 'dead', lands
 assert o.state == 'dead' or o.hp == 30 - 10 - 10 - 15 or len(lands) >= 2, lands
-# the same stroke twice in a row on an invulnerable victim is still refused (no infinite stun with one move)
+# enemies have no post-hit invulnerability any more: a second blow right after the first lands
+assert C.OGRE_HURT_INVULN is False and C.OGRE_HURT_INVULN_EXTRA == 0.0
+w = fresh(0); o = Fighter('ogre', 30, -1); o.ai_cooldown = 99; w.enemies = [o]; w._hit(w.hero, o)
+assert o.invuln == 0 and o.hp == 20; w.hero.hit_set = []; w._hit(w.hero, o); assert o.hp == 10
+# with the option switched back on, the same stroke twice is refused (no infinite stun) but the next stroke of the chain lands
+C.OGRE_HURT_INVULN = True; C.OGRE_HURT_INVULN_EXTRA = 0.15
 w = fresh(0); o = Fighter('ogre', 30, -1); o.ai_cooldown = 99; w.enemies = [o]
 w._hit(w.hero, o); assert o.invuln > 0 and o.combo_open and o.combo_open[1] == 'sword_2'
 w.hero.set_state('attack'); w.hero.attack_id = 'sword'; w.hero.hit_set = []; w.hero.t = 0.0
 hp = o.hp; run(w, 0.2, Inputs()); assert o.hp == hp
 w.hero.attack_id = 'sword_2'; w.hero.hit_set = []; w.hero.t = 0.0; w.hero.set_state('attack'); w.hero.attack_id = 'sword_2'
 run(w, 0.3, Inputs()); assert o.hp == hp - 10, (o.hp, hp)
+C.OGRE_HURT_INVULN = False; C.OGRE_HURT_INVULN_EXTRA = 0.0
 print('56 ok: the next stroke of a combo lands on a stunned victim; the same stroke twice does not')
 
 # 57) the hero lunges forward during combo strokes, stops short of the foe; the black knight can stunlock the hero

@@ -167,8 +167,8 @@ ANIM_SPEED = {
             'spin_slash': SPECIAL_ANIM_SPEED},
 }
 HURT_INVULN_EXTRA = 0.6            # extra invulnerable seconds after the hurt animation (prevents stun-lock)
-OGRE_HURT_INVULN = True            # True: the ogre cannot be hit again during hurt + OGRE_HURT_INVULN_EXTRA
-OGRE_HURT_INVULN_EXTRA = 0.15      # extra invulnerable seconds for enemies only (was 0.4); the next stroke of a combo ignores it
+OGRE_HURT_INVULN = False           # enemies have NO invulnerability after a hit (was True): a combo / spam can stun-lock them
+OGRE_HURT_INVULN_EXTRA = 0.0       # (only used when OGRE_HURT_INVULN is True) was 0.4, then 0.15
 SPAWN_INVULN = 1.0                 # a freshly spawned hero cannot be hit during this time
 KNOCKBACK = 14.0                   # pixels the victim is pushed back
 KNOCKBACK_TIME = 0.25
