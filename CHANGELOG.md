@@ -9,6 +9,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 
 ### Técnico
 - `README.md`: nova seção **TODO** com as ideias planejadas (armas pickup com durabilidade, arco/besta, classes, inimigos, fases e bosses, loja, poções e armadura).
+- `README.md` TODO: 3 fases temáticas (planície, floresta inglesa, cidade), novos inimigos humanos (cavaleiro, arqueiro, lanceiro, cavaleiro com escudo), combo de até 3 golpes no ataque primário e ataque especial com barra de combo.
 
 ## [2026-10-11]
 

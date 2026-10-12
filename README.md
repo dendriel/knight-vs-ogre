@@ -57,6 +57,14 @@ Registro de ideias, sem ordem de prioridade. As marcadas com **(arte)** exigem n
   - Besteiro: primario = besta; secundario = machado pequeno.
   - Mago: primario = cajado que arremessa bolas de fogo; secundario = bater o cajado no chao e fazer surgir
     espinhos de pedra a frente, atingindo os inimigos na area.
+- [ ] Combo no ataque primario: com o heroi atacando, um novo clique no botao de ataque encadeia outro golpe, com
+      animacao propria. Vale so para o ataque primario; no maximo 3 golpes encadeados, depois volta a um ataque normal.
+      Os golpes encadeados sao mais rapidos, entao o primeiro golpe fica ligeiramente mais lento que o atual.
+- [ ] Ataque especial com barra de combo: a barra carrega conforme o dano causado e recebido (X de dano). Com a barra
+      cheia, o jogador segura o botao de ataque para indicar que quer o especial, e ele dispara ao soltar. Cada classe
+      tem um especial tematico (ex.: cavaleiro = golpe giratorio/investida de escudo; arqueiro = chuva de flechas;
+      besteiro = rajada de viroteis; mago = tempestade de fogo/meteoro).
+- [ ] **(arte)** Animacoes do combo (2 golpes encadeados alem do primeiro) e do ataque especial de cada classe, com efeitos.
 - [ ] **(arte)** Sprites e animacoes de cada classe e de cada ataque (incluindo projeteis, bola de fogo e espinhos de pedra).
 - [ ] Tela de selecao de classe no inicio da partida: cards lado a lado, cada um com uma imagem representativa e os
       atributos da classe; a classe e escolhida com um clique.
@@ -66,10 +74,17 @@ Registro de ideias, sem ordem de prioridade. As marcadas com **(arte)** exigem n
       e de ataque a distancia.
 - [ ] O ataque a distancia dos monstros e um tiro/arremesso para cima que faz uma curva no ceu e cai no chao, dando ao
       heroi chance de desviar.
+- [ ] Inimigos humanos: **cavaleiro**, **arqueiro** (a distancia), **lanceiro** (alcance maior) e **cavaleiro com
+      escudo** (defende golpes de frente; exige outra estrategia, ex.: atacar pelas costas ou com o especial).
 - [ ] **(arte)** Sprites e animacoes de cada novo inimigo (reaproveitar o esqueleto de `ogre_gen.py`).
 
 ### Fases e progressao
 - [ ] Fases: um percurso da esquerda para a direita, com o cenario variando e diferentes encontros de inimigos.
+- [ ] Criar 3 fases para o jogo, cada uma com tema proprio:
+  1. Campo de batalha em uma planicie.
+  2. Floresta inglesa.
+  3. Cidade.
+- [ ] **(arte)** Cenario de cada fase (props, tiles de chao e parallax do fundo de cada tema).
 - [ ] Boss no fim de cada cenario: perto do final a tela trava em modo "arena" ate o boss ser derrotado; depois que a
       tela e liberada, o jogador segue em frente para concluir o cenario.
 - [ ] Tela de conclusao do cenario com estatisticas (monstros mortos, dano causado, ouro adquirido).
