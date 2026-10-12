@@ -5,7 +5,17 @@ from PIL import Image, ImageDraw, ImageFont
 
 SRCALPHA = 1; RESIZABLE = 2; FULLSCREEN = 4
 QUIT, KEYDOWN, KEYUP = 256, 768, 769
+
+
+class Event:
+    """stand-in for pygame.event.Event: any keyword becomes an attribute (key, pos, button...)"""
+    def __init__(self, type, **kw): self.type = type; self.__dict__.update(kw)
+
 K_LEFT, K_RIGHT, K_UP, K_DOWN, K_a, K_d, K_w, K_s, K_SPACE, K_ESCAPE, K_F11, K_m = range(1000, 1012)
+K_RETURN, K_1, K_2 = range(1012, 1015)
+MOUSEBUTTONDOWN, MOUSEMOTION = 1025, 1024
+MOUSE_RIGHT = 'mouse-right'   # put it in PRESSED to simulate the right button held
+MOUSE_POS = [0, 0]
 PRESSED = set(); EVENTS = []; FLIP_HOOK = [None]
 MOUSE_LEFT = 'mouse-left'   # put it in PRESSED to simulate the left button held
 
@@ -72,10 +82,12 @@ def _events():
 N = types.SimpleNamespace
 module = N(SRCALPHA=SRCALPHA, RESIZABLE=RESIZABLE, FULLSCREEN=FULLSCREEN, QUIT=QUIT, KEYDOWN=KEYDOWN, KEYUP=KEYUP,
            K_LEFT=K_LEFT, K_RIGHT=K_RIGHT, K_UP=K_UP, K_DOWN=K_DOWN, K_a=K_a, K_d=K_d, K_w=K_w, K_s=K_s,
-           K_SPACE=K_SPACE, K_ESCAPE=K_ESCAPE, K_F11=K_F11, K_m=K_m, Surface=Surface,
+           K_SPACE=K_SPACE, K_ESCAPE=K_ESCAPE, K_F11=K_F11, K_m=K_m, K_RETURN=K_RETURN, K_1=K_1, K_2=K_2,
+           MOUSEBUTTONDOWN=MOUSEBUTTONDOWN, MOUSEMOTION=MOUSEMOTION, Surface=Surface,
            init=lambda: None, quit=lambda: None,
            display=N(set_caption=lambda s: None, set_mode=_set_mode, get_surface=lambda: _state['screen'], flip=_flip),
            image=N(load=_load), transform=N(flip=_tflip, scale=_scale),
            draw=N(rect=_rect, circle=_circle), font=N(Font=Font), time=N(Clock=Clock),
            event=N(get=_events), key=N(get_pressed=lambda: _Keys()),
-           mouse=N(get_pressed=lambda: (MOUSE_LEFT in PRESSED, False, False)))
+           mouse=N(get_pressed=lambda: (MOUSE_LEFT in PRESSED, False, MOUSE_RIGHT in PRESSED),
+                   get_pos=lambda: tuple(MOUSE_POS)))

@@ -43,8 +43,13 @@ def load_timing(assets_dir):
 
 
 class Inputs:
-    def __init__(self, left=False, right=False, attack=False, jump=False):
+    """What the player does this frame. `attack` is the level (button held); the *_pressed / *_released flags are edges
+    computed by main.py; attack_held_t = seconds the attack button has been held (T05)."""
+    def __init__(self, left=False, right=False, attack=False, jump=False, secondary=False, attack_pressed=False,
+                 attack_released=False, attack_held_t=0.0, secondary_pressed=False, potion_pressed=False):
         self.left, self.right, self.attack, self.jump = left, right, attack, jump
+        self.secondary, self.attack_pressed, self.attack_released = secondary, attack_pressed, attack_released
+        self.attack_held_t, self.secondary_pressed, self.potion_pressed = attack_held_t, secondary_pressed, potion_pressed
 
 
 class Fighter:

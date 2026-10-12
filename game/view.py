@@ -163,7 +163,25 @@ class View:
         self._text(surf, f'{world.ogre.hp}', C.SCREEN_W - 156, 18, font=self.font_big, align='right')
         self._text(surf, f'Derrotas: {world.ogre_deaths}', C.SCREEN_W - 10, 38, (255, 220, 150), align='right')
         if t < 8:
-            self._center(surf, 'SETAS ou A D: andar    ESPACO: pular    MOUSE ESQ: atacar    F11: tela cheia', C.SCREEN_H - 14)
+            self._center(surf, 'SETAS ou A D: andar   ESPACO: pular   MOUSE ESQ: atacar   ESC: menu', C.SCREEN_H - 14)
+
+    # public helpers used by the scenes (T05)
+    def text(self, surf, s, x, y, color=(255, 255, 255), font=None, align='left'): self._text(surf, s, x, y, color, font, align)
+    def center(self, surf, s, y, color=(255, 255, 255), font=None):
+        font = font or self.font; w = font.size(s)[0]; self._text(surf, s, (C.SCREEN_W - w) // 2, y, color, font)
+    def title(self, surf, s, y): self.center(surf, s, y, (255, 230, 150), self.font_big)
+
+    def dim(self, surf, alpha=150):
+        ov = pygame.Surface((C.SCREEN_W, C.SCREEN_H), pygame.SRCALPHA); ov.fill((8, 8, 20, alpha)); surf.blit(ov, (0, 0))
+
+    def draw_menu(self, surf, menu):
+        for i, (label, action, enabled) in enumerate(menu.items):
+            r = menu.rect(i); sel = i == menu.index
+            pygame.draw.rect(surf, OUTLINE, (r.x - 1, r.y - 1, r.w + 2, r.h + 2))
+            pygame.draw.rect(surf, (74, 92, 140) if sel and enabled else (38, 40, 62), r.tuple())
+            col = (255, 255, 255) if enabled else (120, 120, 140)
+            w = self.font_big.size(label)[0]
+            self._text(surf, label, r.x + (r.w - w) // 2, r.y + 3, col, self.font_big)
 
     def _center(self, surf, s, y):
         w = self.font.size(s)[0]; self._text(surf, s, (C.SCREEN_W - w) // 2, y)

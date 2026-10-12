@@ -92,3 +92,13 @@ MUSIC_FILE = 'medieval_theme.wav'  # inside assets/music/
 
 # ---- world --------------------------------------------------------------------------------
 SLOT_W = 176                       # width of one scenery slot (house / tree / well / empty)
+
+# ---- controls (the 'Ver comandos' screen reads this table; keep README in sync) ------------------
+CONTROLS = [
+    ('Setas / A D', 'Andar'),
+    ('Espaço', 'Pular'),
+    ('Mouse esquerdo', 'Atacar (segurar repete)'),
+    ('M', 'Liga / desliga o som'),
+    ('F11', 'Tela cheia'),
+    ('Esc', 'Menu'),
+]

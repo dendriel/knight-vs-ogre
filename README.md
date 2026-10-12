@@ -11,7 +11,8 @@ Para gerar um `.exe`: `build_exe.bat` (resultado em `dist\KnightVsOgre.exe`).
 - Setas esquerda/direita ou A / D: andar
 - Espaco: pular
 - Botao esquerdo do mouse: atacar com a espada (golpe lateral); da para andar enquanto ataca
-- F11: tela cheia | Esc: sair
+- M: liga/desliga o som | F11: tela cheia
+- Esc: menu (continuar, ver comandos, reiniciar fase, sair); navegue com as setas + Enter ou com o mouse
 
 ## Regras
 - Heroi (esquerda) comeca com 100 de vida e o ogro (direita) com 30; cada golpe que acerta tira 10.
@@ -31,7 +32,8 @@ descanso entre golpes (`OGRE_COOLDOWN`), alcance dos golpes, dano, tempo de resp
 - `main.py` laco principal, teclado, janela (escala inteira 3x, 480x270 internos)
 - `game/logic.py` regras (sem pygame, testavel) | `game/view.py` desenho e HUD | `game/config.py` numeros
 - `assets/` spritesheets (png + json), cenario
-- `tests/` testes das regras e simulador (roda o jogo sem janela e grava GIF)
+- `game/scenes.py` telas (jogo, pausa, comandos) | `game/ui.py` menu
+- `tests/` testes das regras (`test_logic.py`), das telas (`test_scenes.py`), do pygame real sem janela (`real_pygame_smoke.py`) e simulador (grava GIF)
 
 ## TODO (ideias e tarefas planejadas)
 
@@ -40,8 +42,8 @@ A ordem de execucao, as dependencias, as decisoes (D1-D10) e as incoerencias res
 Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(arte)** exigem sprites novos.
 
 ### Fundacoes
-- [ ] T01 dados por tipo de lutador | T02 varios inimigos | T03 ataques como dados | T04 projeteis e dano em area
-- [ ] T05 entrada ampliada, cenas e menu do Esc (continuar, ver comandos, reiniciar fase, sair) | T06 HUD em slots
+- [x] T01 dados por tipo de lutador | T02 varios inimigos | T03 ataques como dados | T04 projeteis e dano em area
+- [x] T05 entrada ampliada, cenas e menu do Esc (continuar, ver comandos, reiniciar fase, sair) | [ ] T06 HUD em slots
 
 ### Cavaleiro
 - [ ] T10 pocoes no inventario (ate 10, tecla 1; **substitui** o "consumir ao pegar")
