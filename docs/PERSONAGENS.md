@@ -129,3 +129,96 @@ Cavaleiro de ordem religiosa: elmo de balde com fenda, peitoral polido, sobreves
 3. Regenerar os sheets humanos (`knight_*`, `ranger`, `crossbowman`, `mage`, `soldier`, `spearman`, `archer`, `shieldman`,
    `black_knight`), os efeitos de golpe que dependem das poses e rodar `build_assets.py --check` e `check_edges.py`.
 4. Conferir os testes do contrato arte × dados e atualizar a seção 5 do `CLAUDE.md` se a âncora ou as linhas mudarem.
+
+---
+
+# Estilos alternativos (conceitos)
+
+Seis direções de arte **completamente diferentes** do jogo atual, ainda em pixel art e na temática medieval / de heróis.
+Não usam o esqueleto do jogo: cada figura é montada por partes sombreadas (`art_tools/alt_styles.py`), então cada estilo traz
+proporção, nível de detalhe, regra de contorno e paleta próprios. Papéis mostrados: **cavaleiro**, **mago** e **orc**
+(inimigo). Regenerar: `python art_tools/alt_styles.py` (grava em `out/art_estilos/` e atualiza `docs/personagens/estilos/`).
+
+![Linha de estilos alternativos](personagens/estilos/00_linha_de_estilos.png)
+
+| Estilo | Tamanho do sprite | Contorno | Paleta | Sensação |
+|---|---|---|---|---|
+| Chibi heroico | ~48x58, cabeça = metade do corpo | colorido (cor do preenchimento escurecida) | clara e saturada | adorável, aventura leve |
+| Mínimo 4 cores | 16x24 | 1 px, o tom mais escuro | 4 verdes (LCD de portátil) | retrô, silhueta e uma ideia por personagem |
+| Detalhado 7 cabeças | ~84x124 | 1 px escuro | tons por material, 3 níveis + dither | realista, pesado, sombrio |
+| Gótico esguio | ~44x92 | nenhum (só contraste) | carvão, vinho e osso | elegante, mórbido, "cavaleiro-corvo" |
+| Brutamontes cartum | ~72x76 | 2 px preto grosso | saturada, chapada | arcade, exagerado, divertido |
+| Silhueta e luz de contorno | ~60x84 | nenhum | corpo quase preto + borda alaranjada | cinematográfico, contraluz |
+
+## Chibi heroico
+
+Cabeça enorme com o rosto à mostra (olhos grandes com brilho), corpo e membros minúsculos, espada desproporcional. O cavaleiro usa elmo azul com pluma vermelha; o mago, um chapéu gigante e barba branca; o orc, presas e uma faixa de ferro na testa. Contornos coloridos em vez de pretos deixam tudo macio.
+
+- **Uso sugerido:** Jogo mais leve, modo infantil, ou como "pets" / mascotes. Combina com cenários claros.
+
+| Cavaleiro | Mago | Orc (inimigo) |
+|---|---|---|
+| ![knight](personagens/estilos/chibi_knight.png) | ![mage](personagens/estilos/chibi_mage.png) | ![orc](personagens/estilos/chibi_orc.png) |
+
+![Cena: Chibi heroico](personagens/estilos/01_chibi.png)
+
+## Mínimo 4 cores
+
+Sprites de 16x24 pixels com apenas quatro tons de um LCD verde: cada personagem é definido por silhueta (elmo + pluma, chapéu pontudo, cabeçorra). Telas de 160x90 ampliadas 9x.
+
+- **Uso sugerido:** Estilo retrô / homenagem ou minigame; é o mais barato de produzir e animar.
+
+| Cavaleiro | Mago | Orc (inimigo) |
+|---|---|---|
+| ![knight](personagens/estilos/minimo_knight.png) | ![mage](personagens/estilos/minimo_mage.png) | ![orc](personagens/estilos/minimo_orc.png) |
+
+![Cena: Mínimo 4 cores](personagens/estilos/02_minimo.png)
+
+## Detalhado 7 cabeças
+
+Proporção realista (7 cabeças): cavaleiro com bascinete, aventail de malha, peitoral com nervura, tassets sobrepostos, ombreira em lâminas, joelheira, escudo e capa com dobras; mago com manto em camadas e barba; orc senhor da guerra com ombreiras de ferro, peitoral, saiote de couro e cutelo. Luz e sombra por material, dither nas dobras.
+
+- **Uso sugerido:** Quando se quer realismo e peso; exige o dobro do tamanho de quadro e esqueleto novo (mais ossos).
+
+| Cavaleiro | Mago | Orc (inimigo) |
+|---|---|---|
+| ![knight](personagens/estilos/detalhado_knight.png) | ![mage](personagens/estilos/detalhado_mage.png) | ![orc](personagens/estilos/detalhado_orc.png) |
+
+![Cena: Detalhado 7 cabeças](personagens/estilos/03_detalhado.png)
+
+## Gótico esguio
+
+Figuras altas e finas, casacos longos e golas altas, sem contorno: a leitura vem da silhueta. O cavaleiro tem máscara de bico (corvo) e capa vinho, a feiticeira usa chapéu largo e lanterna, o carrasco é um capuz com machado. A única cor viva é o vermelho-sangue.
+
+- **Uso sugerido:** Fases noturnas, chefes humanos, ou um modo "pesadelo". Mantém forte identidade com pouquíssimas cores.
+
+| Cavaleiro | Mago | Orc (inimigo) |
+|---|---|---|
+| ![knight](personagens/estilos/gotico_knight.png) | ![mage](personagens/estilos/gotico_mage.png) | ![orc](personagens/estilos/gotico_orc.png) |
+
+![Cena: Gótico esguio](personagens/estilos/04_gotico.png)
+
+## Brutamontes cartum
+
+Formas grossas e infladas, punhos e botas enormes, contorno preto de 2 px e cores chapadas muito saturadas, com um único tom de sombra. O cavaleiro é um elmo gigante com visor, o orc um bloco verde com maça de espinhos.
+
+- **Uso sugerido:** Jogo estilo arcade / briga de rua; legível mesmo em tela pequena.
+
+| Cavaleiro | Mago | Orc (inimigo) |
+|---|---|---|
+| ![knight](personagens/estilos/brutamontes_knight.png) | ![mage](personagens/estilos/brutamontes_mage.png) | ![orc](personagens/estilos/brutamontes_orc.png) |
+
+![Cena: Brutamontes cartum](personagens/estilos/05_brutamontes.png)
+
+## Silhueta e luz de contorno
+
+Corpos quase pretos; só a borda voltada para o sol é iluminada (cor de brasa) e os olhos brilham (azul no herói, vermelho no monstro). Quase todo o "desenho" está na silhueta: chifres, pluma, capa, chapéu.
+
+- **Uso sugerido:** Cenas de abertura, fases contraluz, ou um modo visual para chefes. Muito barato de animar, pois quase não há detalhe interno.
+
+| Cavaleiro | Mago | Orc (inimigo) |
+|---|---|---|
+| ![knight](personagens/estilos/silhueta_knight.png) | ![mage](personagens/estilos/silhueta_mage.png) | ![orc](personagens/estilos/silhueta_orc.png) |
+
+![Cena: Silhueta e luz de contorno](personagens/estilos/06_silhueta.png)
+
