@@ -93,9 +93,10 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 | `archer_spritesheet` | contrato do ogro; `attack` = poses do arco (a flecha sai no frame 4, projétil `lob`); arco carregado nas demais linhas |
 | `shieldman_spritesheet` | contrato do ogro + linha `guard`(6, escudo erguido; é o estado parado do jogo) **no final**; escudo na mão livre |
 | `orc_`, `goblin_`, `kobold_`, `minotaur_spritesheet` | contrato do ogro (idle, walk, attack, hurt, death), gerados por `enemy_gen.py` a partir do `ogre_gen` (recolor / escala 0,72 / 0,8 / 1,1 / chifres); o minotauro usa a linha `attack` congelada no frame 2 como pose de investida |
+| `ogre_captain_`, `minotaur_lord_`, `black_knight_spritesheet` | **chefes: quadros 96x96** (meta do json: `frame_size` 96, `anchor_x` 48 = coluna do quadril, `ground_row` 90 = linha do chão; espelhado = 95−48). Linhas do contrato do ogro (o cavaleiro negro ainda `attack_2`, `attack_3`, `guard` no final); gerados por `enemy_gen.py` com escala 1,5 / 1,45 / 1,3 |
 | `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6), heal(10), coin_glint(12), sword_slash_2(12), sword_slash_3(12), spin_slash(12, aro do especial), charge(10, brasas enquanto segura), block_spark(14, na frente do escudo) |
 
-- **Âncora**: coluna do quadril = 30 no frame normal, **33 quando espelhado** (63−30); linha do chão = 58 dentro do frame
+- **Âncora** (quadros de 64): coluna do quadril = 30 no frame normal, **33 quando espelhado** (63−30); linha do chão = 58 dentro do frame
   (no jogo `GROUND_Y = 217`). Posicione sempre por essa coluna, senão o sprite "pula" ao virar.
 - Animações de ataque têm o golpe nos **frames 3–4**; o efeito `i` toca junto com o frame `3+i` do ataque.
 - No cavaleiro o frame 4 do arco e da besta é o disparo (a flecha/virote só é desenhada nesse frame; o projétil de verdade

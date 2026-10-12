@@ -24,6 +24,23 @@ FIGHTER_DEFS = {
     'knight': dict(hero=True, max_hp=C.HERO_MAX_HP, speed=C.HERO_SPEED, half_width=8, sheet='knight', ai=None,
                    anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, primary='sword',
                    slash='sword_slash', reach=C.KNIGHT_REACH, label='HERÓI'),
+    'ogre_captain': dict(hero=False, boss=True, max_hp=C.CAPTAIN_MAX_HP, speed=C.CAPTAIN_SPEED, half_width=18,
+                         sheet='ogre_captain', ai='boss', boss_id='captain', summon=('soldier', 'soldier'),
+                         anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='captain_slam',
+                         slash=None, reach=C.CAPTAIN_REACH, label='OGRO-CAPITAO',
+                         ai_params=dict(attack_dist=62, wait=(0.4, 0.7), cooldown=(0.9, 1.4), patience=30)),
+    'minotaur_lord': dict(hero=False, boss=True, max_hp=C.MINO_LORD_MAX_HP, speed=C.MINO_LORD_SPEED, half_width=18,
+                          sheet='minotaur_lord', ai='boss', boss_id='minotaur_lord', summon=('goblin', 'goblin', 'kobold'),
+                          anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death', 'charge': 'attack',
+                                'dash': 'walk'}, charge_frame=2, primary='mino_lord_axe', slash=None, reach=(-16, 70),
+                          label='REI MINOTAURO', ai_params=dict(attack_dist=54, wait=(0.3, 0.5), cooldown=(0.8, 1.2)),
+                          charge=dict(cooldown=2.6, telegraph=0.55, speed=300.0, time=0.7, damage=18, rest=0.8)),
+    'black_knight': dict(hero=False, boss=True, max_hp=C.BLACK_KNIGHT_MAX_HP, speed=C.BLACK_KNIGHT_SPEED, half_width=11,
+                         sheet='black_knight', ai='boss', boss_id='black_knight', guard=True, turn_delay=0.3,
+                         summon=('archer', 'archer'), chain_chance=0.75,
+                         anim={'idle': 'guard', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='bk_1',
+                         slash=None, reach=(-14, 56), label='CAVALEIRO NEGRO',
+                         ai_params=dict(attack_dist=44, wait=(0.35, 0.6), cooldown=(0.7, 1.1), patience=26)),
     'orc': dict(hero=False, max_hp=C.ORC_MAX_HP, speed=C.ORC_SPEED, half_width=10, sheet='orc', ai='melee',
                 anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='orc_axe',
                 slash='axe_slash', reach=C.OGRE_REACH, label='ORC',
@@ -112,6 +129,18 @@ ATTACKS = {
     'shield_sword': dict(anim='attack', damage=C.DAMAGE, reach=C.KNIGHT_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                          slash='sword_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
                          wear=0.0, next=None),
+    'captain_slam': dict(anim='attack', damage=C.CAPTAIN_DAMAGE, reach=C.CAPTAIN_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
+                         slash=None, move_factor=0.6, knockback=C.KNOCKBACK * 2.0, guard_break=True, cooldown=0.0, wear=0.0,
+                         next=None),
+    'mino_lord_axe': dict(anim='attack', damage=C.MINO_LORD_DAMAGE, reach=(-16, 70), active=C.ACTIVE_FRAMES, slash_frame=3,
+                          slash=None, move_factor=0.8, knockback=C.KNOCKBACK * 1.8, guard_break=False, cooldown=0.0,
+                          wear=0.0, next=None),
+    'bk_1': dict(anim='attack', damage=C.BLACK_KNIGHT_DAMAGE[0], reach=(-14, 56), active=C.ACTIVE_FRAMES, slash_frame=3,
+                 slash=None, move_factor=0.8, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0, wear=0.0, next='bk_2'),
+    'bk_2': dict(anim='attack_2', damage=C.BLACK_KNIGHT_DAMAGE[1], reach=(-14, 56), active=C.ACTIVE_FRAMES, slash_frame=3,
+                 slash=None, move_factor=0.8, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0, wear=0.0, next='bk_3'),
+    'bk_3': dict(anim='attack_3', damage=C.BLACK_KNIGHT_DAMAGE[2], reach=(-14, 60), active=C.ACTIVE_FRAMES, slash_frame=3,
+                 slash=None, move_factor=0.8, knockback=C.KNOCKBACK * 1.6, guard_break=False, cooldown=0.0, wear=0.0, next=None),
     'orc_axe': dict(anim='attack', damage=C.DAMAGE, reach=C.OGRE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                     slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0, wear=0.0,
                     next=None),
@@ -176,7 +205,7 @@ class Fighter:
         self.armor = 0; self.armor_max = C.ARMOR_MAX if self.defn['hero'] else 0; self.weapon = None   # equipment (T13, T15); weapon = dict(id, durability)
         self.attack_id = self.defn['primary']                   # which ATTACKS entry the 'attack' state plays
         self.hit_set = []                                       # targets already hit by the current swing
-        self.charge_cd = 0.0; self.dash_t = 0.0; self.dash_hit = False
+        self.charge_cd = 0.0; self.dash_t = 0.0; self.dash_hit = False; self.summoned = False
         self.rehit_done = False; self.cd = {}                    # cd: attack id -> time it can be used again
         self.combo_next = None; self.chain = None               # queued next stroke / (time, id) just after a stroke ended
         self.ai_wait = None; self.ai_cooldown = 0.6             # enemy AI state (per fighter, so many enemies can coexist)
@@ -268,6 +297,7 @@ class World:
         self.max_attackers = C.MAX_ATTACKERS               # tokens (T26)
         self.stage = stage; self.next_enc = 0              # None = the endless mode; else a finite stage (T30)
         self.stage_clear = False; self.defeated = False
+        self.arena = None; self.boss = None; self.boss_dead = False     # boss arena (T32)
         self.queue = []                                    # enemies of fired encounters waiting for room (T36)
         self.diff = stage.difficulty(0.0) if stage is not None else None
         if stage is not None:                              # a path: starts at the left end, no automatic respawns
@@ -284,6 +314,7 @@ class World:
         self.loot_rng = random.Random(seed + 1000)         # separate stream: drops never disturb the AI's random sequence
         self.hero_timer = None
         self.cam_off = C.SCREEN_W / 2 - C.START_HERO_SCREEN_X     # hero starts on the left, camera glides to center
+        if stage is not None: self.cam_off = 0.0                    # stages: the camera clamps at the start instead
         self.shake = 0.0; self.time = 0.0
         self.events = []                                           # (name, kind) for the audio layer; main.py drains it
         self.stats = dict(kills=0, damage_dealt=0, damage_taken=0, gold_gained=0, revives=0)
@@ -292,10 +323,14 @@ class World:
     @property
     def theme_id(self): return self.stage.theme if self.stage is not None else 'village'
 
-    def cam_x(self):
-        x = self.hero.x - C.SCREEN_W / 2 + (0.0 if self.stage is not None else self.cam_off)
-        if self.stage is not None: x = max(0.0, min(self.stage.length - C.SCREEN_W + C.STAGE_END_MARGIN, x))   # locked at the ends
-        return x
+    def _cam_base(self):
+        st = self.stage
+        if st is None: return self.hero.x - C.SCREEN_W / 2
+        if self.arena is not None: return self.arena[0]                    # the arena is one fixed screen
+        return max(0.0, min(st.length - C.SCREEN_W + C.STAGE_END_MARGIN, self.hero.x - C.SCREEN_W / 2))
+
+    def cam_x(self): return self._cam_base() + self.cam_off
+
     def fighters(self): return (self.hero, *self.enemies)
 
     @property
@@ -503,29 +538,40 @@ class World:
         """Minotaur: a telegraphed charge in a straight line (a pose with the axe raised, then a dash), otherwise a
         heavy melee fighter. Jumping over it (feet above VERTICAL_REACH) dodges the dash. T25."""
         h = self.hero
+        cp = dict(cooldown=C.MINOTAUR_CHARGE_COOLDOWN, telegraph=C.MINOTAUR_TELEGRAPH, speed=C.MINOTAUR_DASH_SPEED,
+                  time=C.MINOTAUR_DASH_TIME, damage=C.MINOTAUR_DASH_DAMAGE, rest=C.MINOTAUR_REST, **o.defn.get('charge', {}))
         o.charge_cd = max(0.0, getattr(o, 'charge_cd', 0.0) - dt)
         if o.state == 'charge':                            # telegraph: standing still, axe raised, tracking nothing
             o.ai_wait -= dt
             if o.ai_wait <= 0:
-                o.set_state('dash'); o.dash_t = C.MINOTAUR_DASH_TIME; o.dash_hit = False
+                o.set_state('dash'); o.dash_t = cp['time']; o.dash_hit = False
             return
         if o.state == 'dash':
-            o.dash_t -= dt; o.x += o.facing * C.MINOTAUR_DASH_SPEED * dt
+            o.dash_t -= dt; o.x += o.facing * cp['speed'] * dt
+            if self.arena is not None: o.x = max(self.arena[0] + C.ARENA_WALL_MARGIN, min(self.arena[1] - C.ARENA_WALL_MARGIN, o.x))
             if (not o.dash_hit and h.state != 'dead' and h.invuln <= 0 and abs(h.x - o.x) <= o.hw + h.hw + 4
                     and abs(h.y - o.y) <= C.VERTICAL_REACH):
                 o.dash_hit = True
-                self._hit(o, h, at=dict(damage=C.MINOTAUR_DASH_DAMAGE, knockback=C.MINOTAUR_DASH_KNOCKBACK), src_x=o.x)
+                self._hit(o, h, at=dict(damage=cp['damage'], knockback=C.MINOTAUR_DASH_KNOCKBACK), src_x=o.x)
             if o.dash_t <= 0:
-                o.set_state('idle'); o.ai_cooldown = C.MINOTAUR_REST; o.token = False
+                o.set_state('idle'); o.ai_cooldown = cp['rest']; o.token = False
             return
         if o.can_act() and h.state != 'dead' and o.charge_cd <= 0 and o.ai_cooldown <= 0:
             d = abs(h.x - o.x)
             if C.MINOTAUR_CHARGE_MIN <= d <= C.MINOTAUR_CHARGE_MAX and abs(h.y - o.y) <= C.VERTICAL_REACH:
                 o.facing = 1 if h.x > o.x else -1
-                o.set_state('charge'); o.ai_wait = C.MINOTAUR_TELEGRAPH; o.charge_cd = C.MINOTAUR_CHARGE_COOLDOWN
+                o.set_state('charge'); o.ai_wait = cp['telegraph']; o.charge_cd = cp['cooldown']
                 o.token = False; self.events.append(('telegraph', o.kind))
                 return
         self._ai_melee(o, dt)
+
+    def _ai_boss(self, o, dt):
+        """Boss behaviours (T32): call reinforcements once at half life, then the fighting style of the boss id."""
+        if not o.summoned and o.hp <= o.max_hp * C.BOSS_SUMMON_AT and o.can_act():
+            o.summoned = True; o.set_state('idle'); o.ai_cooldown = 0.8
+            self._summon(o); return
+        if o.defn['boss_id'] == 'minotaur_lord': self._ai_charger(o, dt)
+        else: self._ai_melee(o, dt)
 
     def _ai_guard(self, o, dt): self._ai_melee(o, dt)          # shield bearer: melee plan, the guard is in _hit()
 
@@ -640,7 +686,7 @@ class World:
             tgt.set_state('dead'); tgt.invuln = 999.0
             self.events.append(('death', tgt.kind))
             if tgt is not self.hero: self.stats['kills'] += 1
-            if not tgt.is_hero: self._drop_loot(tgt.x); tgt.respawn_t = C.RESPAWN_DELAY
+            if not tgt.is_hero: self._drop_loot(tgt.x, boss=bool(tgt.defn.get('boss'))); tgt.respawn_t = C.RESPAWN_DELAY
             self.add_vfx('spirit', tgt.x, tgt.x > sx, delay=C.SPIRIT_DELAY, y=tgt.y)
             if tgt is self.hero: self.hero_deaths += 1; self.hero_timer = C.RESPAWN_DELAY; self.combo = 0   # D2: dies with the hero
             else: self.ogre_deaths += 1
@@ -756,8 +802,14 @@ class World:
         self.add_vfx('heal', f.x, f.facing < 0, y=f.y)
         self.events.append(('heal', f.kind))
 
-    def _drop_loot(self, x):
+    def _drop_loot(self, x, boss=False):
         r = self.loot_rng; items = []
+        if boss:                                                 # a boss always pays
+            items = [Pickup('potion', 0, C.POTION_HEAL) for _ in range(C.BOSS_LOOT_POTIONS)]
+            items.append(Pickup('coins', 0, r.randint(*C.BOSS_LOOT_COINS)))
+            for i, p in enumerate(items): p.x = x + (i - (len(items) - 1) / 2) * 16; self.pickups.append(p)
+            del self.pickups[:-C.PICKUP_MAX]
+            return
         if r.random() < C.POTION_DROP_CHANCE: items.append(Pickup('potion', 0, C.POTION_HEAL))
         mult = self.diff['loot_mult'] if self.diff else 1.0          # later parts of a stage pay more (T36)
         if r.random() < C.COIN_BAG_DROP_CHANCE: items.append(Pickup('coins', 0, int(round(r.randint(*C.COIN_BAG_COINS) * mult))))
@@ -801,6 +853,9 @@ class World:
                     if queued: self.start_attack(f, queued); continue              # chained: no gap between strokes
                     f.chain = (self.time, nxt)                                       # a click in the next 0.15 s still chains
                 f.token = False
+                if (not f.is_hero and was_attack and nxt and f.defn.get('chain_chance')
+                        and self.rng.random() < f.defn['chain_chance']):
+                    self.start_attack(f, nxt); continue                  # enemies with a combo (black knight)
                 if not f.is_hero:
                     if was_attack: f.ai_cooldown = self.rng.uniform(*f.ai_p['cooldown'])
                     else: f.ai_cooldown = 0.0; f.ai_wait = self.rng.uniform(*f.ai_p['retaliate'])
@@ -811,13 +866,20 @@ class World:
         st = self.stage
         if st is None: return
         h = self.hero
-        if h.state != 'dead': h.x = max(0.0, min(st.length, h.x))
+        lo, hi = (0.0, st.length) if self.arena is None else (self.arena[0] + C.ARENA_WALL_MARGIN, self.arena[1] - C.ARENA_RIGHT_WALL)
+        if h.state != 'dead': h.x = max(lo, min(hi, h.x))
         self.diff = d = st.difficulty(st.progress(h.x))
         self.max_attackers = d['max_attackers']
         while self.next_enc < len(st.encounters) and h.x >= st.trigger_x(st.encounters[self.next_enc]):
             self.queue.extend(st.encounters[self.next_enc]['enemies']); self.next_enc += 1
         alive = sum(1 for e in self.enemies if e.state != 'dead')
-        while self.queue and alive < d['max_alive']:
+        if st.boss and self.boss is None and not self.boss_dead and self.next_enc >= len(st.encounters) and not self.queue:
+            gate = st.length - C.SCREEN_W + C.ARENA_ENTER_MARGIN                # the last screen of the path is the arena
+            if h.x >= gate and h.state != 'dead': self._start_arena()
+        if self.boss is not None and self.boss.state == 'dead' and not self.boss_dead:
+            self.boss_dead = True; self.events.append(('boss_dead', self.boss.kind))
+            old = self.cam_x(); self.arena = None; self.cam_off = old - self._cam_base()   # the screen is released
+        while self.queue and alive < d['max_alive'] and self.arena is None:
             kind, elite = self.queue.pop(0)
             if elite is None and d['elite_frac'] > 0 and self.spawn_rng.random() < d['elite_frac']:
                 elite = self.spawn_rng.choice(sorted(ELITE_MODS))
@@ -825,8 +887,27 @@ class World:
             e = Fighter(kind, x, -1, elite=elite); e.ai_cooldown = 0.6
             self.enemies.append(e); self.events.append(('spawn', kind)); alive += 1
         if (not self.stage_clear and self.next_enc >= len(st.encounters) and not self.queue and h.state != 'dead'
+                and (not st.boss or self.boss_dead)
                 and not any(e.state != 'dead' for e in self.enemies) and h.x >= st.length - C.STAGE_FINISH_DIST):
             self.stage_clear = True; self.events.append(('stage_clear', 'knight'))
+
+    def _start_arena(self):
+        """The boss fight: the last screen of the path closes (camera eases to it), the boss walks in from the right."""
+        st = self.stage; old = self.cam_x()
+        self.arena = (st.length - C.SCREEN_W, st.length)
+        self.cam_off = old - self._cam_base()
+        b = Fighter(st.boss, self.arena[1] - 30, -1); b.ai_cooldown = 1.0
+        self.enemies.append(b); self.boss = b; self.events.append(('boss_start', st.boss))
+
+    def _summon(self, boss):
+        """Reinforcements around a boss that crossed half of its life (once)."""
+        lo = self.arena[0] + 40 if self.arena else boss.x - 200
+        hi = self.arena[1] - 40 if self.arena else boss.x + 200
+        for i, kind in enumerate(boss.defn['summon']):
+            x = max(lo, min(hi, boss.x + (-1 if i % 2 == 0 else 1) * (70 + 30 * (i // 2))))
+            e = Fighter(kind, x, boss.facing); e.ai_cooldown = 0.8
+            self.enemies.append(e); self.events.append(('spawn', kind))
+        self.events.append(('summon', boss.kind))
 
     def _respawns(self, dt):
         if self.hero_timer is not None:

@@ -40,18 +40,19 @@ SOLDIER = dict(
     GOLD=C(196, 156, 70), LEATH=C(92, 62, 44), LEATH_D=C(56, 38, 28))
 
 
-def write_sheet(out, name, rows, render, pal_module=SR, pal=None, post=None, extra_meta=None):
-    """rows = [(anim name, pose fn(i) -> pose dict, fps)] ; render(pose) -> 64x64 image."""
-    sheet = Image.new('RGBA', (F * 6, F * len(rows)), (0, 0, 0, 0))
-    atlas = {'frames': [], 'animations': {}, 'meta': dict({'image': f'{name}_spritesheet.png', 'frame_size': [F, F],
-                                                         'facing': 'right'}, **(extra_meta or {}))}
+def write_sheet(out, name, rows, render, pal_module=SR, pal=None, post=None, extra_meta=None, fs=F):
+    """rows = [(anim name, pose fn(i) -> pose dict, fps)] ; render(pose) -> fs x fs image (64 normally, 96 for bosses)."""
+    sheet = Image.new('RGBA', (fs * 6, fs * len(rows)), (0, 0, 0, 0))
+    meta = {'image': f'{name}_spritesheet.png', 'frame_size': [fs, fs], 'facing': 'right'}
+    if fs != F: meta.update(anchor_x=48, ground_row=90)          # hip column / feet row inside the big frame
+    atlas = {'frames': [], 'animations': {}, 'meta': dict(meta, **(extra_meta or {}))}
     with palette(pal_module, **(pal or {})):
         for r, (an, fn, fps) in enumerate(rows):
             for i in range(6):
                 img = render(fn(i))
                 if post: img = post(img)
-                sheet.alpha_composite(img, (i * F, r * F))
-                atlas['frames'].append({'filename': f'{an}_{i}', 'frame': {'x': i * F, 'y': r * F, 'w': F, 'h': F}})
+                sheet.alpha_composite(img, (i * fs, r * fs))
+                atlas['frames'].append({'filename': f'{an}_{i}', 'frame': {'x': i * fs, 'y': r * fs, 'w': fs, 'h': fs}})
             atlas['animations'][an] = {'frames': [f'{an}_{i}' for i in range(6)], 'fps': fps,
                                        'loop': not an.startswith(('attack', 'hurt', 'death'))}
     sheet.save(f'{out}/{name}_spritesheet.png')
@@ -155,6 +156,65 @@ def minotaur_head():
     return head
 
 
+def big(k):
+    """Post-process for bosses: scale a 64x64 frame by k about hip column 30 / feet row 58 into a 96x96 frame whose hip
+    column is 48 and feet row 90 (the sheet meta carries those anchors)."""
+    def post(img):
+        kk = k
+        bb = img.getbbox()
+        if bb:                                              # a frame that would cross the 96x96 edge is scaled down to fit
+            x0, y0, x1, y1 = bb; lim = [k, 89.0 / max(1, 58 - y0)]
+            if x1 > 30: lim.append(45.0 / (x1 - 30))
+            if x0 < 30: lim.append(46.0 / (30 - x0))
+            if y1 > 59: lim.append(4.0 / (y1 - 58))
+            kk = min(lim)
+        n = int(round(F * kk)); b = img.resize((n, n), Image.NEAREST)
+        out = Image.new('RGBA', (96, 96), (0, 0, 0, 0))
+        out.paste(b, (int(round(48 - 30 * kk)), int(round(90 - 58 * kk))), b)
+        return out
+    return post
+
+
+def captain_head():
+    """Ogre head + a spiked iron cap (the ogre captain)."""
+    orig = OG.o_head
+    def head(c, eye='open'):
+        base = orig(c, eye); x, y = SR.rd(c)
+        def cap(d):
+            d.polygon([(x - 5, y - 4), (x - 4, y - 9), (x + 4, y - 9), (x + 6, y - 3), (x + 2, y - 5)], fill=C(128, 134, 154))
+            d.polygon([(x - 4, y - 9), (x, y - 12), (x + 4, y - 9)], fill=C(188, 196, 214))
+            d.line([(x - 4, y - 7), (x + 4, y - 7)], fill=C(80, 86, 104))
+            d.point((x - 6, y - 5), fill=C(188, 196, 214)); d.point((x + 7, y - 4), fill=C(188, 196, 214))
+        base.alpha_composite(SR.layer(cap))
+        return base
+    return head
+
+
+CAPTAIN = dict(SK=dict(shade=C(78, 44, 36), base=C(150, 84, 62), hl=C(214, 148, 112)),
+               SKF=dict(shade=C(52, 30, 26), base=C(108, 60, 46), hl=C(150, 96, 74)),
+               FUR=C(90, 40, 40), FUR_D=C(58, 26, 28), EYE=C(255, 230, 80), I1=C(70, 70, 86), I2=C(150, 156, 176), I3=C(226, 232, 246))
+MINO_LORD = dict(SK=dict(shade=C(52, 22, 22), base=C(108, 46, 40), hl=C(164, 92, 76)),
+                 SKF=dict(shade=C(34, 14, 16), base=C(76, 32, 30), hl=C(110, 60, 52)),
+                 FUR=C(40, 28, 28), FUR_D=C(26, 18, 20), EYE=C(255, 60, 40), I1=C(60, 50, 66), I2=C(132, 120, 150), I3=C(214, 206, 230))
+BLACK_KNIGHT = dict(
+    PN=dict(shade=C(20, 20, 26), base=C(50, 50, 62), hl=C(104, 104, 128)),
+    PF=dict(shade=C(12, 12, 18), base=C(34, 34, 44), hl=C(70, 70, 90)),
+    RED=C(170, 24, 48), RED_D=C(100, 14, 30), GOLD=C(168, 132, 60), LEATH=C(60, 40, 30), LEATH_D=C(36, 24, 20),
+    BLADE=C(176, 178, 200), BLADE_SH=C(116, 118, 146))
+
+
+def black_knight_rows():
+    def sh(fn, hand=None):
+        def g(i):
+            p = dict(fn(i), shield=True)
+            if hand: p['handF'] = hand
+            return p
+        return g
+    return [('idle', sh(KG.idle, (7, 3)), 6), ('walk', sh(KG.walk, (7, 3)), 10), ('attack', sh(KG.atk_sword), 12),
+            ('hurt', sh(KG.hurt), 10), ('death', sh(KG.death), 8), ('attack_2', sh(KG.atk_sword_2), 12),
+            ('attack_3', sh(KG.atk_sword_3), 12), ('guard', sh(KG.idle, (9, 0)), 6)]
+
+
 def build(out):
     # T22 soldier: the knight with an enemy palette; stroke 1 of the sword is its attack (frames 3-4 hit)
     write_sheet(out, 'soldier', human_rows(KG.atk_sword), SR.render, pal=SOLDIER)
@@ -167,6 +227,12 @@ def build(out):
     write_sheet(out, 'kobold', ogre_rows(), OG.o_render, pal_module=OG, pal=KOBOLD, post=scaler(0.8))
     write_sheet(out, 'minotaur', ogre_rows(), OG.o_render, pal_module=OG, pal=dict(MINOTAUR, o_head=minotaur_head()),
                 post=scaler(1.1))
+    # T32 bosses: 96x96 frames (1.5x), hip column 48 / feet row 90 (meta anchor_x / ground_row)
+    write_sheet(out, 'ogre_captain', ogre_rows(), OG.o_render, pal_module=OG, pal=dict(CAPTAIN, o_head=captain_head()),
+                post=big(1.5), fs=96)
+    write_sheet(out, 'minotaur_lord', ogre_rows(), OG.o_render, pal_module=OG, pal=dict(MINO_LORD, o_head=minotaur_head()),
+                post=big(1.45), fs=96)
+    write_sheet(out, 'black_knight', black_knight_rows(), SR.render, pal=BLACK_KNIGHT, post=big(1.3), fs=96)
     # T24 shield knight: shield in the free hand + a guard row appended at the end
     write_sheet(out, 'shieldman', shield_rows(), SR.render, pal=SHIELDMAN)
     write_sheet(out, 'archer', human_rows(KG.atk_bow, hold='bow'), SR.render, pal=ARCHER)

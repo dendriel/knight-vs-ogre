@@ -69,20 +69,20 @@ PROP_PLACE = {'medieval_house': (0, 160), 'well': (8, 56), 'tree': (0, 112), 'te
 
 # ---- the campaign (three stages; T36 fills in the difficulty curve, T32-T35 the bosses and the themes) ---------------
 STAGES = {
-    'stage1': Stage('stage1', 'FASE 1 - PLANÍCIE', 'plain', 3000, [
+    'stage1': Stage('stage1', 'FASE 1 - PLANÍCIE', 'plain', 3600, [
         enc(0.10, 'soldier'), enc(0.25, 'ogre'), enc(0.45, 'soldier', 'ogre'), enc(0.60, 'spearman', 'soldier'),
-        enc(0.80, 'archer', 'spearman', 'ogre'), enc(0.92, ('soldier', 'veteran'), 'spearman', 'archer')],
-        difficulty=((2, 1), (3, 2), (3, 2)), elites=(0.75, 0.15, 0.25), loot=(1.0, 1.4)),
-    'stage2': Stage('stage2', 'FASE 2 - FLORESTA', 'village', 3400, [
+        enc(0.78, 'archer', 'spearman', 'ogre'), enc(0.85, ('soldier', 'veteran'), 'spearman', 'archer')],
+        difficulty=((2, 1), (3, 2), (3, 2)), elites=(0.75, 0.15, 0.25), loot=(1.0, 1.4), boss='ogre_captain'),
+    'stage2': Stage('stage2', 'FASE 2 - FLORESTA', 'village', 4000, [
         enc(0.08, 'goblin', 'goblin'), enc(0.22, 'goblin', 'kobold', 'goblin'), enc(0.38, 'shieldman', 'goblin'),
-        enc(0.55, 'goblin', 'goblin', 'kobold', 'orc'), enc(0.78, 'shieldman', 'archer', 'kobold'),
-        enc(0.88, ('goblin', 'agile'), ('goblin', 'agile'), 'orc', 'kobold', 'archer')],
-        difficulty=((3, 2), (4, 2), (5, 3)), elites=(0.5, 0.15, 0.3), loot=(1.3, 1.8)),
-    'stage3': Stage('stage3', 'FASE 3 - CIDADE', 'village', 3800, [
+        enc(0.55, 'goblin', 'goblin', 'kobold', 'orc'), enc(0.77, 'shieldman', 'archer', 'kobold'),
+        enc(0.86, ('goblin', 'agile'), ('goblin', 'agile'), 'orc', 'kobold', 'archer')],
+        difficulty=((3, 2), (4, 2), (5, 3)), elites=(0.5, 0.15, 0.3), loot=(1.3, 1.8), boss='minotaur_lord'),
+    'stage3': Stage('stage3', 'FASE 3 - CIDADE', 'village', 4400, [
         enc(0.08, 'shieldman', 'spearman', 'soldier'), enc(0.22, 'orc', 'archer', 'archer'), enc(0.40, 'minotaur'),
         enc(0.58, 'shieldman', 'spearman', 'orc', 'archer', ('soldier', 'veteran')),
         enc(0.78, ('orc', 'brute'), 'shieldman', 'archer', 'archer', 'spearman'),
-        enc(0.90, ('spearman', 'veteran'), ('shieldman', 'veteran'), ('orc', 'brute'), 'archer', 'archer', 'minotaur')],
-        difficulty=((4, 2), (5, 3), (6, 3)), elites=(0.3, 0.2, 0.45), loot=(1.6, 2.2)),
+        enc(0.87, ('spearman', 'veteran'), ('shieldman', 'veteran'), ('orc', 'brute'), 'archer', 'archer', 'minotaur')],
+        difficulty=((4, 2), (5, 3), (6, 3)), elites=(0.3, 0.2, 0.45), loot=(1.6, 2.2), boss='black_knight'),
 }
 CAMPAIGN = ['stage1', 'stage2', 'stage3']

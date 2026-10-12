@@ -115,7 +115,7 @@ print('7 ok: defeat screen (revive costs gold, restart restores the stage-start 
 
 # 8) stage clear -> summary with the stage numbers -> Continue carries gold / potions / weapon to the next stage -> the end
 def finish(g):
-    w = g.world; w.next_enc = len(w.stage.encounters); w.queue = []; w.enemies = []; w.hero.x = w.stage.length - 5
+    w = g.world; w.next_enc = len(w.stage.encounters); w.queue = []; w.enemies = []; w.boss_dead = True; w.hero.x = w.stage.length - 5
     step(g, 3)
 g = main.Game('stage1'); step(g, 3)
 g.world.gold = 77; g.world.potions = 4; g.world.hero.weapon = dict(id='axe', durability=55.0)

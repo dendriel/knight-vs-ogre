@@ -71,7 +71,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 - [x] T37 derrota: renascer por 100 de ouro ou reiniciar a fase
 - [x] T31 tela de conclusao com estatisticas
 - [ ] T33 (feito) / T34 / T35 temas: planicie, floresta inglesa, cidade **(arte)**
-- [ ] T32 boss e arena no fim de cada fase **(arte)**
+- [x] T32 boss e arena no fim de cada fase **(arte)**
 
 ### Classes
 - [ ] T40 classes | T41 ataque secundario (botao direito; faca do cavaleiro) | T42 arqueiro | T45 selecao de classe

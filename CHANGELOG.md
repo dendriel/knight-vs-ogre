@@ -27,6 +27,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T37: **tela de derrota** (só em fase): *Renascer aqui — 100 ouro* (`REVIVE_COST`; desabilitado com aviso se faltar ouro) levanta o herói onde caiu com vida cheia, `REVIVE_INVULN` 2 s, barra de combo zerada; inimigos, fila e encontros mantêm o estado e poções/arma/armadura são mantidas (D10). *Reiniciar a fase* volta ao **snapshot do início da fase** (ouro, poções, arma, armadura da entrada; D9), o mesmo vale para *Reiniciar fase* do Esc. *Menu inicial* volta ao título.
 - T31: **tela de conclusão** da fase: monstros derrotados, dano causado, dano recebido, ouro adquirido (só desta fase), renascimentos e tempo; *Continuar* leva o estado da run (ouro, poções, arma, armadura — D6) para a fase seguinte; depois da fase 3 aparece "FIM DA DEMO" com volta ao menu inicial.
 - T33: **tema Planície** na fase 1: céu claro, colinas verdes, castelo distante com fumaça no parallax, chão de grama e terra; cenário com tendas listradas, estandartes, paliçadas, espadas fincadas, árvore seca, carroça de feno e fogueira.
+- T32: **chefe e arena** no fim de cada fase: depois do último encontro, ao entrar na última tela do percurso (a `ARENA_ENTER_MARGIN` 30 px) a tela trava (a câmera desliza até ela; paredes à esquerda e à direita) e o chefe entra pela direita; a barra de vida dele aparece embaixo. Ao morrer ele solta 2 poções + bolsa de `BOSS_LOOT_COINS` 30–50 ouro, a tela é liberada, aparece a seta >>> e a fase só termina quando o herói chega ao fim. Fase 1: **Ogro-Capitão** (`CAPTAIN_MAX_HP` 90, golpe largo de 15 que ignora guarda; chama 2 soldados com metade da vida). Fase 2: **Rei Minotauro** (120 de vida, investida mais rápida e frequente, chama goblins e kobold). Fase 3: **Cavaleiro Negro** (110 de vida, combo próprio de 3 golpes, guarda com escudo, chama 2 arqueiros). Comprimentos das fases: 3600 / 4000 / 4400 px.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -46,6 +47,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T24: camada `shield` no `sprite_rig.py` (`shield=True` na pose), `shieldman_spritesheet` com linha `guard` e efeito `block_spark`.
 - T25: sheets `orc`, `goblin`, `kobold`, `minotaur` (recolor/escala do rig do ogro, chifres do minotauro) em `enemy_gen.py`; quadros que estourariam a moldura são reduzidos para caber.
 - T33: novos props `tent`, `banner`, `palisade`, `planted_swords`, `dead_tree`, `cart`, `campfire` e tile `grass_tile` (`art_tools/theme_gen.py`).
+- T32: `ogre_captain`, `minotaur_lord` e `black_knight` (quadros 96x96, escala 1,5 / 1,45 / 1,3 do rig; elmo com espinhos, chifres grandes, armadura negra com escudo).
 
 ### Contrato de arte
 - T11: `knight_spritesheet` ganha as linhas 11 (`attack_sword_2`) e 12 (`attack_sword_3`), frames de golpe 3–4; `vfx_spritesheet` ganha as linhas 6 (`sword_slash_2`) e 7 (`sword_slash_3`). Linhas anteriores inalteradas pixel a pixel.
@@ -56,6 +58,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T21: `spearman_spritesheet` = idle(6), walk(10), attack(12), hurt(10), death(8); `render` aceita `weapon='spear'` / `hold='spear'`.
 - T24: `shieldman_spritesheet` = idle(6, não usado), walk(10), attack(12), hurt(10), death(8) + `guard`(6) no final (o jogo mostra `guard` como estado parado); `vfx_spritesheet` ganha a linha 10 (`block_spark`).
 - T25: quatro sheets novas no contrato do ogro (idle, walk, attack, hurt, death).
+- T32: sheets de chefe com **quadros de 96x96**; o json traz `meta.frame_size`, `anchor_x` (48) e `ground_row` (90) e a View desenha por essas âncoras (os de 64x64 seguem 30 / 58). O cavaleiro negro tem `attack_2`, `attack_3` e `guard` no final.
 
 ### Áudio
 - T10: pegar poção reaproveita o SFX `coin_pickup`; beber usa o `heal` existente (evento `potion`).
@@ -90,6 +93,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T37: `World.revive()/can_revive()/export_run()/apply_run()`, `DefeatScene`, `Game.run/run_start/start(stage, run)/to_title()`; `stats['revives']`. Teste 42 + cena 7.
 - T31: `SummaryScene`, `EndScene`, `Game.after_summary()` (a loja da T50 entra aqui); cena 8.
 - T33: `THEMES` (cores, parallax, chão, tabelas de props por paridade de fatia) e `PROP_PLACE` em `stages.py`; `slot_props(slot, seed, theme)` e a View montam tudo a partir do tema (o tema `village` reproduz o sorteio original); `World.theme_id`. Decoração de parallax `castle`.
+- T32: `World.arena/boss/boss_dead`, `_start_arena()`, `_summon()`, IA `boss` (`boss_id`: captain / minotaur_lord / black_knight), `defn['charge']` sobrescreve os parâmetros da investida, `chain_chance` encadeia golpes de inimigos, `_drop_loot(boss=True)`; câmera de fase = base (seguir ou arena) + `cam_off` que desliza. Teste 43.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

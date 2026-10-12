@@ -15,6 +15,7 @@ class View:
     def __init__(self, assets_dir, timing):
         self.timing = timing; self.assets = assets_dir
         self.frames = {}           # (sheet, anim, flipped) -> [6 surfaces]
+        self.meta = {}             # sheet -> frame size and anchors (64x64 normally; bosses 96x96)
         for fn in sorted(os.listdir(assets_dir)):                  # every *_spritesheet.png (characters, weapons, vfx)
             if fn.endswith('_spritesheet.png'): self._load_sheet(fn[:-len('_spritesheet.png')])
         load = lambda n: pygame.image.load(os.path.join(assets_dir, n + '.png')).convert_alpha()
@@ -32,9 +33,13 @@ class View:
     # ------------------------------------------------------------------ assets
     def _load_sheet(self, sheet):
         img = pygame.image.load(os.path.join(self.assets, f'{sheet}_spritesheet.png')).convert_alpha()
-        with open(os.path.join(self.assets, f'{sheet}_spritesheet.json')) as f: anims = list(json.load(f)['animations'])
+        with open(os.path.join(self.assets, f'{sheet}_spritesheet.json')) as f:
+            meta = json.load(f); anims = list(meta['animations'])
+        fs = meta['meta'].get('frame_size', [64, 64])[0]                  # 64 normally, 96 for the bosses
+        ax = meta['meta'].get('anchor_x', C.ANCHOR_X); gr = meta['meta'].get('ground_row', 58)
+        self.meta[sheet] = dict(fs=fs, ax=ax, ax_flip=fs - 1 - ax, gr=gr)
         for r, name in enumerate(anims):
-            row = [img.subsurface((i * 64, r * 64, 64, 64)).copy() for i in range(6)]
+            row = [img.subsurface((i * fs, r * fs, fs, fs)).copy() for i in range(6)]
             self.frames[(sheet, name, False)] = row
             self.frames[(sheet, name, True)] = [pygame.transform.flip(s, True, False) for s in row]
 
@@ -91,14 +96,15 @@ class View:
 
     # ------------------------------------------------------------------ drawing
     def blit_char(self, surf, sheet, anim, idx, wx, cx, flip, oy=0, tint=None):
-        left = int(round(wx - cx)) - (C.ANCHOR_X_FLIP if flip else C.ANCHOR_X)
+        m = self.meta[sheet]
+        left = int(round(wx - cx)) - (m['ax_flip'] if flip else m['ax'])
         img = self.frames[(sheet, anim, flip)][idx]
         if tint:                                              # elite variants: colour multiplied over the sprite (cached)
             key = (sheet, anim, flip, idx, tint)
             if key not in self.tinted:
                 t = img.copy(); t.fill(tint, special_flags=pygame.BLEND_RGB_MULT); self.tinted[key] = t
             img = self.tinted[key]
-        surf.blit(img, (left, C.GROUND_Y - 60 + oy))
+        surf.blit(img, (left, C.GROUND_Y - 2 - m['gr'] + oy))
 
     def _strip(self, surf, strip, parallax, cx, y):
         off = -int(cx * parallax) % STRIP_W
@@ -245,6 +251,13 @@ class View:
             self._small_bar(surf, x, 18, w, 4, frac, (240, 200, 90))
             for enc in st.encounters:                            # ticks: encounters still to come
                 tx = x + int(w * enc['p']); surf.fill((255, 255, 255), (tx, 17, 1, 1))
+        b = world.boss
+        if b is not None and not world.boss_dead:                 # boss life bar, bottom centre
+            w = 240; x = (C.SCREEN_W - w) // 2
+            self.center(surf, b.defn['label'], C.SCREEN_H - 40, (255, 200, 170), self.font_big)
+            self._small_bar(surf, x, C.SCREEN_H - 22, w, 8, b.hp / b.max_hp, (210, 60, 60))
+        if world.boss_dead and not world.stage_clear and int(t * 3) % 2 == 0:   # the way on is open
+            self._text(surf, '>>>', C.SCREEN_W - 40, C.SCREEN_H // 2 - 30, (255, 236, 120), self.font_big)
         if t < 8:
             self._center(surf, 'SETAS ou A D: andar   ESPACO: pular   MOUSE ESQ: atacar   ESC: menu', C.SCREEN_H - 14)
 

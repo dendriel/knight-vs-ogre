@@ -12,6 +12,28 @@ ANCHOR_X_FLIP = 33
 HERO_MAX_HP = 100
 OGRE_MAX_HP = 30                   # 3 hits
 MAX_HP = HERO_MAX_HP               # (kept for old code/tests)
+CAPTAIN_MAX_HP = 90                # 3x an ogre
+CAPTAIN_SPEED = 44.0
+CAPTAIN_DAMAGE = 15                # a wide slam
+CAPTAIN_REACH = (-20, 92)
+MINO_LORD_MAX_HP = 120
+MINO_LORD_SPEED = 66.0
+MINO_LORD_DAMAGE = 15
+BLACK_KNIGHT_MAX_HP = 110
+BLACK_KNIGHT_SPEED = 54.0
+BLACK_KNIGHT_DAMAGE = (10, 10, 15) # his own three-stroke combo
+BOSS_SUMMON_AT = 0.5               # fraction of life at which a boss calls reinforcements (once)
+CAPTAIN_MAX_HP = 90                # 3x an ogre
+CAPTAIN_SPEED = 44.0
+CAPTAIN_DAMAGE = 15                # a wide slam
+CAPTAIN_REACH = (-20, 92)
+MINO_LORD_MAX_HP = 120
+MINO_LORD_SPEED = 66.0
+MINO_LORD_DAMAGE = 15
+BLACK_KNIGHT_MAX_HP = 110
+BLACK_KNIGHT_SPEED = 54.0
+BLACK_KNIGHT_DAMAGE = (10, 10, 15) # his own three-stroke combo
+BOSS_SUMMON_AT = 0.5               # fraction of life at which a boss calls reinforcements (once)
 ORC_MAX_HP = 40                    # 4 strokes: an ogre with more teeth
 ORC_SPEED = 56.0
 ORC_WAIT = (0.3, 0.55)
@@ -98,6 +120,10 @@ ORC_WALK_ANIM_SPEED = 1.35           # proportional to the move speeds below (og
 GOBLIN_WALK_ANIM_SPEED = 2.8
 KOBOLD_WALK_ANIM_SPEED = 2.0
 MINOTAUR_WALK_ANIM_SPEED = 1.5
+CAPTAIN_ATTACK_ANIM_SPEED = 1.1      # the ogre captain's slam is slow and heavy (row fps 10)
+BOSS_WALK_ANIM_SPEED = 1.1
+CAPTAIN_ATTACK_ANIM_SPEED = 1.1      # the ogre captain's slam is slow and heavy (row fps 10)
+BOSS_WALK_ANIM_SPEED = 1.1
 ARCHER_WALK_ANIM_SPEED = 1.2
 ARCHER_ATTACK_ANIM_SPEED = 1.1        # draw and release (row fps 10): the arrow leaves on frame 4
 SPEAR_WALK_ANIM_SPEED = 1.25         # spearman walk cycle, proportional to SPEARMAN_SPEED (52)
@@ -115,6 +141,12 @@ ANIM_SPEED = {
     'archer': {'attack': ARCHER_ATTACK_ANIM_SPEED, 'walk': ARCHER_WALK_ANIM_SPEED},
     'shieldman': {'attack': SOLDIER_ATTACK_ANIM_SPEED, 'walk': SHIELD_WALK_ANIM_SPEED},
     'orc': {'attack': ATTACK_ANIM_SPEED, 'walk': ORC_WALK_ANIM_SPEED},
+    'ogre_captain': {'attack': CAPTAIN_ATTACK_ANIM_SPEED, 'walk': BOSS_WALK_ANIM_SPEED},
+    'minotaur_lord': {'attack': 1.4, 'walk': 1.6},
+    'black_knight': {'attack': 1.6, 'attack_2': 2.2, 'attack_3': 2.4, 'walk': 1.25},
+    'ogre_captain': {'attack': CAPTAIN_ATTACK_ANIM_SPEED, 'walk': BOSS_WALK_ANIM_SPEED},
+    'minotaur_lord': {'attack': 1.4, 'walk': 1.6},
+    'black_knight': {'attack': 1.6, 'attack_2': 2.2, 'attack_3': 2.4, 'walk': 1.25},
     'goblin': {'attack': 1.8, 'walk': GOBLIN_WALK_ANIM_SPEED},
     'kobold': {'attack': 1.3, 'walk': KOBOLD_WALK_ANIM_SPEED},
     'minotaur': {'attack': 1.35, 'walk': MINOTAUR_WALK_ANIM_SPEED},
@@ -213,6 +245,20 @@ ENDLESS_ELITE_FROM = 8             # kills from which new enemies may be elites.
 ENDLESS_ELITE_CHANCE = 0.25        # ...with this chance
 ENDLESS_CROWD_EVERY = 5            # one more simultaneous enemy every N kills (up to ENDLESS_CROWD_MAX)
 ENDLESS_CROWD_MAX = 3
+
+# ---- boss arena (T32) ---------------------------------------------------------------------
+ARENA_ENTER_MARGIN = 30            # the arena (the last screen of the path) closes when the hero is this far into it
+ARENA_WALL_MARGIN = 10             # px of wall at the left side of the arena
+ARENA_RIGHT_WALL = 50              # ...and at the right: the exit line (STAGE_FINISH_DIST from the end) stays beyond the wall
+BOSS_LOOT_POTIONS = 2              # a boss always drops this many potions...
+BOSS_LOOT_COINS = (30, 50)         # ...and a bag with this much gold
+
+# ---- boss arena (T32) ---------------------------------------------------------------------
+ARENA_ENTER_MARGIN = 30            # the arena (the last screen of the path) closes when the hero is this far into it
+ARENA_WALL_MARGIN = 10             # px of wall at the left side of the arena
+ARENA_RIGHT_WALL = 50              # ...and at the right: the exit line (STAGE_FINISH_DIST from the end) stays beyond the wall
+BOSS_LOOT_POTIONS = 2              # a boss always drops this many potions...
+BOSS_LOOT_COINS = (30, 50)         # ...and a bag with this much gold
 
 # ---- stages (T30) -------------------------------------------------------------------------
 STAGE_END_MARGIN = 40              # px of scenery shown past the end of the path when the camera is locked at the end

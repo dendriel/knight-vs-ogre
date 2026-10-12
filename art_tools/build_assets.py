@@ -16,6 +16,8 @@ SHEETS = ['knight_spritesheet.png', 'knight_spritesheet.json', 'knight_axe_sprit
           'knight_xbow_spritesheet.json', 'soldier_spritesheet.png', 'soldier_spritesheet.json', 'spearman_spritesheet.png',
           'spearman_spritesheet.json', 'archer_spritesheet.png', 'archer_spritesheet.json', 'shieldman_spritesheet.png',
           'shieldman_spritesheet.json',
+          'ogre_captain_spritesheet.png', 'ogre_captain_spritesheet.json', 'minotaur_lord_spritesheet.png',
+          'minotaur_lord_spritesheet.json', 'black_knight_spritesheet.png', 'black_knight_spritesheet.json',
           'orc_spritesheet.png', 'orc_spritesheet.json', 'goblin_spritesheet.png', 'goblin_spritesheet.json',
           'kobold_spritesheet.png', 'kobold_spritesheet.json', 'minotaur_spritesheet.png', 'minotaur_spritesheet.json', 'ogre_spritesheet.png', 'ogre_spritesheet.json',
           'vfx_spritesheet.png', 'vfx_spritesheet.json']

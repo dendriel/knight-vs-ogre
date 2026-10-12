@@ -1,4 +1,4 @@
-import os, sys
+import os, random, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from game import config as C
 from game.logic import World, Inputs, load_timing, Fighter
@@ -817,5 +817,53 @@ w.enemies[0].ai_cooldown = 0; run(w, 1.0, Inputs()); assert w.hero.hp == w.hero.
 # the run state travels (D6): export / apply
 w2 = World(T, stage=st); w2.apply_run(w.export_run()); assert w2.gold == w.gold and w2.potions == 3 and w2.hero.weapon == w.hero.weapon
 print('42 ok: paid revive (100 gold, same spot, 2 s invulnerable, items kept) + run state export / apply')
+
+# 43) T32: boss + arena: the last screen closes after the last encounter, the boss enters, the camera is released and
+#     the way opens only when it dies; summons at half life; boss loot; per-boss behaviours
+for sid in CAMPAIGN:                                                                  # every encounter is before the arena gate
+    s = STAGES[sid]; gate_p = s.progress(s.length - C.SCREEN_W + C.ARENA_ENTER_MARGIN)
+    assert s.boss in FIGHTER_DEFS and FIGHTER_DEFS[s.boss].get('boss') and max(e['p'] for e in s.encounters) < gate_p, sid
+st = Stage('b', 'BOSS', 'village', 1500, [enc(0.2, 'goblin')], boss='ogre_captain')
+w = World(T, stage=st); w.hero.invuln = 99
+gate = st.length - C.SCREEN_W + C.ARENA_ENTER_MARGIN
+w.hero.x = gate + 5; w.update(DT, Inputs()); assert w.arena is None and w.boss is None          # the encounter has not fired yet
+w.hero.x = st.trigger_x(st.encounters[0]) + 1; w.update(DT, Inputs())
+for e in w.enemies: e.invuln = 0; e.hp = 1; w._hit(w.hero, e)
+run(w, C.RESPAWN_DELAY + 0.2, Inputs()); w.hero.invuln = 99
+w.hero.x = gate - 20; w.update(DT, Inputs()); assert w.arena is None                            # not at the gate yet
+w.hero.x = gate + 5; cam0 = w.cam_x(); w.update(DT, Inputs())
+assert w.arena == (st.length - C.SCREEN_W, st.length) and w.boss is not None and w.boss.kind == 'ogre_captain'
+assert abs(w.cam_x() - cam0) < 20, 'the camera does not jump when the arena closes (it glides)'
+run(w, 3.0, Inputs()); assert abs(w.cam_x() - w.arena[0]) < 1.5, w.cam_x()                      # eased to the fixed screen
+w.hero.x = 0.0; w.update(DT, Inputs()); assert w.hero.x == w.arena[0] + C.ARENA_WALL_MARGIN      # walls
+w.hero.x = 99999.0; w.update(DT, Inputs()); assert w.hero.x == w.arena[1] - C.ARENA_RIGHT_WALL
+assert not w.stage_clear
+# the captain calls two soldiers when at half life (once)
+b = w.boss; n0 = len(w.enemies); b.hp = int(b.max_hp * 0.5); b.ai_cooldown = 99
+w.update(DT, Inputs()); assert b.summoned and sorted(e.kind for e in w.enemies[n0:]) == ['soldier', 'soldier'] and ('summon', 'ogre_captain') in w.events
+w.update(DT, Inputs()); assert len(w.enemies) == n0 + 2
+# killing the boss releases the screen, drops guaranteed loot, and the stage can finish only after
+for e in list(w.enemies):
+    if e is not b: e.invuln = 0; e.hp = 1; w._hit(w.hero, e)
+b.invuln = 0; b.hp = 1; w.pickups.clear(); w._hit(w.hero, b)
+assert sum(1 for p in w.pickups if p.kind == 'potion') == C.BOSS_LOOT_POTIONS and any(p.kind == 'coins' and p.amount >= C.BOSS_LOOT_COINS[0] for p in w.pickups)
+w.hero.hp = 100; w.update(DT, Inputs()); assert w.boss_dead and w.arena is None and ('boss_dead', 'ogre_captain') in w.events
+run(w, 4.0, Inputs()); assert not w.stage_clear                                                  # still has to reach the end
+w.hero.x = st.length - 5; w.update(DT, Inputs()); assert w.stage_clear
+# boss specifics: minotaur lord charges faster than the regular minotaur; black knight chains 3 strokes and guards
+ml = Fighter('minotaur_lord', 0, 1); assert ml.defn['charge']['telegraph'] < C.MINOTAUR_TELEGRAPH and ml.defn['charge']['speed'] > C.MINOTAUR_DASH_SPEED
+bk = Fighter('black_knight', 0, 1); assert bk.defn['guard'] and bk.max_hp == C.BLACK_KNIGHT_MAX_HP
+w = fresh(0); k = Fighter('black_knight', 40, -1); w.enemies = [k]; k.ai_cooldown = 99; w.hero.invuln = 99
+seen = []
+for _ in range(60):
+    w.rng = random.Random(1); w.rng.random = lambda: 0.0                                          # always chain
+    w.start_attack(k, 'bk_1'); break
+for _ in range(int(3 / DT)):
+    w.rng.random = lambda: 0.0; w.update(DT, Inputs())
+    if not seen or seen[-1] != k.attack_id: seen.append(k.attack_id)
+assert seen[:3] == ['bk_1', 'bk_2', 'bk_3'], seen
+for name in ('ogre_captain', 'minotaur_lord', 'black_knight'):
+    assert Fighter(name, 0, 1).sheet == name and name in T
+print('43 ok: boss arena (gate, locked screen, walls, summon at half life, loot, release) and boss behaviours')
 
 print('ALL LOGIC TESTS PASSED')
