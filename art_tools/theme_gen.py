@@ -164,6 +164,91 @@ props.update(tent=tent(), banner=banner(), palisade=palisade(), planted_swords=p
              cart=cart(), campfire=campfire())
 props['grass_tile'] = tile_ground(GR3, GR2, GR4, DIRT1, (DIRT2, C(54, 42, 36), DIRT3), (GR1, GR2, GR3), seed=11)
 
+# =============================================================== forest (T34)
+LF1, LF2, LF3, LF4 = C(24, 58, 44), C(40, 92, 56), C(70, 134, 70), C(124, 180, 94)      # leaves, dark to light
+MOSS1, MOSS2 = C(60, 104, 54), C(104, 150, 76)
+BARK1, BARK2, BARK3 = C(58, 40, 34), C(92, 64, 46), C(128, 92, 62)
+FUN_R, FUN_RL, FUN_W = C(190, 50, 50), C(226, 92, 80), C(244, 240, 224)
+
+
+def blob(d, cx, cy, rx, ry, cols):
+    """A lit foliage blob: dark body, lighter patch to the top-left, lightest speck."""
+    d.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], fill=cols[0])
+    d.ellipse([cx - rx + 1, cy - ry + 1, cx + rx - 3, cy + ry - 4], fill=cols[1])
+    d.ellipse([cx - rx + 3, cy - ry + 2, cx + rx - 8, cy + ry - 10], fill=cols[2])
+
+def oak():
+    w, h = 140, 156; im = canvas(w, h); d = ImageDraw.Draw(im); gy = h - 2
+    d.polygon([(54, gy), (60, 80), (80, 80), (88, gy)], fill=BARK2)                 # trunk
+    d.polygon([(54, gy), (60, 80), (66, 80), (62, gy)], fill=BARK3)
+    d.polygon([(80, 80), (88, gy), (80, gy)], fill=BARK1)
+    d.line([(62, 100), (50, 80)], fill=BARK2, width=5); d.line([(80, 96), (96, 76)], fill=BARK2, width=5)   # boughs
+    for cx, cy, rx, ry in ((70, 40, 36, 30), (36, 66, 28, 24), (104, 62, 30, 26), (66, 74, 34, 24), (20, 84, 18, 16),
+                           (120, 84, 18, 16)):
+        blob(d, cx, cy, rx, ry, (LF1, LF2, LF3))
+    for x, y in ((50, 28), (84, 22), (30, 58), (110, 54), (68, 50), (92, 76), (48, 78)):   # light speckles
+        d.rectangle([x, y, x + 3, y + 1], fill=LF4)
+    return outline(im)
+
+def fern():
+    w, h = 34, 26; im = canvas(w, h); d = ImageDraw.Draw(im); gy = h - 2
+    for ang, ln in ((-62, 18), (-38, 21), (-14, 22), (14, 22), (38, 21), (62, 18)):
+        r = math.radians(ang); x1 = 17 + math.sin(r) * ln; y1 = gy - math.cos(r) * ln
+        d.line([(17, gy), (x1, y1)], fill=LF2, width=2)
+        d.line([(17, gy), (x1 - 1, y1)], fill=LF3, width=1)
+        for k in range(1, 5):
+            t = k / 5; px = 17 + (x1 - 17) * t; py = gy + (y1 - gy) * t
+            d.point((px + 2, py + 1), fill=LF4); d.point((px - 2, py + 1), fill=LF3)
+    return outline(im)
+
+def log():
+    w, h = 78, 30; im = canvas(w, h); d = ImageDraw.Draw(im); gy = h - 2
+    d.rounded_rectangle([4, 6, 70, gy], radius=8, fill=BARK2)
+    d.line([(10, 8), (66, 8)], fill=BARK3, width=2); d.line([(10, gy - 1), (66, gy - 1)], fill=BARK1, width=2)
+    d.ellipse([60, 4, 76, gy + 1], fill=C(190, 150, 100)); d.ellipse([64, 8, 72, gy - 3], fill=C(150, 112, 72))
+    d.ellipse([67, 12, 70, gy - 7], fill=C(120, 88, 56))
+    for x, y, ww in ((14, 7, 14), (32, 6, 18), (50, 8, 10)):                                # moss on top
+        d.rectangle([x, y - 2, x + ww, y + 1], fill=MOSS1); d.line([(x + 1, y - 2), (x + ww - 2, y - 2)], fill=MOSS2)
+    return outline(im)
+
+def mushrooms():
+    w, h = 26, 20; im = canvas(w, h); d = ImageDraw.Draw(im); gy = h - 2
+    for cx, top, r in ((7, 4, 6), (17, 8, 5), (12, 10, 4)):
+        d.rectangle([cx - 1, top + r - 1, cx + 1, gy], fill=FUN_W)
+        d.pieslice([cx - r, top, cx + r, top + 2 * r], 180, 360, fill=FUN_R)
+        d.arc([cx - r, top, cx + r, top + 2 * r], 200, 250, fill=FUN_RL)
+        d.point((cx - 2, top + 2), fill=FUN_W); d.point((cx + 2, top + 3), fill=FUN_W); d.point((cx, top + 1), fill=FUN_W)
+    return outline(im)
+
+def stone_wall():
+    w, h = 88, 50; im = canvas(w, h); d = ImageDraw.Draw(im); gy = h - 2
+    rnd = random.Random(5)
+    d.rectangle([2, 10, 85, gy], fill=ST1)
+    for row, y in enumerate((10, 22, 34)):
+        x = 2 - (6 if row % 2 else 0)
+        while x < 86:
+            ww = rnd.randint(14, 22); x0 = max(2, x); x1 = min(85, x + ww - 2)
+            if x1 > x0:
+                col = rnd.choice((ST2, ST3, C(98, 104, 122)))
+                d.rectangle([x0, y, x1, min(gy, y + 10)], fill=col)
+                d.line([(x0, y), (x1, y)], fill=C(190, 196, 212)); d.line([(x0, min(gy, y + 10)), (x1, min(gy, y + 10))], fill=ST1)
+            x += ww
+    d.polygon([(2, 10), (14, 4), (26, 10)], fill=ST2); d.polygon([(52, 10), (60, 3), (72, 10)], fill=ST3)   # broken top
+    for x in (6, 30, 58, 76): d.rectangle([x, 10, x + 8, 12], fill=MOSS1); d.line([(x + 1, 10), (x + 6, 10)], fill=MOSS2)
+    return outline(im)
+
+def bush():
+    w, h = 50, 34; im = canvas(w, h); d = ImageDraw.Draw(im); gy = h - 2
+    for cx, cy, rx, ry in ((14, gy - 9, 13, 9), (34, gy - 10, 14, 10), (24, gy - 14, 14, 11)):
+        blob(d, cx, cy, rx, ry, (LF1, LF2, LF3))
+    for x, y in ((12, gy - 8), (28, gy - 6), (38, gy - 14), (22, gy - 16)):
+        d.rectangle([x, y, x + 1, y + 1], fill=FUN_RL)
+    return outline(im)
+
+props.update(oak=oak(), fern=fern(), log=log(), mushrooms=mushrooms(), stone_wall=stone_wall(), bush=bush())
+props['forest_tile'] = tile_ground(MOSS2, MOSS1, C(132, 178, 88), C(46, 36, 32), (C(66, 52, 42), C(30, 24, 24), C(86, 70, 50)),
+                                   (LF1, LF2, MOSS1), seed=23)
+
 for name, im in props.items():
     im.save(f'{out}/{name}.png')
 print('ok', len(props))

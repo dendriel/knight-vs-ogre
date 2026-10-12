@@ -52,12 +52,35 @@ class View:
             return self._make_hills(height, color, seed=seed, amp=amp)
         far = hills(t['hills_far']); near = hills(t['hills_near'])
         if 'castle' in t['extras']: self._stamp_castle(far)
+        if 'treeline' in t['extras']:
+            self._stamp_trees(far, (62, 104, 88), seed=3, step=26); self._stamp_trees(near, (34, 74, 54), seed=8, step=34)
         ground = self._load_img(t['ground'])
         names = {n for n, _ in t['props_even'] + t['props_odd']}
         d = dict(far=far, near=near, ground=ground, ground_h=ground.get_height(),
                  props={n: self._load_img(n) for n in names}, sky=t['sky'], dirt=t['dirt'], fog='fog' in t['extras'])
+        if d['fog'] and not hasattr(self, 'fog'): self.fog = self._make_fog()
         self.themes[theme_id] = d
         return d
+
+    def _stamp_trees(self, strip, color, seed, step):
+        """A line of round-crowned trees along the top of a hill strip (forest horizon)."""
+        rnd = random.Random(seed); h = strip.get_height()
+        for x in range(0, STRIP_W, step):
+            cx = x + rnd.randint(0, step // 2); base = h - rnd.randint(16, 30); r = rnd.randint(9, 15)
+            strip.fill(tuple(c - 14 for c in color) + (255,), (cx - 1, base - 6, 3, 12))
+            for dx, dy, rr in ((0, -r, r), (-r // 2, -r // 2 + 1, r * 2 // 3), (r // 2, -r // 2 + 1, r * 2 // 3)):
+                pygame.draw.circle(strip, color + (255,), (cx + dx, base + dy), rr)
+
+    def _make_fog(self):
+        """Soft horizontal mist bands (translucent), tiled like the other parallax strips."""
+        s = pygame.Surface((STRIP_W, 46), pygame.SRCALPHA); rnd = random.Random(12)
+        for k in range(14):
+            x = rnd.randint(0, STRIP_W); y = rnd.randint(4, 38); w = rnd.randint(70, 150); a = rnd.randint(34, 62)
+            for dy in range(-3, 4):
+                ww = w - abs(dy) * 18
+                for xx in (x, x - STRIP_W):
+                    s.fill((226, 238, 232, max(8, a - abs(dy) * 10)), (xx - ww // 2, y + dy * 2, ww, 2))
+        return s
 
     def _stamp_castle(self, strip):
         """A far castle on the horizon (silhouette towers with crenellations) and a thin smoke column."""
@@ -120,6 +143,7 @@ class View:
         self._strip(surf, self.clouds, 0.15, cx, 14 + oy)
         self._strip(surf, th['far'], 0.30, cx, top - th['far'].get_height() + 2)
         self._strip(surf, th['near'], 0.55, cx, top - th['near'].get_height() + 2)
+        if th['fog']: self._strip(surf, self.fog, 0.8, cx, top - 40 + oy)               # mist in front of the hills
         # ground: tiles repeat every 64 px, aligned with world x
         for x in range(-(cx % 64), C.SCREEN_W + 64, 64): surf.blit(th['ground'], (x, top))
         surf.fill(th['dirt'], (0, top + th['ground_h'], C.SCREEN_W, C.SCREEN_H))

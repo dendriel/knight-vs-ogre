@@ -62,10 +62,15 @@ THEMES = {
                   dirt=(70, 54, 46), ground='grass_tile', extras=('castle',),
                   props_even=[('tent', .30), ('banner', .16), ('palisade', .20), ('cart', .12)],
                   props_odd=[('dead_tree', .28), ('planted_swords', .18), ('campfire', .14), ('banner', .12)]),
+    'forest': dict(sky=(168, 202, 192), hills_far=((86, 128, 108), 70, (14, 7, 4), 41), hills_near=((50, 92, 70), 46, (10, 5, 3), 47),
+                   dirt=(46, 36, 32), ground='forest_tile', extras=('treeline', 'fog'),
+                   props_even=[('oak', .36), ('log', .14), ('stone_wall', .12), ('bush', .12)],
+                   props_odd=[('oak', .30), ('fern', .20), ('mushrooms', .12), ('bush', .12)]),
 }
 # where a prop may stand inside its slot: x offset in randint(first, SLOT_W - last)
 PROP_PLACE = {'medieval_house': (0, 160), 'well': (8, 56), 'tree': (0, 112), 'tent': (0, 82), 'banner': (4, 28),
-              'palisade': (0, 68), 'planted_swords': (4, 38), 'dead_tree': (0, 64), 'cart': (0, 80), 'campfire': (8, 28)}
+              'palisade': (0, 68), 'planted_swords': (4, 38), 'dead_tree': (0, 64), 'cart': (0, 80), 'campfire': (8, 28),
+              'oak': (0, 140), 'fern': (4, 34), 'log': (0, 78), 'mushrooms': (4, 26), 'stone_wall': (0, 88), 'bush': (0, 50)}
 
 # ---- the campaign (three stages; T36 fills in the difficulty curve, T32-T35 the bosses and the themes) ---------------
 STAGES = {
@@ -73,7 +78,7 @@ STAGES = {
         enc(0.10, 'soldier'), enc(0.25, 'ogre'), enc(0.45, 'soldier', 'ogre'), enc(0.60, 'spearman', 'soldier'),
         enc(0.78, 'archer', 'spearman', 'ogre'), enc(0.85, ('soldier', 'veteran'), 'spearman', 'archer')],
         difficulty=((2, 1), (3, 2), (3, 2)), elites=(0.75, 0.15, 0.25), loot=(1.0, 1.4), boss='ogre_captain'),
-    'stage2': Stage('stage2', 'FASE 2 - FLORESTA', 'village', 4000, [
+    'stage2': Stage('stage2', 'FASE 2 - FLORESTA', 'forest', 4000, [
         enc(0.08, 'goblin', 'goblin'), enc(0.22, 'goblin', 'kobold', 'goblin'), enc(0.38, 'shieldman', 'goblin'),
         enc(0.55, 'goblin', 'goblin', 'kobold', 'orc'), enc(0.77, 'shieldman', 'archer', 'kobold'),
         enc(0.86, ('goblin', 'agile'), ('goblin', 'agile'), 'orc', 'kobold', 'archer')],
