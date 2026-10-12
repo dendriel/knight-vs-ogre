@@ -952,4 +952,41 @@ w.hero.invuln = 0; w._hit(w.ogre, w.hero); run(w, 1.2, Inputs()); assert w.timer
 w = ranger_world(); w.pickups = [Pickup('weapon', 0, 100.0, 'axe')]; run(w, 0.3, Inputs()); assert w.hero.weapon is None and len(w.pickups) == 1
 print('46 ok: ranger (bow chain with piercing 3rd arrow, short sword, arrow rain, no pickups)')
 
+# 47) T43: crossbowman: heavy, slow, bolt chain (3rd pierces) with a reload before a new chain, small axe, bolt volley
+assert 'crossbowman' in CLASSES and 'crossbowman' in T
+def xb_world():
+    w = World(T, hero_class='crossbowman'); w.cam_off = 0; w.ogre.x = 5000.0; w.ai_cooldown = 99; return w
+w = xb_world(); h = w.hero
+assert h.max_hp == C.XBOWMAN_MAX_HP > 100 and h.speed < 120 and h.primary == 'xb_1' and h.sheet == 'crossbowman'
+x0 = h.x; run(w, 1.0, Inputs(right=True)); assert abs((h.x - x0) - C.CROSSBOWMAN_SPEED) < 3
+# chain of 3 bolts (20 / 20 / 22 ...) and the reload gate between chains
+w = xb_world(); h = w.hero; shots = []
+w.update(DT, Inputs(attack=True, attack_pressed=True)); t_first = w.time
+for n in range(int(5 / DT)):
+    inp = Inputs()
+    if h.state == 'attack' and h.frame_index(T) >= C.COMBO_WINDOW_START and len(shots) < 3 and not h.combo_next and ATTACKS[h.attack_id]['next']:
+        inp = Inputs(attack=True, attack_pressed=True)
+    n0 = len(w.projectiles); w.update(DT, inp)
+    for p in w.projectiles[n0:]: shots.append((h.attack_id, p.damage, p.pierce, p.sprite))
+assert [s[0] for s in shots] == ['xb_1', 'xb_2', 'xb_3'] and [s[3] for s in shots] == ['bolt'] * 3
+assert [s[1] for s in shots] == list(C.XBOW_HERO_DAMAGE) and [s[2] for s in shots] == [False, False, True]
+w = xb_world(); w.update(DT, Inputs(attack=True, attack_pressed=True)); run(w, 0.7, Inputs())      # first chain started, then idle
+assert w.hero.state == 'idle'
+t = w.time
+w.update(DT, Inputs(attack=True, attack_pressed=True))
+if w.time - t < C.XBOW_HERO_RELOAD - 0.7: assert w.hero.state != 'attack'                          # still reloading
+run(w, 1.0, Inputs(attack=True)); assert w.hero.state in ('attack', 'idle')
+# small axe: heavy-ish hit with cooldown; ignores shields
+w = xb_world(); e = Fighter('shieldman', 30, -1); w.enemies = [e]; e.ai_cooldown = 99
+w.update(DT, Inputs(secondary=True, secondary_pressed=True)); assert w.hero.attack_id == 'small_axe'
+run(w, 0.6, Inputs()); assert e.hp == 30 - C.AXE_SMALL_DAMAGE, e.hp                                # guard_break: shield did not help
+# volley: needs the bar, fires VOLLEY_COUNT piercing bolts in a burst
+w = xb_world(); w.combo = C.COMBO_BAR_MAX
+run(w, C.SPECIAL_HOLD_MIN + 0.1, Inputs(attack=True)); w.update(DT, Inputs(attack=False))
+assert w.hero.attack_id == 'bolt_volley' and len(w.timers) == C.VOLLEY_COUNT
+w.events.clear(); run(w, 1.0, Inputs())
+fired = sum(1 for ev in w.events if ev[0] == 'shoot')
+assert fired == C.VOLLEY_COUNT and w.timers == [], fired
+print('47 ok: crossbowman (slow and tough, bolt chain with piercing 3rd, reload gate, small axe, bolt volley)')
+
 print('ALL LOGIC TESTS PASSED')

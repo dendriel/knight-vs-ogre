@@ -84,10 +84,52 @@ def atk_short(i):
     return p
 
 
+# ------------------------------------------------------------------ crossbowman (T43)
+CROSSBOWMAN = dict(
+    PN=dict(shade=C(92, 40, 30), base=C(168, 84, 56), hl=C(232, 156, 112)),     # rust-red plate
+    PF=dict(shade=C(60, 26, 22), base=C(112, 56, 40), hl=C(158, 98, 72)),
+    RED=C(70, 90, 160), RED_D=C(44, 58, 112),                                    # blue sash and plume
+    GOLD=C(214, 176, 80), LEATH=C(100, 66, 40), LEATH_D=C(64, 42, 28))
+
+
+def atk_xbow_2(i):
+    # 2nd bolt: the crossbow is still up, so the reload is quick; light recoil
+    p = KG.atk_xbow(i)
+    p['sink'] = [1, 1, 1.2, 1.2, 1.6, 1][i]; p['shift'] = [0, 0, 0, 0, -1, 0][i]
+    p['loaded'] = [True, True, True, True, False, True][i]
+    return p
+
+
+def atk_xbow_3(i):
+    # 3rd bolt: heavy shot, the whole body takes the recoil (the bolt pierces)
+    p = KG.atk_xbow(i)
+    p['lean'] = [0, 0, -3, -4, -9, -3][i]; p['shift'] = [0, 0, 0, 1, -5, 0][i]; p['sink'] = [1, 1, 1.5, 2, 3, 1.5][i]
+    return p
+
+
+def atk_volley(i):
+    # special: aims forward and fires bolt after bolt (frames 1-4 all show a bolt leaving), frame 0 = the charge pose
+    p = KG.atk_xbow(i)
+    p['loaded'] = [True, False, True, False, True, False][i]
+    p['bolt'] = ['load', 'fly', 'fly', 'fly', 'fly', None][i]
+    p['ang'] = [100, 92, 90, 92, 90, 96][i]
+    p['lean'] = [0, -3, -2, -3, -2, -1][i]; p['shift'] = [0, -1, 0, -1, 0, 0][i]
+    return p
+
+
+def atk_axe_small(i):
+    # small axe (secondary): the knight's axe chop, quicker and tighter (the trail is drawn in the frame)
+    p = KG.atk_axe(i)
+    return p
+
+
 def build(out):
     ranger_extra = [('attack_bow_2', atk_bow_2, 10), ('attack_bow_3', atk_bow_3, 10),
                     ('attack_short', lambda i: dict(atk_short(i)), 12), ('attack_special', atk_rain, 10)]
     write_class_sheet(out, 'ranger', ranger_extra, 'bow', RANGER)
+    xbow_extra = [('attack_crossbow_2', atk_xbow_2, 10), ('attack_crossbow_3', atk_xbow_3, 10),
+                  ('attack_axe_small', atk_axe_small, 10), ('attack_special', atk_volley, 10)]
+    write_class_sheet(out, 'crossbowman', xbow_extra, 'xbow', CROSSBOWMAN)
 
 
 if __name__ == '__main__':

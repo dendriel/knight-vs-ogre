@@ -78,6 +78,11 @@ FIGHTER_DEFS = {
                    anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, slash=None, reach=(0, 0),
                    label='ARQUEIRO', icon='bow', stats=dict(vida=2, vel=5, dano=3, alcance=5),
                    card=('Arco em combo de 3', 'Espada curta', 'Chuva de flechas')),
+    'crossbowman': dict(hero=True, max_hp=C.XBOWMAN_MAX_HP, speed=C.CROSSBOWMAN_SPEED, half_width=9, sheet='crossbowman', ai=None,
+                        voice='knight', jump=C.XBOWMAN_JUMP, special='bolt_volley', secondary='small_axe', primary='xb_1',
+                        anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, slash=None, reach=(0, 0),
+                        label='BESTEIRO', icon='xbow', stats=dict(vida=5, vel=2, dano=5, alcance=4),
+                        card=('Besta em combo de 3', 'Machado pequeno', 'Rajada de virotes')),
     'spearman': dict(hero=False, max_hp=C.SPEARMAN_MAX_HP, speed=C.SPEARMAN_SPEED, half_width=8, sheet='spearman', ai='spear',
                      anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='spearman_thrust',
                      slash=None, reach=C.SPEARMAN_REACH, label='LANCEIRO',
@@ -95,7 +100,7 @@ FIGHTER_DEFS = {
 # Playable classes (T40): the id is a FIGHTER_DEFS key with hero=True. Everything a class changes is data there:
 # max_hp, speed, jump (height multiplier), sheet, anim map, primary (id of the first attack of its combo chain), secondary,
 # special, label and `blurb`. The three extra classes are added below (T42-T44).
-CLASSES = ['knight', 'ranger']
+CLASSES = ['knight', 'ranger', 'crossbowman']
 
 # Every attack is data (T03). Adding one = one entry here + one row in a sprite sheet.
 #   anim: sheet row | damage | reach: (from, to) in front of the hip | active: frames that can hit | slash_frame: frame
@@ -140,6 +145,24 @@ ATTACKS = {
                  move_factor=0.5, knockback=C.KNOCKBACK * 1.6, guard_break=False, cooldown=0.0, wear=0.0, next=None,
                  shoot=dict(kind='straight', sprite='arrow', speed=C.RANGER_ARROW_SPEED[2],
                             max_range=C.RANGER_ARROW_RANGE * 1.2, pierce=True)),
+    'xb_1': dict(anim='attack_crossbow', damage=C.XBOW_HERO_DAMAGE[0], reach=(0, 0), active=(), slash_frame=4, slash=None,
+                 move_factor=0.4, knockback=C.KNOCKBACK * 1.3, guard_break=False, cooldown=C.XBOW_HERO_RELOAD, wear=0.0,
+                 next='xb_2', shoot=dict(kind='straight', sprite='bolt', speed=C.XBOW_HERO_SPEED[0], max_range=C.XBOW_HERO_RANGE)),
+    'xb_2': dict(anim='attack_crossbow_2', damage=C.XBOW_HERO_DAMAGE[1], reach=(0, 0), active=(), slash_frame=4, slash=None,
+                 move_factor=0.4, knockback=C.KNOCKBACK * 1.3, guard_break=False, cooldown=0.0, wear=0.0, next='xb_3',
+                 shoot=dict(kind='straight', sprite='bolt', speed=C.XBOW_HERO_SPEED[1], max_range=C.XBOW_HERO_RANGE)),
+    'xb_3': dict(anim='attack_crossbow_3', damage=C.XBOW_HERO_DAMAGE[2], reach=(0, 0), active=(), slash_frame=4, slash=None,
+                 move_factor=0.3, knockback=C.KNOCKBACK * 2.0, guard_break=False, cooldown=0.0, wear=0.0, next=None,
+                 shoot=dict(kind='straight', sprite='bolt', speed=C.XBOW_HERO_SPEED[2], max_range=C.XBOW_HERO_RANGE * 1.15,
+                            pierce=True)),
+    'small_axe': dict(anim='attack_axe_small', damage=C.AXE_SMALL_DAMAGE, reach=C.AXE_SMALL_REACH, active=C.ACTIVE_FRAMES,
+                      slash_frame=3, slash=None, move_factor=0.9, knockback=C.KNOCKBACK * 1.2, guard_break=True,
+                      cooldown=C.AXE_SMALL_COOLDOWN, wear=0.0, next=None),
+    'bolt_volley': dict(anim='attack_special', damage=C.VOLLEY_DAMAGE, reach=(0, 0), active=(), slash_frame=99, slash=None,
+                        move_factor=0.0, knockback=C.KNOCKBACK, guard_break=True, cooldown=0.0, wear=0.0, next=None,
+                        burst=[dict(t=0.1 + 0.07 * i, type='shot', damage=C.VOLLEY_DAMAGE,
+                                    shoot=dict(kind='straight', sprite='bolt', speed=440.0, max_range=380.0, pierce=True))
+                               for i in range(C.VOLLEY_COUNT)]),
     'short_sword': dict(anim='attack_short', damage=C.RANGER_SHORT_DAMAGE, reach=C.RANGER_SHORT_REACH, active=C.ACTIVE_FRAMES,
                         slash_frame=3, slash='sword_slash', move_factor=0.9, knockback=C.KNOCKBACK, guard_break=False,
                         cooldown=C.RANGER_SHORT_COOLDOWN, wear=0.0, next=None),

@@ -90,6 +90,7 @@ SOLDIER_COOLDOWN = (0.7, 1.1)
 DAMAGE = 10                        # damage of every hit (both sides)
 HERO_SPEED = 120.0                 # pixels per second (was 84)
 OGRE_SPEED = 50.0
+CROSSBOWMAN_SPEED = 105.0           # heavy armour: the slowest class
 RANGER_SPEED = 135.0               # the ranger is quicker than the knight (120); see the classes block below
 ATTACK_MOVE_FACTOR = 1.0           # hero speed multiplier while the attack animation plays (he can move and swing)
 
@@ -132,6 +133,8 @@ SPEAR_ATTACK_ANIM_SPEED = 1.3        # slow, telegraphed thrust (row fps 12)
 SOLDIER_WALK_ANIM_SPEED = 1.55      # soldier walk cycle, proportional to SOLDIER_SPEED (62)
 SOLDIER_ATTACK_ANIM_SPEED = KNIGHT_ATTACK_ANIM_SPEED   # same sword stroke as the hero's stroke 1 AND its slash effect
 ANIM_SPEED = {
+    'crossbowman': {'attack_crossbow': 0.9, 'attack_crossbow_2': 1.5, 'attack_crossbow_3': 1.2, 'attack_axe_small': 1.6,
+                    'attack_special': 1.0, 'run': RUN_ANIM_SPEED * CROSSBOWMAN_SPEED / HERO_SPEED, 'jump_up': 1.6},
     'ranger': {'attack_bow': 1.1, 'attack_bow_2': 1.7, 'attack_bow_3': 1.3, 'attack_short': 2.0, 'attack_special': 1.1,
                'run': RUN_ANIM_SPEED * RANGER_SPEED / HERO_SPEED, 'jump_up': 1.6},
     'ranger': {'attack_bow': 1.1, 'attack_bow_2': 1.7, 'attack_bow_3': 1.3, 'attack_short': 2.0, 'attack_special': 1.1,
@@ -242,6 +245,18 @@ RAIN_COUNT = 10
 RAIN_SPAN = (60, 230)              # px in front of the ranger covered by the rain
 RAIN_FALL_TIME = 0.55
 RAIN_RADIUS = 16
+
+XBOWMAN_MAX_HP = 110
+XBOWMAN_JUMP = 0.9
+XBOW_HERO_DAMAGE = (14, 14, 22)    # chain of bolts: the 3rd is heavy and pierces
+XBOW_HERO_SPEED = (360.0, 380.0, 430.0)
+XBOW_HERO_RANGE = 380.0
+XBOW_HERO_RELOAD = 0.8             # the chain cannot restart sooner than this after its first bolt
+AXE_SMALL_DAMAGE = 12              # secondary: a small axe
+AXE_SMALL_REACH = (-10, 38)
+AXE_SMALL_COOLDOWN = 0.6
+VOLLEY_COUNT = 6
+VOLLEY_DAMAGE = 10
 
 # ---- armor (T15) --------------------------------------------------------------------------
 ARMOR_MAX = 50                     # armor points; damage is taken from them before the life bar

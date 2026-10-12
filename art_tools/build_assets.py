@@ -13,7 +13,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, '..', 'assets')
 SHEETS = ['knight_spritesheet.png', 'knight_spritesheet.json', 'knight_axe_spritesheet.png', 'knight_axe_spritesheet.json',
           'knight_bow_spritesheet.png', 'knight_bow_spritesheet.json', 'knight_xbow_spritesheet.png',
-          'knight_xbow_spritesheet.json', 'soldier_spritesheet.png', 'soldier_spritesheet.json', 'ranger_spritesheet.png', 'ranger_spritesheet.json', 'spearman_spritesheet.png',
+          'knight_xbow_spritesheet.json', 'soldier_spritesheet.png', 'soldier_spritesheet.json', 'ranger_spritesheet.png', 'ranger_spritesheet.json', 'crossbowman_spritesheet.png', 'crossbowman_spritesheet.json', 'spearman_spritesheet.png',
           'spearman_spritesheet.json', 'archer_spritesheet.png', 'archer_spritesheet.json', 'shieldman_spritesheet.png',
           'shieldman_spritesheet.json',
           'ogre_captain_spritesheet.png', 'ogre_captain_spritesheet.json', 'minotaur_lord_spritesheet.png',
