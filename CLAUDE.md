@@ -39,7 +39,7 @@ game/audio.py           toca os SFX a partir de `world.events` (falha em silênc
 assets/                 spritesheets (png + json) e cenário (png) usados pelo jogo
 assets/sfx/             efeitos sonoros .wav (gerados por código, ver skill game-audio-synthesis)
 assets/music/           trilha .wav em loop (`music_gen.py` da mesma skill regenera)
-tests/                  test_logic.py (57 testes), test_scenes.py, test_fuzz.py, real_pygame_smoke.py, simulate.py, fake_pygame.py (stand-in em Pillow)
+tests/                  test_logic.py (63 testes), test_scenes.py, test_fuzz.py, real_pygame_smoke.py, simulate.py, fake_pygame.py (stand-in em Pillow)
 art_tools/              geradores da arte (ver seção 5); build_assets.py regenera tudo em assets/ (knight/ogre/enemy/class/vfx/theme/proj/icons_gen)
 .claude/skills/         4 skills do projeto (carregadas automaticamente pelo Claude Code, ver seção 6)
 install_skills.py       OPCIONAL: instala as skills também como skills pessoais (~/.claude/skills)
@@ -116,7 +116,7 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 | `orc_`, `goblin_`, `kobold_`, `minotaur_spritesheet` | contrato do ogro (idle, walk, attack, hurt, death), gerados por `enemy_gen.py` a partir do `ogre_gen` (recolor / escala 0,72 / 0,8 / 1,1 / chifres); o minotauro usa a linha `attack` congelada no frame 2 como pose de investida |
 | `ogre_captain_`, `minotaur_lord_`, `black_knight_spritesheet` | **chefes: quadros 96x96** (meta do json: `frame_size` 96, `anchor_x` 48 = coluna do quadril, `ground_row` 90 = linha do chão; espelhado = 95−48). Linhas do contrato do ogro (o cavaleiro negro ainda `attack_2`, `attack_3`, `guard` no final); gerados por `enemy_gen.py` com escala 1,5 / 1,45 / 1,3 |
 | `ranger_spritesheet` (e as outras classes: `crossbowman_`, `mage_`) — mago: `attack_staff`(12), `_2`, `_3`, `attack_stomp`(12); besteiro: `attack_crossbow_2/_3`(10), `attack_axe_small`(10) | **linhas do `knight_spritesheet`** (idle … throw, o herói carregando a arma da classe) + as da classe: o `attack_special` é **substituído** pelo especial da classe e são anexadas `attack_bow_2`(10), `attack_bow_3`(10), `attack_short`(12). Gerado por `art_tools/class_gen.py` |
-| `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6), heal(10), coin_glint(12), sword_slash_2(12), sword_slash_3(12), spin_slash(12, aro do especial), charge(10, brasas enquanto segura), block_spark(14, na frente do escudo), stone_spikes(12, espinhos do mago), fire_burst(14, explosão) |
+| `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6), heal(10), coin_glint(12), sword_slash_2(12), sword_slash_3(12), spin_slash(12, aro do especial), charge(10, brasas enquanto segura), block_spark(14, na frente do escudo), stone_spikes(12, espinhos do mago), fire_burst(14, explosão), shield_break(12, escudo se partindo, na frente do defensor) |
 
 - **Âncora** (quadros de 64): coluna do quadril = 30 no frame normal, **33 quando espelhado** (63−30); linha do chão = 58 dentro do frame
   (no jogo `GROUND_Y = 217`). Posicione sempre por essa coluna, senão o sprite "pula" ao virar.
@@ -214,7 +214,7 @@ constante de `config.py` e o valor antes → depois), Arte, Contrato de arte (li
 ## 7. O que foi e o que NÃO foi testado (leia antes de mexer)
 
 **Testado automaticamente** (rode tudo antes de commitar; os três primeiros não precisam de janela):
-- `tests/test_logic.py` (57 testes, inclui o contrato arte × dados): dano/hurt/invulnerabilidade, vários inimigos, ataques como dados, projéteis e
+- `tests/test_logic.py` (63 testes, inclui o contrato arte × dados): dano/hurt/invulnerabilidade, vários inimigos, ataques como dados, projéteis e
   áreas, poções, combo, machado/arco/besta, armadura, barra de combo e especial, fichas e elites, cada inimigo, fases
   (encontros, arena, boss, derrota, renascer), curva de dificuldade, classes, secundário, loja/bombas, mapa de áudio.
 - `tests/test_scenes.py`: pilha de telas com o stand-in Pillow (título, classe, pausa, comandos, derrota, conclusão,

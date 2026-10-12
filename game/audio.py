@@ -20,7 +20,7 @@ SOUND_FOR = {
     'heal': 'heal',                                                # any life recovery
     'potion': 'gulp', 'jump': 'jump', 'drop': 'impact',
     'shoot': 'shoot', 'throw': 'throw', 'impact': 'impact', 'explosion': 'explosion', 'spikes': 'spikes',
-    'block': 'block', 'armor_hit': 'armor_hit', 'armor_break': 'armor_break', 'break': 'weapon_break',
+    'block': 'block', 'guard_break': 'guard_break', 'armor_hit': 'armor_hit', 'armor_break': 'armor_break', 'break': 'weapon_break',
     'charge': 'charge', 'special': 'special', 'telegraph': 'telegraph',
     'boss_start': 'boss_start', 'summon': 'spawn_ogre', 'boss_dead': 'victory', 'stage_clear': 'victory', 'revive': 'revive',
 }

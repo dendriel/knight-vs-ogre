@@ -39,6 +39,9 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - **Tecla E**: armas (machado, arco, besta) e armadura no chão só são coletadas com **E** (poções e ouro continuam automáticos). Com uma arma na mão, **E** sem nada ao alcance a **solta** (o item cai aos pés com a durabilidade que restava); **E** junto de outra arma troca (a antiga cai no chão). Um 'E' amarelo aparece sobre o item quando o herói está ao alcance. Evento `drop` → som `impact`; entrada em `CONTROLS`.
 - **Stunlock em combo**: o alvo atingido por um golpe de combo (espada do cavaleiro, arco/besta/cajado das classes, combo do Cavaleiro Negro) fica **aberto ao próximo golpe da mesma cadeia** por `COMBO_OPEN_TIME` mesmo dentro da invulnerabilidade do `hurt` (`World._open_to`; `Fighter.combo_open`). Vale para os dois lados: o herói pode ficar preso no combo do Cavaleiro Negro. Repetir o golpe 1 continua barrado pela invulnerabilidade (sem stunlock infinito).
 - **O herói avança durante o combo**: os golpes de espada (e `bk_1`..`bk_3`) empurram o atacante para frente a `COMBO_LUNGE_SPEED` até o último frame de impacto, parando a `LUNGE_STOP` px do alvo (nunca o atravessa), de modo que os golpes encadeados alcancem o alvo empurrado.
+- **Estamina do escudo** (escudeiro e Cavaleiro Negro): cada golpe bloqueado gasta o dano dele da estamina (`GUARD_STAMINA` 30 = 3 golpes de espada); ao zerar a defesa **quebra**: efeito `shield_break` + som `guard_break`, o escudo abaixa (animação idle) e não sobe por `GUARD_BREAK_TIME` 2,5 s, quando volta com a estamina cheia. Sem bloquear por 1,5 s a estamina volta devagar. Barra fina azul sob a vida do inimigo (vermelha enquanto quebrada).
+- **A besta quebra o escudo com um único tiro** (pickup e classe Besteiro, `shield_break` em `xbow`, `xb_1`..`xb_3`); o virote é absorvido, mas a defesa vai ao chão.
+- **Facas de arremesso com cargas**: o cavaleiro tem 3 facas (`KNIFE_CHARGES`); cada arremesso gasta uma, com `KNIFE_COOLDOWN` de intervalo, e cada faca volta depois de `KNIFE_RECHARGE` 5 s. A barrinha do secundário no HUD tem 3 divisões (cheia = pronta, parcial = recarregando).
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -50,6 +53,9 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - `OGRE_HURT_INVULN_EXTRA` 0,4 → 0,15: os inimigos ficam menos tempo invulneráveis depois do `hurt`.
 - `COMBO_KNOCKBACK` (14, 14, 24) → (8, 8, 24): os golpes 1 e 2 empurram pouco; o cavaleiro negro (`bk_1`/`bk_2`) idem.
 - `COMBO_OPEN_TIME` 1,0 s, `COMBO_LUNGE_SPEED` 90 px/s, `LUNGE_RANGE` 70, `LUNGE_STOP` 12 (novos, ver Jogabilidade).
+- Vida dos inimigos: o mais fraco passa a aguentar exatamente **um combo inteiro do cavaleiro** (`ENEMY_MIN_HP` = 10+10+15 = 35) e os demais ×`ENEMY_HP_SCALE` 1,5 arredondado a 5, nunca abaixo desse mínimo. Ogro 30 → 45, soldado 20 → 35, lanceiro 25 → 40, arqueiro 15 → 35, escudeiro 30 → 45, orc 40 → 60, goblin 10 → 35, kobold 12 → 35, minotauro 50 → 75, Ogro-Capitão 90 → 135, Rei Minotauro 120 → 180, Cavaleiro Negro 110 → 165.
+- Facas: `KNIFE_COOLDOWN` 1,0 → 0,4 (intervalo entre arremessos); novas `KNIFE_CHARGES` 3 e `KNIFE_RECHARGE` 5,0 s (cada faca volta sozinha).
+- Escudo: `GUARD_STAMINA` 30, `GUARD_BREAK_TIME` 2,5 s, `GUARD_REGEN_DELAY` 1,5 s, `GUARD_REGEN` 6/s (novos).
 
 ### Arte
 - T04: novos sprites de projétil (`proj_arrow` + variantes inclinadas `u45/u90/d45/d90`, `proj_bolt`, `proj_knife`, `proj_fireball`, `proj_rock`) gerados por `art_tools/proj_gen.py` e desenhados em camada própria (com sombra no chão).
@@ -86,6 +92,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T41: `knight_spritesheet` (e `knight_axe/bow/xbow`) ganham a linha 14 `throw`.
 - T42: sheet de classe = linhas do `knight_spritesheet` + extras; `attack_special` é substituída pela da classe.
 - T44: `vfx_spritesheet` ganha as linhas 11 (`stone_spikes`) e 12 (`fire_burst`); `sprite_rig.held()` aceita `staff`.
+- `vfx_spritesheet`: nova linha no final, `shield_break`(12 fps, 6 quadros: escudo rachado e depois estilhaços; na frente do defensor, mesma âncora do `block_spark`). Novo SFX `guard_break.wav`.
 
 ### Áudio
 - T10: pegar poção reaproveita o SFX `coin_pickup`; beber usa o `heal` existente (evento `potion`).
@@ -133,12 +140,18 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - `build_exe.bat` validado de verdade: o PyInstaller gera `KnightVsOgre.exe` (≈19 MB) e ele abre campanha, modo infinito e título sem erro (testado em modo headless). Scripts das skills sincronizados com `art_tools/`. `README.md` e `CLAUDE.md` reescritos para o estado final; `TASKS_PLAN.md` marcado como executado.
 - Novo `tests/test_fuzz.py` (60 s de teclas aleatórias, poções, bombas e renascimentos para cada classe no modo infinito e nas três fases, em várias posições, incluindo os chefes) e teste 51 (cada chefe roda a própria IA).
 - Teste 52: contrato arte × dados (toda animação e efeito que `FIGHTER_DEFS`/`ATTACKS` pedem existe no sheet que desenharia).
+- Desgaste das armas movido de `start_attack` para `World._hit` (cobra uma vez por golpe/tiro que acerta, inclusive no escudo); projéteis levam `next`/`wear`/`shield_break` do golpe que os disparou (`World._proj_at`). `World.charges()` / `can_use()` cuidam das cargas das facas.
 
 ### Correções
 - `Game.run` (o laço principal) estava sobrescrito pelo atributo `self.run` (estado da run, T37): o jogo empacotado quebrava com 'dict object is not callable' ao iniciar. Atributo renomeado para `run_state`; achado ao rodar o executável do PyInstaller. Novos testes cobrem o laço principal (`Game.run`) com o stand-in e com o pygame real.
 - Investida do Rei Minotauro: `dict(...)` recebia `cooldown` duas vezes (parâmetros padrão + `defn['charge']`) e derrubava o jogo ao chegar à arena da fase 2; achado pelo novo teste de ruído.
 - Bug: **o golpe do cavaleiro não tinha efeito nem som (e o ataque secundário não mostrava as facas) quando não havia inimigo vivo na tela** — o rastro, o SFX de `swing` e o disparo de projéteis estavam dentro do laço de pares herói × inimigo e só rodavam com alguém para acertar. Agora rodam para todo lutador em ataque (`World._attacks`).
 - Bug: **os golpes 2 e 3 do combo não acertavam** — o primeiro golpe empurrava o alvo (inimigo ou herói) para fora do alcance e a invulnerabilidade pós-`hurt` ainda barrava o encadeamento (ver Jogabilidade: stunlock em combo e avanço do herói).
+- Bug: **o herói andava mais rápido durante o combo** — o movimento de andar somava com o avanço do combo. `COMBO_MOVE_FACTOR` = 0 (golpes de espada e do Cavaleiro Negro): durante o golpe só o avanço move o personagem.
+- Bug: **o 3º golpe do combo era difícil de encaixar** — a janela só abria no frame 3 do golpe anterior e o 2º golpe é curto (0,21 s), então um clique em ritmo normal caía antes dela. `COMBO_WINDOW_START` 3 → 1 e `COMBO_BUFFER` 0,15 → 0,3 s. Matar o inimigo no 2º golpe não interrompe a cadeia (coberto por teste).
+- Bug: **um golpe acertava o escudeiro com o escudo erguido** quando o herói estava sobreposto a ele (a checagem de frente usava o sinal da distância). Um atacante a até `GUARD_BACK_MARGIN` 14 px atrás do quadril ainda conta como de frente.
+- O desgaste das armas só acontece quando o golpe/tiro **acerta** algo (antes cobrava ao atacar, mesmo no ar).
+- A barra de durabilidade do HUD agora é relativa à durabilidade máxima (`WEAPON_DURABILITY`): arma nova = 100% (antes aparecia 30% por dividir por 100).
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

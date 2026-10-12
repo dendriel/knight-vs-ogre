@@ -228,9 +228,19 @@ def jump():                # a short rising whoosh (the hero leaves the ground)
 
 
 
+def guard_break():         # a shield giving way: a heavy clang, a crack and metal pieces falling
+    r = rng('guard_break')
+    clang = mix([(env_exp(tone(f, 0.5, f * 0.7, 'square', duty=.3), 0.14), a, 0)
+                 for f, a in ((660, 0.5), (990, 0.4), (1480, 0.3), (2210, 0.2))])
+    crack = env_exp(highpass(noise(0.14, r), 1600), 0.03)
+    thud = env_exp(tone(150, 0.25, 60, 'sine'), 0.07)
+    bits = [(env_exp(tone(f, 0.12, shape='square', duty=.25), 0.035), 0.3, d) for f, d in ((1900, 0.12), (1500, 0.2), (2300, 0.28), (1200, 0.36))]
+    return finish(mix([(clang, 1.0, 0), (crack, 0.9, 0), (thud, 0.8, 0)] + bits), peak=0.85)
+
+
 SOUNDS = {f.__name__: f for f in (sword_swing, axe_swing, hit_knight, hit_ogre, hurt_knight, hurt_ogre,
                                   death_knight, death_ogre, spawn_hero, spawn_ogre, coin_pickup, heal,
-                                  shoot, throw, impact, block, armor_hit, armor_break, weapon_break, charge, special,
+                                  shoot, throw, impact, block, guard_break, armor_hit, armor_break, weapon_break, charge, special,
                                   spikes, explosion, telegraph, boss_start, victory, revive, gulp, jump)}
 
 

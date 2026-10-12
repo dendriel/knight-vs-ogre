@@ -25,7 +25,7 @@ A lista que o jogo mostra em "Ver comandos" vem de `CONTROLS` em `game/config.py
 ## Classes
 | Classe | Vida | Vel. | Primario (combo de 3) | Secundario | Especial |
 |---|---|---|---|---|---|
-| Cavaleiro | 100 | 120 | espada (10/10/15) | faca arremessada | giro (2 x 15 em volta) |
+| Cavaleiro | 100 | 120 | espada (10/10/15) | faca arremessada (3 cargas, 5 s cada) | giro (2 x 15 em volta) |
 | Arqueiro | 80 | 135 | arco (8/8/14, a 3a atravessa) | espada curta | chuva de flechas |
 | Besteiro | 110 | 105 | besta (14/14/22, a 3a atravessa; recarga) | machado pequeno | rajada de 6 virotes |
 | Mago | 70 | 115 | bolas de fogo (12/12/16, a 3a explode) | espinhos de pedra (area) | tempestade de fogo |
@@ -43,7 +43,7 @@ Armas pickup (machado, arco, besta) valem so para o cavaleiro.
 - Barra de combo (laranja): enche com o dano causado (x1,5) e recebido (x1,0); zera ao usar o especial e quando o
   heroi morre.
 - **Inimigos**: ogro, soldado, lanceiro (alcance longo, zona morta colado), arqueiro (flecha em parabola com marcador no
-  chao), escudeiro (bloqueia de frente; vire-o, use machado ou especial), orc, goblin (bando), kobold (pedras em
+  chao), escudeiro (bloqueia de frente; 3 golpes quebram a defesa por 2,5 s; a besta quebra com 1 tiro; machado e especial ignoram o escudo), orc, goblin (bando), kobold (pedras em
   parabola), minotauro (investida telegrafada: pule por cima). So alguns atacam ao mesmo tempo (fichas); ha variantes
   elite (veterano, bruto, agil) com tinta de cor.
 - **Fases**: percurso finito com 3 temas (planicie, floresta, cidade). A dificuldade cresce entre as fases e dentro de

@@ -119,13 +119,13 @@ WEAPONS = {                                  # pickup weapons the hero can hold 
 
 ATTACKS = {
     'sword': dict(anim='attack_sword', damage=C.COMBO_DAMAGE[0], reach=C.KNIGHT_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
-                  slash='sword_slash', move_factor=C.ATTACK_MOVE_FACTOR, knockback=C.COMBO_KNOCKBACK[0], guard_break=False,
+                  slash='sword_slash', move_factor=C.COMBO_MOVE_FACTOR, knockback=C.COMBO_KNOCKBACK[0], guard_break=False,
                   cooldown=0.0, wear=0.0, next='sword_2'),
     'sword_2': dict(anim='attack_sword_2', damage=C.COMBO_DAMAGE[1], reach=C.KNIGHT_REACH, active=C.ACTIVE_FRAMES,
-                    slash_frame=3, slash='sword_slash_2', move_factor=C.ATTACK_MOVE_FACTOR,
+                    slash_frame=3, slash='sword_slash_2', move_factor=C.COMBO_MOVE_FACTOR,
                     knockback=C.COMBO_KNOCKBACK[1], guard_break=False, cooldown=0.0, wear=0.0, next='sword_3'),
     'sword_3': dict(anim='attack_sword_3', damage=C.COMBO_DAMAGE[2], reach=(C.KNIGHT_REACH[0], C.KNIGHT_REACH[1] + 6),
-                    active=C.ACTIVE_FRAMES, slash_frame=3, slash='sword_slash_3', move_factor=C.ATTACK_MOVE_FACTOR,
+                    active=C.ACTIVE_FRAMES, slash_frame=3, slash='sword_slash_3', move_factor=C.COMBO_MOVE_FACTOR,
                     knockback=C.COMBO_KNOCKBACK[2], guard_break=False, cooldown=0.0, wear=0.0, next=None),
     'axe': dict(anim='attack_axe', damage=C.AXE_DAMAGE, reach=C.AXE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                 slash=None, move_factor=C.AXE_MOVE_FACTOR, knockback=C.AXE_KNOCKBACK, guard_break=True, cooldown=0.0,
@@ -242,6 +242,9 @@ ATTACKS = {
 for _k in ('sword', 'sword_2', 'sword_3', 'bk_1', 'bk_2', 'bk_3'):      # melee combos drive the attacker forward
     ATTACKS[_k]['lunge'] = C.COMBO_LUNGE_SPEED
 for _k in ('bk_1', 'bk_2'): ATTACKS[_k]['knockback'] = C.COMBO_KNOCKBACK[0]
+for _k in ('bk_1', 'bk_2', 'bk_3'): ATTACKS[_k]['move_factor'] = C.COMBO_MOVE_FACTOR
+for _k in ('xbow', 'xb_1', 'xb_2', 'xb_3'): ATTACKS[_k]['shield_break'] = True      # one bolt shatters a guard
+ATTACKS['knife'].update(charges=C.KNIFE_CHARGES, recharge=C.KNIFE_RECHARGE)       # 3 knives, each recharges alone
 ANIM = {k: d['anim'] for k, d in FIGHTER_DEFS.items()}          # (aliases kept for old code / tests)
 SLASH = {k: d['slash'] for k, d in FIGHTER_DEFS.items()}
 REACH = {k: d['reach'] for k, d in FIGHTER_DEFS.items()}
@@ -295,6 +298,9 @@ class Fighter:
         self.hit_set = []                                       # targets already hit by the current swing
         self.charge_cd = 0.0; self.dash_t = 0.0; self.dash_hit = False; self.summoned = False
         self.rehit_done = False; self.cd = {}                    # cd: attack id -> time it can be used again
+        self.guard_stamina = C.GUARD_STAMINA if self.defn.get('guard') else 0   # shield bearers (T24)
+        self.guard_t = 0.0; self.guard_idle = 0.0                 # guard broken for this long / time since the last block
+        self.recharge = {}; self.wear_done = False                # attack id -> ready times (knives); wear taken by this swing
         self.combo_open = None                                  # (attacker, its next stroke id, expiry time): hit by a combo stroke
         self.combo_next = None; self.chain = None               # queued next stroke / (time, id) just after a stroke ended
         self.ai_wait = None; self.ai_cooldown = 0.6             # enemy AI state (per fighter, so many enemies can coexist)
@@ -323,6 +329,7 @@ class Fighter:
         if self.is_hero and self.airborne and self.state in ('idle', 'walk'):
             return 'jump_up' if self.vy > 0 else 'jump_fall'      # falling off a ledge without jumping plays jump_fall too
         if self.state == 'attack': return ATTACKS[self.attack_id]['anim']
+        if self.guard_t > 0 and self.state in ('idle', 'walk'): return 'walk' if self.state == 'walk' else 'idle'   # shield down
         if self.state == 'charge': return self.defn['anim'].get('charge', 'attack_special')   # hero: frame 0 of the spin
         return self.defn['anim'][self.state]
 
@@ -497,6 +504,7 @@ class World:
         dt = min(dt, 0.05); self.time += dt
         for f in self.fighters():
             f.t += dt; f.invuln = max(0.0, f.invuln - dt)
+            if f.defn.get('guard'): self._guard_tick(f, dt)
         for f in self.corpses: f.t += dt
         self.shake = max(0.0, self.shake - dt)
         if inp.potion_pressed: self.drink_potion()
@@ -547,7 +555,7 @@ class World:
             h.charge_t = 0.0
             if not inp.attack: self.start_attack(h, h.primary)
         sec = h.defn.get('secondary')
-        if (inp.secondary_pressed and sec and h.state in ('idle', 'walk') and self.time >= h.cd.get(sec, 0.0)):
+        if (inp.secondary_pressed and sec and h.state in ('idle', 'walk') and self.can_use(h, sec)):
             self.start_attack(h, sec)                                                # right button: secondary attack (T41)
             h.x += dx * h.defn['speed'] * ATTACKS[sec]['move_factor'] * dt
             return
@@ -764,6 +772,15 @@ class World:
                 atk.hit_done = True; atk.hit_set.append(tgt); hits.append((atk, tgt))
         for atk, tgt in hits: self._hit(atk, tgt)          # applied together, so trades are possible
 
+    def _guard_tick(self, f, dt):
+        if f.guard_t > 0:
+            f.guard_t = max(0.0, f.guard_t - dt)
+            if f.guard_t == 0.0: f.guard_stamina = C.GUARD_STAMINA                 # the shield is back, fresh
+        else:
+            f.guard_idle += dt
+            if f.guard_idle >= C.GUARD_REGEN_DELAY:
+                f.guard_stamina = min(C.GUARD_STAMINA, f.guard_stamina + C.GUARD_REGEN * dt)
+
     def _open_to(self, src, attack_id, tgt):
         """Can `src` hit `tgt` with `attack_id` right now? Normally not while it is invulnerable, but the victim of a combo
         stroke stays open to the NEXT stroke of the same chain (that is what makes a combo a stunlock)."""
@@ -803,11 +820,21 @@ class World:
         """A connected blow. `at` = ATTACKS-like dict (damage, knockback); `src_x` = where it came from (a projectile
         or an area hit instead of the attacker's own position)."""
         at = at or ATTACKS[atk.attack_id]; sx = atk.x if src_x is None else src_x
-        if (tgt.defn.get('guard') and tgt.state in ('idle', 'walk') and not at.get('guard_break')
-                and (sx - tgt.x) * tgt.facing > 0):         # shield up and the blow comes from the front (T24)
+        wear = at.get('wear', 0.0)
+        if wear and atk.weapon and not atk.wear_done:             # a held weapon only wears down when it strikes something
+            atk.wear_done = True; atk.weapon['durability'] -= wear
+            if atk.weapon['durability'] <= 0:
+                atk.weapon = None; self.events.append(('break', atk.kind)); self.shake = C.SHAKE_TIME
+        if (tgt.defn.get('guard') and tgt.guard_t <= 0 and tgt.state in ('idle', 'walk') and not at.get('guard_break')
+                and (sx - tgt.x) * tgt.facing > -C.GUARD_BACK_MARGIN):   # shield up and the blow comes from the front (T24)
             self.add_vfx('block_spark', tgt.x, tgt.facing < 0, y=tgt.y)
             self.events.append(('block', tgt.kind)); self.shake = C.SHAKE_TIME * 0.5
             tgt.kb_dir = 1 if tgt.x >= sx else -1; tgt.kb_t = C.KNOCKBACK_TIME; tgt.kb_speed = C.BLOCK_KNOCKBACK / C.KNOCKBACK_TIME
+            tgt.guard_stamina -= at['damage']; tgt.guard_idle = 0.0
+            if at.get('shield_break') or tgt.guard_stamina <= 0:   # the guard shatters: shield down for a while
+                tgt.guard_stamina = 0; tgt.guard_t = C.GUARD_BREAK_TIME
+                self.add_vfx('shield_break', tgt.x, tgt.facing < 0, y=tgt.y)
+                self.events.append(('guard_break', tgt.kind)); self.shake = C.SHAKE_TIME
             return False
         mult = 1.0 if atk.is_hero else C.ENEMY_DAMAGE_MULT
         self.apply_damage(atk, tgt, int(round(at['damage'] * atk.mods.get('damage', 1.0) * mult)))
@@ -886,8 +913,7 @@ class World:
                     if tgt in p.hit_set or not self._open_to(p.owner, p.attack_id, tgt): continue
                     if abs(p.x - tgt.x) > tgt.hw + 3 or abs(p.base_y - tgt.y) > C.VERTICAL_REACH: continue
                     p.hit_set.append(tgt)
-                    self._hit(p.owner, tgt, at=dict(damage=p.damage, knockback=p.knockback,
-                                                    next=ATTACKS.get(p.attack_id, {}).get('next')), src_x=p.x - p.facing * 8)
+                    self._hit(p.owner, tgt, at=self._proj_at(p), src_x=p.x - p.facing * 8)
                     if not p.pierce: p.done = True; break
                 if abs(p.x - p.x0) >= p.max_range: p.done = True
                 if p.done and p.explode: self._explode(p)
@@ -903,6 +929,13 @@ class World:
                             continue
                         self._hit(p.owner, tgt, at=dict(damage=p.damage, knockback=p.knockback), src_x=p.tx - p.facing * 4)
         self.projectiles = [p for p in self.projectiles if not p.done and abs(p.x - self.hero.x) < 900]
+
+    @staticmethod
+    def _proj_at(p):
+        """The ATTACKS-like dict a projectile hits with: its own damage / knockback plus the traits of the attack that fired it."""
+        src = ATTACKS.get(p.attack_id, {})
+        return dict(damage=p.damage, knockback=p.knockback, next=src.get('next'), wear=src.get('wear', 0.0),
+                    shield_break=src.get('shield_break', False))
 
     def _explode(self, p):
         """A fireball with `explode` hurts everyone around where it ended (the one it hit already took the blow)."""
@@ -970,15 +1003,28 @@ class World:
         self.events.append(('throw', h.voice))
         return True
 
+    def charges(self, f, attack_id):
+        """Attacks with `charges` (the thrown knives): (ready, [seconds left of each one recharging]); None for the others."""
+        n = ATTACKS[attack_id].get('charges')
+        if not n: return None
+        used = [t for t in f.recharge.get(attack_id, []) if t > self.time]
+        f.recharge[attack_id] = used
+        return n - len(used), [t - self.time for t in used]
+
+    def can_use(self, f, attack_id):
+        """Cooldown gap over and (for knives) at least one charge in the belt."""
+        if self.time < f.cd.get(attack_id, 0.0): return False
+        c = self.charges(f, attack_id)
+        return c is None or c[0] > 0
+
     def start_attack(self, f, attack_id):
-        f.attack_id = attack_id; f.set_state('attack'); f.chain = None
-        if ATTACKS[attack_id]['cooldown']: f.cd[attack_id] = self.time + ATTACKS[attack_id]['cooldown']
-        for spec in ATTACKS[attack_id].get('burst', ()): self.timers.append([spec['t'], f, spec])
-        wear = ATTACKS[attack_id].get('wear', 0.0)
-        if wear and f.weapon:                                  # every swing wears the held weapon down
-            f.weapon['durability'] -= wear
-            if f.weapon['durability'] <= 0:
-                f.weapon = None; self.events.append(('break', f.kind)); self.shake = C.SHAKE_TIME
+        f.attack_id = attack_id; f.set_state('attack'); f.chain = None; f.wear_done = False
+        at = ATTACKS[attack_id]
+        if at['cooldown']: f.cd[attack_id] = self.time + at['cooldown']
+        if at.get('charges'):
+            self.charges(f, attack_id); f.recharge[attack_id].append(self.time + at['recharge'])
+        for spec in at.get('burst', ()): self.timers.append([spec['t'], f, spec])
+        # (weapon wear is charged when the blow connects: see _hit)
 
     def heal(self, f, amount):
         """Restores life (capped at max_hp) with the heal effect and sound. Any healing item should go through here."""

@@ -1,8 +1,13 @@
 import os, random, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from game import config as C
-from game.logic import World, Inputs, load_timing, Fighter, CLASSES
+from game.logic import World, Inputs, load_timing, Fighter, CLASSES, ATTACKS
 
+from game.logic import FIGHTER_DEFS as _FD
+REAL_HP = {k: d['max_hp'] for k, d in _FD.items() if not d['hero']}
+LEGACY_HP = dict(ogre=30, soldier=20, spearman=25, archer=15, shieldman=30, orc=40, goblin=10, kobold=12, minotaur=50,
+                 ogre_captain=90, minotaur_lord=120, black_knight=110)
+for _k, _hp in LEGACY_HP.items(): _FD[_k]['max_hp'] = _hp         # the older tests count in these; test 58 checks the real ones
 C.ENEMY_DAMAGE_MULT = 1.0          # the older tests count in whole 10s; the 1.2 multiplier has its own test (51+)
 T = load_timing(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets'))
 DT = 1 / 60
@@ -434,17 +439,21 @@ assert 'knight_axe' in T and T['knight_axe']['attack_axe'] < T['knight']['attack
 # damage 20 per hit (ogre 30 hp -> 2 hits), reach 8 px longer than the sword, wears AXE_WEAR per swing
 w = fresh(0); w.hero.weapon = dict(id='axe', durability=100.0); w.ogre.x = 55.0; w.ogre.ai_cooldown = 99; w.ogre.set_state('hurt')      # (a 'hurt' ogre stands still)
 w.update(DT, Inputs(attack=True, attack_pressed=True)); assert w.hero.attack_id == 'axe' and w.hero.anim == 'attack_axe'
-assert w.hero.weapon['durability'] == 100 - C.AXE_WEAR
-run(w, 0.5, Inputs()); assert w.ogre.hp == 10, w.ogre.hp                      # 55 px away: only the axe reaches (sword: 40 + the ogre's half width)
+assert w.hero.weapon['durability'] == 100                                  # nothing hit yet: no wear
+run(w, 0.5, Inputs()); assert w.ogre.hp == 10, w.ogre.hp
+assert w.hero.weapon['durability'] == 100 - C.AXE_WEAR           # worn by the blow that connected                      # 55 px away: only the axe reaches (sword: 40 + the ogre's half width)
 assert C.AXE_REACH[1] > C.KNIGHT_REACH[1]
 from game.logic import ATTACKS as _AT
 _lunge = _AT['sword'].pop('lunge'); w2 = fresh(0); w2.ogre.x = 55.0; w2.ogre.ai_cooldown = 99; w2.ogre.set_state('hurt'); run(w2, 0.5, Inputs(attack=True)); assert w2.ogre.hp == 30
 _AT['sword']['lunge'] = _lunge      # (without the combo lunge)
 # every swing wears it; at 0 it breaks and the hero is back to the sword (class weapon is indestructible)
 w = fresh(0); w.ogre.x = 5000.0; w.hero.weapon = dict(id='axe', durability=C.AXE_WEAR * 2 + 0.5)
-w.start_attack(w.hero, 'axe'); assert w.hero.weapon['durability'] == C.AXE_WEAR + 0.5
-w.start_attack(w.hero, 'axe'); assert w.hero.weapon['durability'] < C.AXE_WEAR
-w.start_attack(w.hero, 'axe'); assert w.hero.weapon is None and ('break', 'knight') in w.events
+def swing_hit(w):                                  # one axe swing that connects (wear is charged on contact)
+    w.start_attack(w.hero, 'axe'); w.ogre.invuln = 0; w._hit(w.hero, w.ogre); w.ogre.hp = 30
+swing_hit(w); assert w.hero.weapon['durability'] == C.AXE_WEAR + 0.5
+swing_hit(w); assert w.hero.weapon['durability'] < C.AXE_WEAR
+w.start_attack(w.hero, 'axe'); assert w.hero.weapon['durability'] < C.AXE_WEAR      # a swing in the air costs nothing
+swing_hit(w); assert w.hero.weapon is None and ('break', 'knight') in w.events
 assert w.hero.primary == 'sword' and w.hero.sheet == 'knight'
 w.hero.set_state('idle'); w.update(DT, Inputs(attack=True, attack_pressed=True)); assert w.hero.attack_id == 'sword'
 for _ in range(40): w.start_attack(w.hero, 'sword')                           # the sword never wears
@@ -518,12 +527,13 @@ assert w.hero.weapon['id'] == 'bow' and w.hero.sheet == 'knight_bow' and w.hero.
 assert 'knight_bow' in T and 'knight_xbow' in T
 w.ogre.x = 200.0; w.ogre.ai_cooldown = 99; w.ogre.set_state('hurt'); w.ogre.invuln = 0          # target at range, standing still
 w.update(DT, Inputs(attack=True, attack_pressed=True)); assert w.hero.state == 'attack' and w.hero.anim == 'attack_bow'
-assert w.hero.weapon['durability'] == 100 - C.BOW_WEAR
+assert w.hero.weapon['durability'] == 100                       # shot, not yet landed: no wear
 born = None
 for n in range(120):
     w.update(DT, Inputs())
     if w.projectiles and born is None: born = (w.hero.frame_index(T), w.projectiles[0].sprite, w.projectiles[0].damage)
 assert born is not None and born[0] == 4 and born[1:] == ('arrow', C.BOW_DAMAGE), born
+assert w.hero.weapon['durability'] == 100 - C.BOW_WEAR          # worn when the arrow hit the ogre 200 px away
 assert w.ogre.hp == 30 - C.BOW_DAMAGE or w.ogre.hp == 20, w.ogre.hp                              # hit from 200 px away
 # max range: a target past BOW_RANGE is never reached
 w = fresh(0); w.hero.weapon = dict(id='bow', durability=100.0); w.ogre.x = C.BOW_RANGE + 80; w.ogre.set_state('hurt'); w.ogre.ai_cooldown = 99
@@ -543,7 +553,10 @@ assert w.hero.weapon is None or w.hero.weapon['durability'] < 100 - C.XBOW_WEAR
 assert w.stats['damage_dealt'] >= C.XBOW_DAMAGE           # the bolts did land (the ogre may even have died and respawned)
 # the weapon breaks after enough shots and the hero is back to the sword
 w = fresh(0); w.ogre.x = 5000.0; w.hero.weapon = dict(id='bow', durability=C.BOW_WEAR + 0.1)
-w.start_attack(w.hero, 'bow'); w.start_attack(w.hero, 'bow'); assert w.hero.weapon is None and w.hero.primary == 'sword'
+for _ in range(2):
+    w.start_attack(w.hero, 'bow'); w.ogre.invuln = 0; w.hero.wear_done = False
+    w._hit(w.hero, w.ogre, at=w._proj_at(type('P', (), dict(attack_id='bow', damage=10, knockback=0))()))
+assert w.hero.weapon is None and w.hero.primary == 'sword'
 print('31 ok: bow/crossbow pickups (shot on frame 4, range, wear, crossbow reload)')
 
 # 32) T20: AI behaviours are data: a def with different ai_params changes how far away the enemy stops and attacks
@@ -859,7 +872,7 @@ run(w, 4.0, Inputs()); assert not w.stage_clear                                 
 w.hero.x = st.length - 5; w.update(DT, Inputs()); assert w.stage_clear
 # boss specifics: minotaur lord charges faster than the regular minotaur; black knight chains 3 strokes and guards
 ml = Fighter('minotaur_lord', 0, 1); assert ml.defn['charge']['telegraph'] < C.MINOTAUR_TELEGRAPH and ml.defn['charge']['speed'] > C.MINOTAUR_DASH_SPEED
-bk = Fighter('black_knight', 0, 1); assert bk.defn['guard'] and bk.max_hp == C.BLACK_KNIGHT_MAX_HP
+bk = Fighter('black_knight', 0, 1); assert bk.defn['guard'] and bk.max_hp == LEGACY_HP['black_knight']
 w = fresh(0); k = Fighter('black_knight', 40, -1); w.enemies = [k]; k.ai_cooldown = 99; w.hero.invuln = 99
 seen = []
 for _ in range(60):
@@ -1193,5 +1206,87 @@ k.attack_id = 'bk_1'; w.hero.invuln = 0; w._hit(k, w.hero); assert w.hero.combo_
 hp = w.hero.hp; k.set_state('attack'); k.attack_id = 'bk_2'; k.hit_set = []; k.t = 0.0
 run(w, 0.4, Inputs()); assert w.hero.hp < hp                                              # stroke 2 lands on the hurt hero
 print('57 ok: combo lunge, no walking through the foe, black knight chain stunlocks the hero')
+
+# 58) life: the weakest enemy survives exactly one whole combo, the others keep their order
+combo_total = sum(C.COMBO_DAMAGE)
+assert min(REAL_HP.values()) == combo_total, REAL_HP
+assert all(REAL_HP[k] >= LEGACY_HP[k] for k in LEGACY_HP) and REAL_HP['goblin'] <= REAL_HP['ogre'] <= REAL_HP['orc'] <= REAL_HP['minotaur']
+assert REAL_HP['ogre_captain'] > REAL_HP['orc'] and REAL_HP['minotaur_lord'] > REAL_HP['ogre_captain']
+print('58 ok: weakest enemy = one full combo (%d), others scaled: %s' % (combo_total, REAL_HP))
+
+# 59) no walking during a melee combo stroke (the lunge does the moving), also with the key held
+a = fresh(0); a.enemies = []; b = fresh(0); b.enemies = []
+a.update(DT, Inputs(attack=True, attack_pressed=True)); b.update(DT, Inputs(attack=True, attack_pressed=True, right=True))
+for _ in range(15): a.update(DT, Inputs(attack=True)); b.update(DT, Inputs(attack=True, right=True))
+assert abs(a.hero.x - b.hero.x) < 1e-6, (a.hero.x, b.hero.x)
+print('59 ok: holding a direction adds nothing during the combo')
+
+# 60) the combo is easier: a click as early as frame 1 queues the next stroke; a late click up to 0.3 s after still chains;
+#     killing the enemy with stroke 2 does not break the chain into stroke 3
+w = fresh(0); o = Fighter('ogre', 5000, -1); w.enemies = [o]
+w.update(DT, Inputs(attack=True, attack_pressed=True))
+for _ in range(60):
+    if w.hero.frame_index(T) >= 1: break
+    w.update(DT, Inputs(attack=True))
+w.update(DT, Inputs(attack=True, attack_pressed=True)); assert w.hero.combo_next == 'sword_2'
+run(w, 0.5, Inputs()); assert w.hero.attack_id == 'sword_2' or w.hero.state == 'attack'
+w = fresh(0); o = Fighter('ogre', 5000, -1); w.enemies = [o]
+w.update(DT, Inputs(attack=True, attack_pressed=True))
+while w.hero.state == 'attack': w.update(DT, Inputs())
+run(w, 0.25, Inputs()); w.update(DT, Inputs(attack=True, attack_pressed=True))      # 0.25 s after the stroke ended
+assert w.hero.attack_id == 'sword_2' and w.hero.state == 'attack', (w.hero.attack_id, w.hero.state)
+w = fresh(0); o = Fighter('ogre', 36, -1); o.ai_cooldown = 99; w.enemies = [o]; o.hp = 20      # dies on stroke 2
+w.update(DT, Inputs(attack=True, attack_pressed=True)); seen = []
+for _ in range(120):
+    pressed = w.hero.state == 'attack' and w.hero.frame_index(T) == 2 and w.hero.attack_id != 'sword_3'
+    w.update(DT, Inputs(attack=True, attack_pressed=pressed)); o.ai_cooldown = 99
+    if not seen or seen[-1] != w.hero.attack_id: seen.append(w.hero.attack_id)
+assert 'sword_2' in seen and 'sword_3' in seen and o.state == 'dead', (seen, o.state)
+print('60 ok: easier combo window (frame 1 .. +0.3 s), a kill on stroke 2 still flows into stroke 3')
+
+# 61) shield stamina: blocked blows wear it, at 0 it shatters (vfx + event), the shield stays down, then comes back full
+w, s = shield_world(0.0); s.hp = s.max_hp = 99
+for i in range(3):
+    s.state = 'idle'; w.hero.invuln = 0; w.events.clear(); w._hit(w.hero, s)
+    assert s.hp == 99 and ('block', 'shieldman') in w.events
+assert ('guard_break', 'shieldman') in w.events and any(v['name'] == 'shield_break' for v in w.vfx)
+assert s.guard_t > 0 and s.anim == 'idle'                                    # shield lowered while broken
+s.state = 'idle'; w._hit(w.hero, s); assert s.hp < 99                       # the next blow connects
+s.state = 'idle'; s.invuln = 0
+run(w, C.GUARD_BREAK_TIME + 0.1, Inputs()); assert s.guard_t == 0 and s.guard_stamina == C.GUARD_STAMINA and s.anim == 'guard'
+# overlapping the shield bearer (hero "inside" him) is still the front; far behind is the back
+w, s = shield_world(0.0); s.x = 0.0; w.hero.x = 5.0; s.hp = 99; s.facing = -1; w._hit(w.hero, s); assert s.hp == 99
+w, s = shield_world(0.0); s.x = 0.0; w.hero.x = -60.0; s.hp = 99; s.facing = 1; w._hit(w.hero, s); assert s.hp < 99
+# stamina comes back slowly when nobody is hitting the shield
+w, s = shield_world(0.0); s.hp = s.max_hp = 99; w.hero.invuln = 0; w._hit(w.hero, s); assert s.guard_stamina == C.GUARD_STAMINA - 10
+s.state = 'idle'; run(w, C.GUARD_REGEN_DELAY + 3.0, Inputs()); assert s.guard_stamina > C.GUARD_STAMINA - 10
+print('61 ok: shield stamina (3 blocks, shatter, down 2.5 s, back), overlap counts as front, slow regeneration')
+
+# 62) crossbow: ONE bolt shatters the guard
+w, s = shield_world(0.0); s.hp = s.max_hp = 99
+w.hero.weapon = dict(id='xbow', durability=C.WEAPON_DURABILITY)
+w.start_attack(w.hero, 'xbow')                                          # the bolt leaves on frame 4
+got = False
+for _ in range(60):
+    w.update(DT, Inputs()); got = got or ('guard_break', 'shieldman') in w.events
+assert got and s.guard_t > 0 and s.hp == 99
+from game.logic import ATTACKS as _AT2
+for a_id in ('xb_1', 'xb_2', 'xb_3'): assert _AT2[a_id].get('shield_break')
+assert not _AT2['bow'].get('shield_break') and not _AT2['sword'].get('shield_break')
+print('62 ok: crossbow bolts (pickup and class) shatter a guard in one blow, arrows and swords do not')
+
+# 63) knives: 3 in the belt, a short gap between throws, each one returns on its own after KNIFE_RECHARGE seconds
+w = fresh(0); w.enemies = []; w.hero.invuln = 99
+assert w.charges(w.hero, 'knife')[0] == C.KNIFE_CHARGES == 3
+thrown = 0
+for i in range(5):
+    w.update(DT, Inputs(secondary=True, secondary_pressed=True))
+    if w.hero.state == 'attack' and w.hero.attack_id == 'knife': thrown += 1
+    run(w, C.KNIFE_COOLDOWN + 0.5, Inputs())
+assert thrown == 3, thrown                                                  # the 4th and 5th found the belt empty
+ready, left = w.charges(w.hero, 'knife'); assert ready == 0 and len(left) == 3 and max(left) <= C.KNIFE_RECHARGE
+run(w, C.KNIFE_RECHARGE + 0.2, Inputs()); assert w.charges(w.hero, 'knife')[0] >= 1
+w.update(DT, Inputs(secondary=True, secondary_pressed=True)); assert w.hero.attack_id == 'knife' and w.hero.state == 'attack'
+print('63 ok: 3 knives, gap between throws, recharge one by one')
 
 print('ALL LOGIC TESTS PASSED')

@@ -112,8 +112,8 @@ SPECIAL_ANIM_SPEED = 1.5           # spin animation AND its ring effect (they mu
 BOW_ANIM_SPEED = 1.3               # picked-up bow: draw and release
 XBOW_ANIM_SPEED = 1.0              # picked-up crossbow: slower aim
 AXE_ANIM_SPEED = 1.26              # picked-up axe: 1.35x slower than stroke 1 (KNIGHT_ATTACK_ANIM_SPEED / 1.35)
-COMBO_WINDOW_START = 3             # a new click chains the next stroke from this frame of the current one...
-COMBO_BUFFER = 0.15                # ...until this many seconds after it ended
+COMBO_WINDOW_START = 1             # a new click chains the next stroke from this frame of the current one (was 3: too tight)...
+COMBO_BUFFER = 0.3                 # ...until this many seconds after it ended (was 0.15)
 COMBO_DAMAGE = (10, 10, 15)        # damage of strokes 1, 2, 3
 COMBO_KNOCKBACK = (8.0, 8.0, 24.0)   # strokes 1-2 barely push (the next one must still connect); the finisher shoves
 WALK_ANIM_SPEED = 1.2              # ogre walk cycle; keep it proportional to OGRE_SPEED so the feet don't slide
@@ -215,7 +215,7 @@ XBOW_MOVE_FACTOR = 0.4
 KNIFE_DAMAGE = 8
 KNIFE_SPEED = 340.0
 KNIFE_RANGE = 300.0
-KNIFE_COOLDOWN = 1.0               # infinite uses, limited only by the recharge (D3)
+KNIFE_COOLDOWN = 0.4               # gap between two throws; the knives themselves recharge one by one (KNIFE_RECHARGE)
 KNIFE_MOVE_FACTOR = 0.7
 
 # ---- classes (T42-T44) --------------------------------------------------------------------
@@ -394,3 +394,33 @@ COMBO_OPEN_TIME = 1.0              # seconds the victim of a combo stroke stays 
 COMBO_LUNGE_SPEED = 90.0           # px/s a combo stroke (hero sword, black knight) drives the attacker forward...
 LUNGE_RANGE = 70.0                 # ...while a foe is this close ahead (or nobody is: it just steps forward)...
 LUNGE_STOP = 12.0                  # ...and stops this far from the foe so it never walks through him
+
+# ---- fixes after the second play-test ----------------------------------------------------------
+COMBO_MOVE_FACTOR = 0.0            # walking speed multiplier during a melee combo stroke (the lunge does the moving)
+# enemy life: the weakest enemy must die to one whole knight combo (10 + 10 + 15); the others keep their old proportions
+ENEMY_MIN_HP = sum(COMBO_DAMAGE)
+ENEMY_HP_SCALE = 1.5
+def _scaled_hp(old): return max(ENEMY_MIN_HP, int(round(old * ENEMY_HP_SCALE / 5.0)) * 5)
+OGRE_MAX_HP = _scaled_hp(OGRE_MAX_HP)
+SOLDIER_MAX_HP = _scaled_hp(SOLDIER_MAX_HP)
+SPEARMAN_MAX_HP = _scaled_hp(SPEARMAN_MAX_HP)
+ARCHER_MAX_HP = _scaled_hp(ARCHER_MAX_HP)
+SHIELDMAN_MAX_HP = _scaled_hp(SHIELDMAN_MAX_HP)
+ORC_MAX_HP = _scaled_hp(ORC_MAX_HP)
+GOBLIN_MAX_HP = _scaled_hp(GOBLIN_MAX_HP)
+KOBOLD_MAX_HP = _scaled_hp(KOBOLD_MAX_HP)
+MINOTAUR_MAX_HP = _scaled_hp(MINOTAUR_MAX_HP)
+CAPTAIN_MAX_HP = _scaled_hp(CAPTAIN_MAX_HP)
+MINO_LORD_MAX_HP = _scaled_hp(MINO_LORD_MAX_HP)
+BLACK_KNIGHT_MAX_HP = _scaled_hp(BLACK_KNIGHT_MAX_HP)
+
+# shield stamina: blocked blows wear the guard down; at 0 it breaks and the shield stays down for a while
+GUARD_STAMINA = 30                 # damage a guard absorbs before it breaks (three sword strokes of 10)
+GUARD_BREAK_TIME = 2.5             # seconds the shield cannot be raised after breaking
+GUARD_REGEN_DELAY = 1.5            # seconds without blocking before the stamina starts to come back...
+GUARD_REGEN = 6.0                  # ...at this many points per second
+GUARD_BACK_MARGIN = 14             # an attacker this close behind the hip (overlapping) still counts as in front
+
+# thrown knives: three in the belt, each one comes back by itself
+KNIFE_CHARGES = 3
+KNIFE_RECHARGE = 5.0               # seconds for a thrown knife to be ready again (each one on its own clock)

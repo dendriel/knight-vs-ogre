@@ -284,17 +284,26 @@ class View:
             w = h.weapon
             surf.blit(self.icons[w['id'] if w else h.defn.get('icon', 'sword')], (x, y - 1))
             if w and w.get('durability') is not None:
-                d = w['durability'] / 100.0
+                d = max(0.0, min(1.0, w['durability'] / C.WEAPON_DURABILITY))      # relative to a new weapon
                 self._small_bar(surf, x + 15, y + 3, 30, 4, d, (230, 200, 90) if d > .25 else (230, 80, 70))
             else:
                 self._text(surf, 'inf', x + 15, y, (200, 210, 230))
             x += 58
         sec = h.defn.get('secondary')
         if 'secondary' in feats and sec:                         # secondary attack icon + recharge bar
-            rem = max(0.0, h.cd.get(sec, 0.0) - world.time); cdn = max(1e-6, ATTACK_COOLDOWN(sec))
             surf.blit(self.icons[SECONDARY_ICON.get(sec, 'knife')], (x, y - 1))
-            self._small_bar(surf, x + 15, y + 3, 30, 4, 1.0 - min(1.0, rem / cdn), (120, 200, 255) if rem <= 0 else (150, 150, 170))
-            x += 58
+            ch = world.charges(h, sec) if 'charges' in ATTACKS[sec] else None
+            if ch is not None:                                   # one segment per knife in the belt (ready = full)
+                n = ATTACKS[sec]['charges']; ready, left = ch; left = sorted(left)
+                for i in range(n):
+                    if i < ready: frac, col = 1.0, (120, 200, 255)
+                    else: frac, col = 1.0 - left[i - ready] / ATTACKS[sec]['recharge'], (150, 150, 170)
+                    self._small_bar(surf, x + 15 + i * 11, y + 3, 9, 4, frac, col)
+                x += 15 + n * 11 + 4
+            else:                                                # single recharge bar
+                rem = max(0.0, h.cd.get(sec, 0.0) - world.time); cdn = max(1e-6, ATTACK_COOLDOWN(sec))
+                self._small_bar(surf, x + 15, y + 3, 30, 4, 1.0 - min(1.0, rem / cdn), (120, 200, 255) if rem <= 0 else (150, 150, 170))
+                x += 58
         if 'potions' in feats:
             surf.blit(self.pickup_img['potion'], (x, y - 3))
             self._text(surf, f'{world.potions}/{C.POTION_MAX_STOCK}', x + 15, y, (255, 150, 150))
@@ -309,6 +318,11 @@ class View:
             self._text(surf, label, C.SCREEN_W - 10, 6, (255, 220, 200), self.font_big, 'right')
             self._bar(surf, C.SCREEN_W - 10, 20, o.hp, o.max_hp, (222, 80, 60), 'right')
             self._text(surf, f'{o.hp}', C.SCREEN_W - 156, 18, font=self.font_big, align='right')
+            if o.defn.get('guard'):                       # shield stamina under the life bar
+                broken = o.guard_t > 0
+                self._small_bar(surf, C.SCREEN_W - 156, 31, 146, 3, 1.0 - o.guard_t / C.GUARD_BREAK_TIME if broken
+                                else o.guard_stamina / C.GUARD_STAMINA,
+                                (230, 80, 70) if broken else (150, 200, 255))
         self._text(surf, f'Derrotas: {world.ogre_deaths}', C.SCREEN_W - 10, 38, (255, 220, 150), align='right')
         st = world.stage
         if st is not None:                                       # stage name + progress along the path (top centre)

@@ -346,11 +346,45 @@ def fire_burst(i):
         put(im, cx + math.cos(a) * v, cy - r // 3 + math.sin(a) * v * .8, FIRE[1] if k % 2 else FIRE[2], al)
     return im
 
+# ---- 13) shield break: the shield in front of the defender cracks and bursts into pieces (guard stamina ran out) ----
+STEEL = (C(226, 234, 248), C(150, 170, 205), C(96, 112, 150), C(58, 66, 100))
+RIM = (C(255, 226, 120), C(204, 150, 60))
+
+def shield_break(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0)); cx, cy = 45, 36
+    if i == 0:                                                           # the whole shield, cracked
+        for y in range(-9, 10):
+            for x in range(-6, 7):
+                d2 = (x / 6.0) ** 2 + (y / 9.0) ** 2
+                if d2 > 1: continue
+                col = RIM[0] if d2 > .72 else (STEEL[0] if x + y < 0 else (STEEL[1] if x + y < 5 else STEEL[2]))
+                put(im, cx + x, cy + y, col)
+        for k in range(-8, 9):                                           # a jagged crack down the middle
+            put(im, cx + (2 if k % 4 in (1, 2) else -1), cy + k, STEEL[3])
+        return im
+    rnd = random.Random(77)
+    al = [1, 1, 1, .9, .7, .45][i]
+    for k in range(14):                                                  # shards flying out
+        a = rnd.uniform(-math.pi * .95, math.pi * .95); v = rnd.uniform(4.0, 8.0)
+        w = 3 + k % 3; h = 3 + (k // 2) % 2
+        px = cx + math.cos(a) * v * (i - .4) * .75; py = cy + math.sin(a) * v * (i - .4) * .75 + .55 * i * i
+        for dy in range(h):
+            for dx in range(w):
+                col = RIM[k % 2] if (dx == 0 and k % 3 == 0) else STEEL[(k + dx + dy) % 3]
+                put(im, px + dx, py + dy, col, al)
+    if i <= 2:                                                           # the flash of the burst
+        r = 4 + 2 * i
+        for a in range(0, 360, 30):
+            for rr in (r - 1, r):
+                put(im, cx + math.cos(math.radians(a)) * rr, cy + math.sin(math.radians(a)) * rr, STEEL[0] if rr == r else RIM[0], 1.0)
+    return im
+
 EFFECTS = [('sword_slash', sword_slash, 12), ('axe_slash', axe_slash, 10), ('blood_splash', blood, 12), ('spirit', spirit, 6),
            ('heal', heal, 10), ('coin_glint', coin_glint, 12),
            ('sword_slash_2', sword_slash_2, 12), ('sword_slash_3', sword_slash_3, 12),
            ('spin_slash', spin_slash, 12), ('charge', charge, 10), ('block_spark', block_spark, 14),
-           ('stone_spikes', stone_spikes, 12), ('fire_burst', fire_burst, 14)]
+           ('stone_spikes', stone_spikes, 12), ('fire_burst', fire_burst, 14),
+           ('shield_break', shield_break, 12)]
 
 if __name__ == '__main__':
     out = sys.argv[1] if len(sys.argv) > 1 else './out'; os.makedirs(out, exist_ok=True)
@@ -358,7 +392,7 @@ if __name__ == '__main__':
     atlas = {'frames': [], 'animations': {}, 'meta': {'image': 'vfx_spritesheet.png', 'frame_size': [64, 64], 'note':
              'sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; '
              'blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life '
-             '(any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held; block_spark: on the front of a shielded defender; stone_spikes: ground spikes in front of the mage; fire_burst: an explosion on the ground. Same anchor as the character frames.'}}
+             '(any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held; block_spark: on the front of a shielded defender; stone_spikes: ground spikes in front of the mage; fire_burst: an explosion on the ground; shield_break: the shield of a defender bursting (on the front of the defender, like block_spark). Same anchor as the character frames.'}}
     for r, (name, fn, fps) in enumerate(EFFECTS):
         for i in range(6):
             sheet.alpha_composite(fn(i), (i * F, r * F))
