@@ -15,6 +15,68 @@ class Scene:
 def key_pressed(e, *keys): return e.type == pygame.KEYDOWN and e.key in keys
 
 
+class SelectScene(Scene):
+    """Class selection (T45): cards side by side with the idle frame, the attributes and the three attacks. <-/-> + Enter
+    or a click on a card; Esc goes back to the title. `next_start` = stage id / 'endless' to start with the choice."""
+    CARD_W, CARD_H, GAP = 108, 172, 8
+
+    def __init__(self, game, next_start):
+        from .logic import CLASSES, FIGHTER_DEFS
+        self.next_start = next_start; self.classes = list(CLASSES); self.index = 0; self.hover = None
+        n = len(self.classes); total = n * self.CARD_W + (n - 1) * self.GAP
+        self.x0 = (C.SCREEN_W - total) // 2; self.y0 = 32
+        self.defs = [FIGHTER_DEFS[c] for c in self.classes]
+        self.portraits = []
+        for c, d in zip(self.classes, self.defs):             # idle frame 0, enlarged 3x with nearest-neighbour scaling
+            frame = game.view.frames[(d['sheet'], 'idle', False)][0]
+            self.portraits.append(pygame.transform.scale(frame.subsurface((12, 6, 40, 54)).copy(), (80, 108)))
+        self.index = self.classes.index(game.hero_class) if game.hero_class in self.classes else 0
+
+    def rect(self, i):
+        from .ui import Rect
+        return Rect(self.x0 + i * (self.CARD_W + self.GAP), self.y0, self.CARD_W, self.CARD_H)
+
+    def choose(self, game):
+        game.hero_class = self.classes[self.index]; game.start(self.next_start)
+
+    def handle_event(self, e, game):
+        if key_pressed(e, pygame.K_LEFT, pygame.K_a): self.index = (self.index - 1) % len(self.classes)
+        elif key_pressed(e, pygame.K_RIGHT, pygame.K_d): self.index = (self.index + 1) % len(self.classes)
+        elif key_pressed(e, pygame.K_RETURN, pygame.K_SPACE): self.choose(game)
+        elif key_pressed(e, pygame.K_ESCAPE): game.to_title()
+        elif e.type == pygame.MOUSEMOTION:
+            p = game.to_internal(e.pos)
+            for i in range(len(self.classes)):
+                if self.rect(i).contains(p): self.index = i; self.hover = i; return
+            self.hover = None
+        elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+            p = game.to_internal(e.pos)
+            for i in range(len(self.classes)):
+                if self.rect(i).contains(p): self.index = i; self.choose(game); return
+
+    def draw(self, surf, game):
+        v = game.view
+        surf.fill((26, 30, 48))
+        v.title(surf, 'ESCOLHA SUA CLASSE', 14)
+        labels = (('Vida', 'vida'), ('Vel.', 'vel'), ('Dano', 'dano'), ('Alc.', 'alcance'))
+        for i, d in enumerate(self.defs):
+            r = self.rect(i); sel = i == self.index
+            pygame.draw.rect(surf, (255, 224, 120) if sel else (18, 18, 30), (r.x - 2, r.y - 2, r.w + 4, r.h + 4))
+            pygame.draw.rect(surf, (52, 60, 96) if sel else (38, 42, 66), r.tuple())
+            surf.blit(self.portraits[i], (r.x + (r.w - 80) // 2, r.y + 4))
+            v.text(surf, d['label'], r.x + (r.w - v.font_big.size(d['label'])[0]) // 2, r.y + 114, (255, 236, 170), v.font_big)
+            for k, (lab, key) in enumerate(labels):
+                yy = r.y + 132 + k * 9
+                v.text(surf, lab, r.x + 4, yy - 3, (200, 208, 230))
+                for j in range(5):
+                    col = (240, 200, 90) if j < d['stats'][key] else (60, 64, 88)
+                    surf.fill(col, (r.x + 40 + j * 12, yy, 10, 4))
+        d = self.defs[self.index]
+        for k, line in enumerate(zip(('Ataque', 'Botao dir.', 'Especial'), d['card'])):
+            v.text(surf, f'{line[0]}: {line[1]}', self.x0, self.y0 + self.CARD_H + 8 + k * 12, (235, 240, 255))
+        v.center(surf, '<- ->: escolher   Enter / clique: jogar   Esc: voltar', C.SCREEN_H - 14, (180, 190, 215))
+
+
 class TitleScene(Scene):
     """Start screen (T30): campaign (the three stages), the endless mode, controls, quit."""
     def __init__(self):
@@ -23,8 +85,8 @@ class TitleScene(Scene):
                          x=(C.SCREEN_W - 150) // 2, y=108, w=150, row_h=22)
 
     def act(self, action, game):
-        if action == 'campaign': game.start('stage1')
-        elif action == 'endless': game.start('endless')
+        if action == 'campaign': game.replace(SelectScene(game, 'stage1'))
+        elif action == 'endless': game.replace(SelectScene(game, 'endless'))
         elif action == 'controls': game.push(ControlsScene())
         elif action == 'quit': game.running = False
 

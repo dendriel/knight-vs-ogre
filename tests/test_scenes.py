@@ -78,17 +78,24 @@ fp.PRESSED.add(fp.K_1); step(g); assert g.cur.potion_pressed
 step(g); assert not g.cur.potion_pressed
 print('5 ok: attack / secondary / potion edges and hold time')
 
-# 6) title screen: menu -> campaign starts stage 1; endless starts the infinite mode; --stage style start works
+# 6) title screen: menu -> class selection -> campaign / endless; --stage style start works; restart keeps the stage
 fp.PRESSED.clear(); fp.EVENTS.clear()
 g = main.Game(); step(g, 3); assert isinstance(g.scene, S.TitleScene)
 t0 = g.world.time; step(g, 30); assert g.world.time == t0, 'the title backdrop is frozen'
-key(g, fp.K_RETURN); assert isinstance(g.scene, S.PlayScene) and g.world.stage is not None and g.world.stage.id == 'stage1'
-g = main.Game(); step(g, 2); key(g, fp.K_DOWN); key(g, fp.K_RETURN)
-assert isinstance(g.scene, S.PlayScene) and g.world.stage is None and g.stage_id == 'endless'
+key(g, fp.K_RETURN); assert isinstance(g.scene, S.SelectScene) and g.scene.next_start == 'stage1'
+assert g.scene.classes[0] == 'knight' and len(g.scene.classes) >= 2
+key(g, fp.K_RIGHT); assert g.scene.index == 1
+key(g, fp.K_LEFT); key(g, fp.K_RETURN)
+assert isinstance(g.scene, S.PlayScene) and g.world.stage.id == 'stage1' and g.world.hero.kind == 'knight'
+g = main.Game(); step(g, 2); key(g, fp.K_DOWN); key(g, fp.K_RETURN); key(g, fp.K_RIGHT); key(g, fp.K_RETURN)
+assert isinstance(g.scene, S.PlayScene) and g.world.stage is None and g.stage_id == 'endless' and g.world.hero.kind == 'ranger'
+g = main.Game(); step(g, 2); key(g, fp.K_RETURN); key(g, fp.K_ESCAPE); assert isinstance(g.scene, S.TitleScene)   # Esc backs out
+key(g, fp.K_RETURN); r = g.scene.rect(1); click(g, (r.x + 5, r.y + 5))                                              # click = choose
+assert isinstance(g.scene, S.PlayScene) and g.world.hero.kind == g.hero_class == 'ranger'
 g = main.Game('stage2'); step(g, 2); assert g.world.stage.id == 'stage2'
 key(g, fp.K_ESCAPE); r = g.scene.menu.rect(2); click(g, (r.x + 5, r.y + 5))              # restart keeps the same stage
 assert isinstance(g.scene, S.PlayScene) and g.world.stage.id == 'stage2' and g.world.time < 0.5
-print('6 ok: title menu, campaign / endless start, restart keeps the stage')
+print('6 ok: title -> class selection -> campaign / endless, click and keyboard, restart keeps stage and class')
 
 # 7) defeat screen: opens when the hero falls in a stage; revive needs gold; restart goes back to the stage-start snapshot
 def kill_hero(g, gold):

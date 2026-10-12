@@ -32,6 +32,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T35: **tema Cidade** na fase 3: céu quente, silhueta de telhados e torres ao fundo, muralha com torres e ameias no parallax, rua de pedra; casas, barracas de feira, barris empilhados, postes de lampião e poço.
 - T41: **ataque secundário** no botão direito do mouse: o cavaleiro arremessa uma **faca** em linha reta (`KNIFE_DAMAGE` 8, `KNIFE_SPEED` 340, `KNIFE_RANGE` 300), infinita e limitada só pela recarga `KNIFE_COOLDOWN` 1,0 s (D3; funciona com qualquer vida e com arma pickup na mão); o HUD mostra o ícone com a barra de recarga.
 - T42: nova classe **Arqueiro** (por enquanto `python main.py --class ranger`; a seleção chega na T45): `RANGER_MAX_HP` 80, `RANGER_SPEED` 135 (cavaleiro 120), pulo 1,1x. Primário = **arco** com combo de 3 flechas (dano 8 / 8 / 14; a 3ª atravessa os inimigos); secundário (botão direito) = **espada curta** (dano 10, recarga 0,45 s); especial (barra cheia, segurar e soltar) = **chuva de flechas** (`RAIN_COUNT` 10 flechas de dano 8 caindo de 60 a 230 px à frente, com marcador no chão; um golpe sofrido interrompe o resto). Armas pickup não valem para esta classe (sem arte).
+- T45: **tela de seleção de classe** depois de Campanha / Modo infinito: cartões lado a lado com o quadro `idle` ampliado, nome, 4 barras (vida, velocidade, dano, alcance) e os 3 ataques; ←/→ + Enter ou clique escolhem; Esc volta. `--class ranger` pula o menu.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -107,6 +108,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T40: classes como dados: `CLASSES` + entradas `FIGHTER_DEFS` com `hero=True` (vida, velocidade, `jump` = multiplicador de altura, `special`, `secondary`, `label`, `voice` para o áudio); `World(hero_class=...)`; o respawn mantém a classe; eventos usam `Fighter.voice`. O cavaleiro é a entrada 0 (comportamento idêntico). Teste 44.
 - T41: `FIGHTER_DEFS[x].secondary` + `ATTACKS['knife']` (`shoot`, `cooldown`), `Inputs.secondary_pressed`; teste 45.
 - T42: `ATTACKS[x].burst` + `World.timers/_bursts()` (peças atrasadas de um especial), `Projectile.fall`, `Game(hero_class)` e `--class`; teste 46.
+- T45: `SelectScene`; `Game.hero_class`; `FIGHTER_DEFS[x].stats/card/label/icon`; cena 6 estendida.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

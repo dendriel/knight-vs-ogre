@@ -1,7 +1,7 @@
 # Knight vs Ogre (demo)
 
 ## Como rodar (Windows)
-O jogo abre num menu inicial: **Campanha** (3 fases), **Modo infinito** (o combate original), comandos e sair. Para pular o menu: `python main.py --endless` ou `python main.py --stage 2`.
+O jogo abre num menu inicial: **Campanha** (3 fases), **Modo infinito** (o combate original), comandos e sair; depois escolha a classe (setas + Enter ou clique). Para pular o menu: `python main.py --endless`, `--stage 2` e `--class ranger`.
 
 1. Instale o Python 3.10+ (marque "Add Python to PATH").
 2. De dois cliques em `run_game.bat` (instala o pygame na primeira vez e abre o jogo).
@@ -75,7 +75,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 - [x] T32 boss e arena no fim de cada fase **(arte)**
 
 ### Classes
-- [x] T40 classes | T41 ataque secundario (botao direito; faca do cavaleiro) | [x] T42 arqueiro | T45 selecao de classe
+- [x] T40 classes | T41 ataque secundario (botao direito; faca do cavaleiro) | [x] T42 arqueiro | [x] T45 selecao de classe
 - [ ] T43 besteiro | T44 mago **(arte)**
 
 ### Economia

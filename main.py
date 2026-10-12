@@ -148,9 +148,11 @@ class Game:
 
 if __name__ == '__main__':
     start = 'title'
+    explicit_class = '--class' in sys.argv
     if '--endless' in sys.argv: start = 'endless'
     elif '--stage' in sys.argv:
         n = sys.argv[sys.argv.index('--stage') + 1]
         start = n if n in STAGES else 'stage' + n
+    elif explicit_class: start = 'stage1'                       # --class alone starts the campaign with that class
     cls = sys.argv[sys.argv.index('--class') + 1] if '--class' in sys.argv else 'knight'
     Game(start, cls).run()
