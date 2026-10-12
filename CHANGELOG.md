@@ -26,6 +26,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T36: **dificuldade crescente**: cada fase tem 3 trechos por progresso (abertura 0–35%, meio 35–75%, pré-boss 75–100%) com `max_alive` e `max_attackers` próprios (fase 1: 2/1 → 3/2 → 3/2; fase 2: 3/2 → 4/2 → 5/3; fase 3: 4/2 → 5/3 → 6/3). Os encontros entram numa fila e os inimigos aparecem pela borda direita enquanto houver menos de `max_alive` vivos; a fração de elites sorteados cresce com o progresso (fase 1 só a partir de 75%); as bolsas de ouro pagam mais no fim (fase 1 ×1,0→1,4; fase 3 ×1,6→2,2). Encontros da fase 1 conforme a seção 4.2 do plano.
 - T37: **tela de derrota** (só em fase): *Renascer aqui — 100 ouro* (`REVIVE_COST`; desabilitado com aviso se faltar ouro) levanta o herói onde caiu com vida cheia, `REVIVE_INVULN` 2 s, barra de combo zerada; inimigos, fila e encontros mantêm o estado e poções/arma/armadura são mantidas (D10). *Reiniciar a fase* volta ao **snapshot do início da fase** (ouro, poções, arma, armadura da entrada; D9), o mesmo vale para *Reiniciar fase* do Esc. *Menu inicial* volta ao título.
 - T31: **tela de conclusão** da fase: monstros derrotados, dano causado, dano recebido, ouro adquirido (só desta fase), renascimentos e tempo; *Continuar* leva o estado da run (ouro, poções, arma, armadura — D6) para a fase seguinte; depois da fase 3 aparece "FIM DA DEMO" com volta ao menu inicial.
+- T33: **tema Planície** na fase 1: céu claro, colinas verdes, castelo distante com fumaça no parallax, chão de grama e terra; cenário com tendas listradas, estandartes, paliçadas, espadas fincadas, árvore seca, carroça de feno e fogueira.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -44,6 +45,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T23: `archer_spritesheet` (poses de arco como linha de ataque, arco carregado nas outras) gerado por `enemy_gen.py`.
 - T24: camada `shield` no `sprite_rig.py` (`shield=True` na pose), `shieldman_spritesheet` com linha `guard` e efeito `block_spark`.
 - T25: sheets `orc`, `goblin`, `kobold`, `minotaur` (recolor/escala do rig do ogro, chifres do minotauro) em `enemy_gen.py`; quadros que estourariam a moldura são reduzidos para caber.
+- T33: novos props `tent`, `banner`, `palisade`, `planted_swords`, `dead_tree`, `cart`, `campfire` e tile `grass_tile` (`art_tools/theme_gen.py`).
 
 ### Contrato de arte
 - T11: `knight_spritesheet` ganha as linhas 11 (`attack_sword_2`) e 12 (`attack_sword_3`), frames de golpe 3–4; `vfx_spritesheet` ganha as linhas 6 (`sword_slash_2`) e 7 (`sword_slash_3`). Linhas anteriores inalteradas pixel a pixel.
@@ -87,6 +89,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T36: `Stage.difficulty(p)`, `Stage.threat(section)`, `THREAT`, `World.queue/diff`; teste 41 verifica que a ameaça cresce entre trechos e entre fases e que nunca há mais de `max_alive` vivos. Bot ingênuo (aperta sem esquivar): fase 1 vence 1 de 3 seeds, fase 2 vence 3 de 3, fase 3 perde — a fase 3 exige esquiva, poções e especial.
 - T37: `World.revive()/can_revive()/export_run()/apply_run()`, `DefeatScene`, `Game.run/run_start/start(stage, run)/to_title()`; `stats['revives']`. Teste 42 + cena 7.
 - T31: `SummaryScene`, `EndScene`, `Game.after_summary()` (a loja da T50 entra aqui); cena 8.
+- T33: `THEMES` (cores, parallax, chão, tabelas de props por paridade de fatia) e `PROP_PLACE` em `stages.py`; `slot_props(slot, seed, theme)` e a View montam tudo a partir do tema (o tema `village` reproduz o sorteio original); `World.theme_id`. Decoração de parallax `castle`.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

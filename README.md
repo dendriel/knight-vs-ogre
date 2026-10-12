@@ -70,7 +70,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 - [x] T36 encontros e dificuldade crescente (entre fases e dentro de cada fase; varios inimigos ao mesmo tempo)
 - [x] T37 derrota: renascer por 100 de ouro ou reiniciar a fase
 - [x] T31 tela de conclusao com estatisticas
-- [ ] T33 / T34 / T35 temas: planicie, floresta inglesa, cidade **(arte)**
+- [ ] T33 (feito) / T34 / T35 temas: planicie, floresta inglesa, cidade **(arte)**
 - [ ] T32 boss e arena no fim de cada fase **(arte)**
 
 ### Classes

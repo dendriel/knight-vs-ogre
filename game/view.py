@@ -3,6 +3,7 @@ import json, math, os, random
 import pygame
 from . import config as C
 from .logic import slot_props, slot_boxes
+from .stages import THEMES
 
 SKY = (122, 178, 224)
 DIRT = (70, 54, 46)
@@ -17,19 +18,15 @@ class View:
         for fn in sorted(os.listdir(assets_dir)):                  # every *_spritesheet.png (characters, weapons, vfx)
             if fn.endswith('_spritesheet.png'): self._load_sheet(fn[:-len('_spritesheet.png')])
         load = lambda n: pygame.image.load(os.path.join(assets_dir, n + '.png')).convert_alpha()
-        self.props = {n: load(n) for n in ('medieval_house', 'tree', 'well')}
+        self._load_img = load; self.themes = {}               # theme id -> its parallax strips / ground / props
         self.box = load('box')
         self.pickup_img = {'potion': load('potion'), 'coins': load('coin_bag')}; self.coin_icon = load('coin')
         self.icons = {n: load('icon_' + n) for n in ('armor', 'sword', 'axe', 'bow', 'xbow', 'knife', 'staff')}
         self.proj = {}
         for n in ('arrow', 'bolt', 'knife', 'fireball', 'rock', 'arrow_u45', 'arrow_u90', 'arrow_d45', 'arrow_d90'):
             im = load('proj_' + n); self.proj[(n, False)] = im; self.proj[(n, True)] = pygame.transform.flip(im, True, False)
-        self.street = load('street_tile')
-        self.street_h = self.street.get_height()
         self.font = pygame.font.Font(None, 16); self.font_big = pygame.font.Font(None, 20)
         self.clouds = self._make_clouds()
-        self.hills_far = self._make_hills(70, (98, 156, 156), seed=3, amp=(20, 9, 5))
-        self.hills_near = self._make_hills(44, (78, 134, 110), seed=9, amp=(13, 6, 3))
         self.slots = {}; self.boxes = {}; self.tinted = {}
 
     # ------------------------------------------------------------------ assets
@@ -40,6 +37,35 @@ class View:
             row = [img.subsurface((i * 64, r * 64, 64, 64)).copy() for i in range(6)]
             self.frames[(sheet, name, False)] = row
             self.frames[(sheet, name, True)] = [pygame.transform.flip(s, True, False) for s in row]
+
+    def _theme(self, theme_id):
+        """Everything one theme needs, built on first use: hills (with castle / fog decorations), ground tile, props."""
+        if theme_id in self.themes: return self.themes[theme_id]
+        t = THEMES[theme_id]
+        def hills(spec):
+            color, height, amp, seed = spec
+            return self._make_hills(height, color, seed=seed, amp=amp)
+        far = hills(t['hills_far']); near = hills(t['hills_near'])
+        if 'castle' in t['extras']: self._stamp_castle(far)
+        ground = self._load_img(t['ground'])
+        names = {n for n, _ in t['props_even'] + t['props_odd']}
+        d = dict(far=far, near=near, ground=ground, ground_h=ground.get_height(),
+                 props={n: self._load_img(n) for n in names}, sky=t['sky'], dirt=t['dirt'], fog='fog' in t['extras'])
+        self.themes[theme_id] = d
+        return d
+
+    def _stamp_castle(self, strip):
+        """A far castle on the horizon (silhouette towers with crenellations) and a thin smoke column."""
+        h = strip.get_height(); col = (84, 108, 128); lit = (112, 138, 158)
+        for x0 in (140, 640):
+            base = h - 22
+            def blk(x, y, w, hh, c=col): strip.fill(c, (x0 + x, base - y - hh, w, hh))
+            blk(0, 0, 54, 22); blk(-6, 0, 14, 34); blk(46, 0, 14, 40); blk(18, 22, 16, 12)
+            for k in range(0, 54, 8): blk(k, 22, 4, 4, lit)                      # wall crenellations
+            for xx, top in ((-6, 34), (46, 40)):
+                for k in range(0, 14, 5): blk(xx + k, top, 3, 4, lit)           # tower tops
+            blk(20, 34, 12, 8, lit)
+            for i in range(5): strip.fill((196, 204, 212), (x0 + 53 + (i % 2) * 2, base - 48 - i * 5, 5 - i % 2, 4))   # smoke
 
     def _make_clouds(self):
         s = pygame.Surface((STRIP_W, 90), pygame.SRCALPHA); rnd = random.Random(4)
@@ -83,19 +109,21 @@ class View:
         if world.shake > 0:
             rnd = random.Random(int(clock_t * 60)); cx += rnd.randint(-2, 2); oy = rnd.randint(-1, 1)
         top = C.GROUND_Y - 3 + oy
-        surf.fill(SKY)
+        th = self._theme(world.theme_id)
+        surf.fill(th['sky'])
         self._strip(surf, self.clouds, 0.15, cx, 14 + oy)
-        self._strip(surf, self.hills_far, 0.30, cx, top - self.hills_far.get_height() + 2)
-        self._strip(surf, self.hills_near, 0.55, cx, top - self.hills_near.get_height() + 2)
+        self._strip(surf, th['far'], 0.30, cx, top - th['far'].get_height() + 2)
+        self._strip(surf, th['near'], 0.55, cx, top - th['near'].get_height() + 2)
         # ground: tiles repeat every 64 px, aligned with world x
-        for x in range(-(cx % 64), C.SCREEN_W + 64, 64): surf.blit(self.street, (x, top))
-        surf.fill(DIRT, (0, top + self.street_h, C.SCREEN_W, C.SCREEN_H))
+        for x in range(-(cx % 64), C.SCREEN_W + 64, 64): surf.blit(th['ground'], (x, top))
+        surf.fill(th['dirt'], (0, top + th['ground_h'], C.SCREEN_W, C.SCREEN_H))
         # scenery of the visible slots
         s0 = math.floor(cx / C.SLOT_W) - 1; s1 = math.floor((cx + C.SCREEN_W) / C.SLOT_W) + 1
         for s in range(s0, s1 + 1):
-            if s not in self.slots: self.slots[s] = slot_props(s)
-            for name, wx in self.slots[s]:
-                img = self.props[name]; surf.blit(img, (wx - cx, C.GROUND_Y - (img.get_height() - 2) + oy))
+            key = (world.theme_id, s)
+            if key not in self.slots: self.slots[key] = slot_props(s, theme=world.theme_id)
+            for name, wx in self.slots[key]:
+                img = th['props'][name]; surf.blit(img, (wx - cx, C.GROUND_Y - (img.get_height() - 2) + oy))
         # boxes: stacked boxes share their outline row, so level L is drawn L * BOX_H above the ground
         for s in range(s0, s1 + 1):
             if s not in self.boxes: self.boxes[s] = slot_boxes(s)

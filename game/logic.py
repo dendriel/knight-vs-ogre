@@ -1,6 +1,7 @@
 """Game rules. No pygame in here: this module can be tested without a window."""
 import json, math, os, random
 from . import config as C
+from .stages import THEMES, PROP_PLACE
 
 # Default parameters of the enemy AIs (T20); a fighter def may override any of them in 'ai_params'.
 #   attack_dist: stops walking and prepares to swing | wait: random pause before a swing (the player's window) |
@@ -288,6 +289,9 @@ class World:
         self.stats = dict(kills=0, damage_dealt=0, damage_taken=0, gold_gained=0, revives=0)
 
     # ------------------------------------------------------------------ helpers
+    @property
+    def theme_id(self): return self.stage.theme if self.stage is not None else 'village'
+
     def cam_x(self):
         x = self.hero.x - C.SCREEN_W / 2 + (0.0 if self.stage is not None else self.cam_off)
         if self.stage is not None: x = max(0.0, min(self.stage.length - C.SCREEN_W + C.STAGE_END_MARGIN, x))   # locked at the ends
@@ -867,15 +871,16 @@ def slot_boxes(slot, seed=7):
     return []
 
 
-def slot_props(slot, seed=7):
-    """Scenery of one world slot: a list of (prop name, world x). Deterministic, so the world is 'infinite'."""
+def slot_props(slot, seed=7, theme='village'):
+    """Scenery of one world slot: a list of (prop name, world x). Deterministic, so the world is 'infinite'.
+    The table of what may appear comes from THEMES[theme] (T33); 'village' reproduces the original draw exactly."""
     r = random.Random(slot * 7919 + seed); x0 = slot * C.SLOT_W; out = []
-    if slot % 2 == 0:
-        v = r.random()
-        if v < .6: out.append(('medieval_house', x0 + r.randint(0, C.SLOT_W - 160)))
-        elif v < .78: out.append(('well', x0 + r.randint(8, C.SLOT_W - 56)))
-    else:
-        v = r.random()
-        if v < .6: out.append(('tree', x0 + r.randint(0, C.SLOT_W - 112)))
-        elif v < .72: out.append(('well', x0 + r.randint(8, C.SLOT_W - 56)))
+    t = THEMES[theme]
+    table = t['props_even'] if slot % 2 == 0 else t['props_odd']
+    v = r.random(); acc = 0.0
+    for name, p in table:
+        acc += p
+        if v < acc:
+            a, b = PROP_PLACE[name]
+            out.append((name, x0 + r.randint(a, C.SLOT_W - b))); break
     return out

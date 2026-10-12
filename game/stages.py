@@ -51,15 +51,25 @@ def enc(p, *kinds):
     return {'p': p, 'enemies': [(k, None) if isinstance(k, str) else tuple(k) for k in kinds]}
 
 
-# Visual themes: colours, which scenery props appear (T33-T35 add real ones); the game draws from this table.
+# Visual themes (T33-T35): colours, parallax layers, ground tile and which scenery props appear. Props of a slot are
+# drawn from a table [(prop name, probability)] per slot parity (cumulative, like slot_props always did).
+# hills_*: (colour, height px, (amplitudes), seed). extras: optional parallax decorations ('castle', 'fog', 'wall').
 THEMES = {
-    'village': dict(sky=(122, 178, 224), hills_far=(98, 156, 156), hills_near=(78, 134, 110), dirt=(70, 54, 46),
-                    ground='street_tile'),
+    'village': dict(sky=(122, 178, 224), hills_far=((98, 156, 156), 70, (20, 9, 5), 3), hills_near=((78, 134, 110), 44, (13, 6, 3), 9),
+                    dirt=(70, 54, 46), ground='street_tile', extras=(),
+                    props_even=[('medieval_house', .6), ('well', .18)], props_odd=[('tree', .6), ('well', .12)]),
+    'plain': dict(sky=(146, 194, 228), hills_far=((120, 158, 130), 66, (16, 8, 4), 21), hills_near=((98, 144, 84), 40, (11, 5, 3), 33),
+                  dirt=(70, 54, 46), ground='grass_tile', extras=('castle',),
+                  props_even=[('tent', .30), ('banner', .16), ('palisade', .20), ('cart', .12)],
+                  props_odd=[('dead_tree', .28), ('planted_swords', .18), ('campfire', .14), ('banner', .12)]),
 }
+# where a prop may stand inside its slot: x offset in randint(first, SLOT_W - last)
+PROP_PLACE = {'medieval_house': (0, 160), 'well': (8, 56), 'tree': (0, 112), 'tent': (0, 82), 'banner': (4, 28),
+              'palisade': (0, 68), 'planted_swords': (4, 38), 'dead_tree': (0, 64), 'cart': (0, 80), 'campfire': (8, 28)}
 
 # ---- the campaign (three stages; T36 fills in the difficulty curve, T32-T35 the bosses and the themes) ---------------
 STAGES = {
-    'stage1': Stage('stage1', 'FASE 1 - PLANÍCIE', 'village', 3000, [
+    'stage1': Stage('stage1', 'FASE 1 - PLANÍCIE', 'plain', 3000, [
         enc(0.10, 'soldier'), enc(0.25, 'ogre'), enc(0.45, 'soldier', 'ogre'), enc(0.60, 'spearman', 'soldier'),
         enc(0.80, 'archer', 'spearman', 'ogre'), enc(0.92, ('soldier', 'veteran'), 'spearman', 'archer')],
         difficulty=((2, 1), (3, 2), (3, 2)), elites=(0.75, 0.15, 0.25), loot=(1.0, 1.4)),

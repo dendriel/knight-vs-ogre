@@ -24,7 +24,9 @@ SCENERY = ['tree.png', 'medieval_house.png', 'well.png', 'street_tile.png', 'box
            'proj_arrow.png', 'proj_bolt.png', 'proj_knife.png', 'proj_fireball.png', 'proj_rock.png',
            'proj_arrow_u45.png', 'proj_arrow_u90.png', 'proj_arrow_d45.png', 'proj_arrow_d90.png',
            'icon_armor.png', 'icon_sword.png', 'icon_axe.png', 'icon_bow.png', 'icon_xbow.png', 'icon_knife.png',
-           'icon_staff.png']
+           'icon_staff.png',
+           'tent.png', 'banner.png', 'palisade.png', 'planted_swords.png', 'dead_tree.png', 'cart.png', 'campfire.png',
+           'grass_tile.png']
 
 
 def same(a, b):
@@ -44,7 +46,7 @@ def main():
     check = '--check' in sys.argv
     tmp = tempfile.mkdtemp(prefix='ko_art_')
     try:
-        for g in ('knight_gen.py', 'ogre_gen.py', 'vfx_gen.py', 'scenery_gen.py', 'proj_gen.py', 'icons_gen.py', 'enemy_gen.py'): run(g, tmp)
+        for g in ('knight_gen.py', 'ogre_gen.py', 'vfx_gen.py', 'scenery_gen.py', 'proj_gen.py', 'icons_gen.py', 'enemy_gen.py', 'theme_gen.py'): run(g, tmp)
         bad = []
         for name in SHEETS + SCENERY:
             src = os.path.join(tmp, name); dst = os.path.join(ASSETS, name)

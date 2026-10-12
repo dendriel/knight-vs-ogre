@@ -103,6 +103,7 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 - Cenário: `tree` 112x128, `medieval_house` 160x160, `well` 48x64, `street_tile` 64x40 (repetível na horizontal),
   `box` 24x24 (caixote; contorno nas 4 bordas; caixas empilhadas compartilham a linha de contorno, 23 px por nível).
   O último pixel sólido de cada objeto é o chão (a linha de baixo é o contorno).
+- Temas de fase (`game/stages.py THEMES`, arte em `art_tools/theme_gen.py`): cada tema tem tile de chão 64x40 repetível, props (mesma convenção: último pixel sólido = chão, linha abaixo = contorno), cores de céu/colinas e decorações de parallax (`castle`). `plain`: tent 82x60, banner 24x66, palisade 68x36, planted_swords 34x36, dead_tree 64x90, cart 80x48, campfire 24x20, grass_tile.
 - Estilo: contorno 1 px `(18,18,30)`, só pixels opacos (transparência de efeitos é simulada com dithering), luz vinda do
   topo-esquerda, paleta compartilhada entre personagens e cenário.
 
