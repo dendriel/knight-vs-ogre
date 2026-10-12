@@ -14,7 +14,9 @@ ASSETS = os.path.join(HERE, '..', 'assets')
 SHEETS = ['knight_spritesheet.png', 'knight_spritesheet.json', 'ogre_spritesheet.png', 'ogre_spritesheet.json',
           'vfx_spritesheet.png', 'vfx_spritesheet.json']
 SCENERY = ['tree.png', 'medieval_house.png', 'well.png', 'street_tile.png', 'box.png',
-           'potion.png', 'coin_bag.png', 'coin.png']
+           'potion.png', 'coin_bag.png', 'coin.png',
+           'proj_arrow.png', 'proj_bolt.png', 'proj_knife.png', 'proj_fireball.png', 'proj_rock.png',
+           'proj_arrow_u45.png', 'proj_arrow_u90.png', 'proj_arrow_d45.png', 'proj_arrow_d90.png']
 
 
 def same(a, b):
@@ -34,13 +36,14 @@ def main():
     check = '--check' in sys.argv
     tmp = tempfile.mkdtemp(prefix='ko_art_')
     try:
-        for g in ('knight_gen.py', 'ogre_gen.py', 'vfx_gen.py', 'scenery_gen.py'): run(g, tmp)
+        for g in ('knight_gen.py', 'ogre_gen.py', 'vfx_gen.py', 'scenery_gen.py', 'proj_gen.py'): run(g, tmp)
         bad = []
         for name in SHEETS + SCENERY:
             src = os.path.join(tmp, name); dst = os.path.join(ASSETS, name)
             if not os.path.exists(src): bad.append(name + ' (not generated)'); continue
             if check:
                 if not os.path.exists(dst) or not same(src, dst): bad.append(name)
+            elif os.path.exists(dst) and same(src, dst): continue          # identical pixels: leave the file alone
             else:
                 shutil.copyfile(src, dst); print('wrote', os.path.normpath(dst))
         if check:

@@ -293,4 +293,43 @@ w = fresh(0); w.start_attack(w.ogre, 'ogre_axe'); assert w.ogre.anim == 'attack'
 del ATTACKS['heavy']
 print('24 ok: attacks are data (damage, knockback, effect per attack id)')
 
+# 25) T04: straight shots, lobbed shots (dodgeable, with landing marker), pierce, area hits
+w = fresh(0); w.ogre.x = 150.0; w.ogre.invuln = 0
+p = w.shoot(w.hero, 'straight', 'arrow', damage=10)
+assert p in w.projectiles and ('shoot', 'knight') in w.events
+run(w, 1.0, Inputs()); assert w.ogre.hp == 20 and not w.projectiles                  # hit and gone
+w = fresh(0); w.ogre.x = 150.0; w.ogre.y = 3 * C.BOX_H                                 # target far above the shooter's feet
+w.shoot(w.hero, 'straight'); run(w, 1.5, Inputs()); assert w.ogre.hp == 30 and not w.projectiles   # flew past, expired
+w = fresh(0); w.ogre.x = 150.0; w.hero.facing = -1
+w.shoot(w.hero, 'straight'); run(w, 0.3, Inputs()); assert w.ogre.hp == 30             # shot the other way
+# range limit and pierce
+w = fresh(0); w.hero.facing = 1
+w.enemies = [Fighter('ogre', 80, -1), Fighter('ogre', 140, -1)]
+for e in w.enemies: e.ai_cooldown = 99; e.invuln = 0
+w.shoot(w.hero, 'straight', pierce=True, damage=10); run(w, 1.2, Inputs())
+assert [e.hp for e in w.enemies] == [20, 20]                                           # pierced both
+w = fresh(0); w.hero.facing = 1; w.enemies = [Fighter('ogre', 80, -1), Fighter('ogre', 140, -1)]
+for e in w.enemies: e.ai_cooldown = 99
+w.shoot(w.hero, 'straight', pierce=False, damage=10); run(w, 1.2, Inputs())
+assert [e.hp for e in w.enemies] == [20, 30]                                           # stopped at the first
+# lob: lands on the hero's spot; the hero can step out of the zone in time
+w = fresh(0); a = Fighter('ogre', 200, -1); a.ai_cooldown = 99; w.enemies = [a]; w.hero.invuln = 0
+p = w.shoot(a, 'lob', 'arrow', damage=10, flight=0.9, apex=60.0)
+assert p.tx == w.hero.x and p.facing == -1
+run(w, 1.2, Inputs()); assert w.hero.hp == 90
+w = fresh(0); a = Fighter('ogre', 200, -1); a.ai_cooldown = 99; w.enemies = [a]; w.hero.invuln = 0
+w.shoot(a, 'lob', 'arrow', damage=10, flight=0.9, apex=60.0)
+run(w, 1.2, Inputs(right=True)); assert w.hero.hp == 100                               # walked away from the marker
+w = fresh(0); a = Fighter('ogre', 200, -1); a.ai_cooldown = 99; w.enemies = [a]; w.hero.invuln = 0
+w.shoot(a, 'lob', 'arrow', damage=10, flight=0.9, apex=60.0)
+w.update(DT, Inputs(jump=True)); run(w, 0.8, Inputs()); w.hero.y = 0                    # airborne at impact is not required
+assert w.hero.hp in (90, 100)
+# area hit: delayed, hits everyone inside once, ignores the ones outside
+w = fresh(0); w.hero.facing = 1; w.enemies = [Fighter('ogre', 50, -1), Fighter('ogre', 70, -1), Fighter('ogre', 400, -1)]
+for e in w.enemies: e.ai_cooldown = 99; e.invuln = 0
+w.add_area(w.hero, 30, 100, 10, delay=0.3, duration=0.2)
+run(w, 0.2, Inputs()); assert [e.hp for e in w.enemies] == [30, 30, 30]               # not yet
+run(w, 0.5, Inputs()); assert [e.hp for e in w.enemies] == [20, 20, 30]
+print('25 ok: straight / pierce / lob (dodgeable) projectiles and area hits')
+
 print('ALL LOGIC TESTS PASSED')

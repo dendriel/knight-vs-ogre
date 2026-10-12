@@ -103,6 +103,28 @@ class Pickup:
         self.y = 14.0; self.vy = 90.0; self.t = 0.0
 
 
+class Projectile:
+    """Something in flight (T04). kind 'straight': flies level in the facing direction and hits the first target on its
+    path (within VERTICAL_REACH of the shooter's feet). kind 'lob': a parabola over the sky towards where the target
+    stood at launch (tx, ty); it hurts whatever is inside the landing zone when it comes down, so the hero can dodge."""
+    def __init__(self, kind, owner, x, base_y, facing, damage, sprite, speed=240.0, max_range=260.0, pierce=False,
+                 knockback=C.KNOCKBACK, tx=None, flight=0.9, apex=60.0, radius=14.0, chest=C.PROJ_CHEST):
+        self.kind, self.owner, self.x, self.x0, self.base_y, self.facing = kind, owner, float(x), float(x), base_y, facing
+        self.damage, self.sprite, self.speed, self.max_range, self.pierce = damage, sprite, speed, max_range, pierce
+        self.knockback, self.tx, self.ty = knockback, tx, base_y
+        self.flight, self.apex, self.radius, self.chest = flight, apex, radius, chest
+        self.t = 0.0; self.height = chest; self.hit_set = []; self.done = False
+
+
+class AreaHit:
+    """A box on the ground that hurts everyone inside it once, after `delay`, and lingers for `duration` (T04)."""
+    def __init__(self, owner, x0, x1, base_y, damage, delay=0.0, duration=0.1, knockback=C.KNOCKBACK, vfx=None,
+                 guard_break=True):
+        self.owner, self.x0, self.x1, self.base_y, self.damage = owner, x0, x1, base_y, damage
+        self.delay, self.duration, self.knockback, self.vfx, self.guard_break = delay, duration, knockback, vfx, guard_break
+        self.t = 0.0; self.hit_set = []; self.done = False
+
+
 class World:
     def __init__(self, timing, seed=1):
         self.timing = timing; self.rng = random.Random(seed)
@@ -111,6 +133,7 @@ class World:
         self.spawn_target = 1                              # endless mode keeps this many enemies in the world (T02)
         self._jump_held = False; self._box_cache = {}
         self.corpses = []; self.vfx = []
+        self.projectiles = []; self.areas = []
         self.hero_deaths = 0; self.ogre_deaths = 0
         self.pickups = []; self.gold = 0                   # gold belongs to the player, so it survives hero deaths
         self.loot_rng = random.Random(seed + 1000)         # separate stream: drops never disturb the AI's random sequence
@@ -199,6 +222,8 @@ class World:
         self._knockback(dt)
         for f in self.fighters(): self._physics(f, dt)
         self._attacks()
+        self._projectiles(dt)
+        self._areas(dt)
         self._pickups(dt)
         self._timeouts()
         self._respawns(dt)
@@ -282,13 +307,15 @@ class World:
         else: self.stats['damage_dealt'] += amount
         return amount
 
-    def _hit(self, atk, tgt):
-        at = ATTACKS[atk.attack_id]
+    def _hit(self, atk, tgt, at=None, src_x=None):
+        """A connected blow. `at` = ATTACKS-like dict (damage, knockback); `src_x` = where it came from (a projectile
+        or an area hit instead of the attacker's own position)."""
+        at = at or ATTACKS[atk.attack_id]; sx = atk.x if src_x is None else src_x
         self.apply_damage(atk, tgt, at['damage'])
-        self.add_vfx('blood_splash', tgt.x, tgt.x > atk.x, y=tgt.y)
+        self.add_vfx('blood_splash', tgt.x, tgt.x > sx, y=tgt.y)
         self.shake = C.SHAKE_TIME
         self.events.append(('hit', tgt.kind))
-        dirn = 1 if tgt.x >= atk.x else -1
+        dirn = 1 if tgt.x >= sx else -1
         tgt.facing = -dirn                                   # turns toward the attacker, recoils backwards
         tgt.kb_dir = dirn; tgt.kb_t = C.KNOCKBACK_TIME; tgt.kb_speed = at['knockback'] / C.KNOCKBACK_TIME
         if tgt.hp <= 0:
@@ -296,7 +323,7 @@ class World:
             self.events.append(('death', tgt.kind))
             if tgt is not self.hero: self.stats['kills'] += 1
             if not tgt.is_hero: self._drop_loot(tgt.x); tgt.respawn_t = C.RESPAWN_DELAY
-            self.add_vfx('spirit', tgt.x, tgt.x > atk.x, delay=C.SPIRIT_DELAY, y=tgt.y)
+            self.add_vfx('spirit', tgt.x, tgt.x > sx, delay=C.SPIRIT_DELAY, y=tgt.y)
             if tgt is self.hero: self.hero_deaths += 1; self.hero_timer = C.RESPAWN_DELAY
             else: self.ogre_deaths += 1
         else:
@@ -305,6 +332,64 @@ class World:
             if tgt is self.hero: tgt.invuln = tgt.duration(self.timing) + C.HURT_INVULN_EXTRA
             elif C.OGRE_HURT_INVULN: tgt.invuln = tgt.duration(self.timing) + C.OGRE_HURT_INVULN_EXTRA
             if not tgt.is_hero: tgt.ai_wait = None
+
+    # ------------------------------------------------------------------ projectiles and areas (T04)
+    def targets_of(self, owner):
+        return [e for e in self.enemies] if owner.is_hero else [self.hero]
+
+    def shoot(self, owner, kind='straight', sprite='arrow', damage=C.DAMAGE, **kw):
+        """Fires a projectile from the owner's hand. For 'lob' pass nothing else: it is aimed at the hero's position."""
+        x = owner.x + owner.facing * 14
+        p = Projectile(kind, owner, x, owner.y, owner.facing, damage, sprite, **kw)
+        if kind == 'lob':
+            tgt = self.hero if not owner.is_hero else (self.ogre or self.hero)
+            p.tx = tgt.x; p.ty = tgt.y
+            p.facing = 1 if p.tx >= x else -1
+        self.projectiles.append(p); self.events.append(('shoot', owner.kind))
+        return p
+
+    def add_area(self, owner, x0, x1, damage, delay=0.0, duration=0.1, **kw):
+        a = AreaHit(owner, x0, x1, owner.y, damage, delay=delay, duration=duration, **kw)
+        self.areas.append(a)
+        if a.vfx: self.add_vfx(a.vfx, (x0 + x1) / 2, False, delay=delay, y=owner.y)
+        return a
+
+    def _projectiles(self, dt):
+        for p in self.projectiles:
+            p.t += dt
+            targets = [t for t in self.targets_of(p.owner) if t.state != 'dead']
+            if p.kind == 'straight':
+                p.x += p.facing * p.speed * dt; p.height = p.chest
+                for tgt in targets:
+                    if tgt in p.hit_set or tgt.invuln > 0: continue
+                    if abs(p.x - tgt.x) > tgt.hw + 3 or abs(p.base_y - tgt.y) > C.VERTICAL_REACH: continue
+                    p.hit_set.append(tgt)
+                    self._hit(p.owner, tgt, at=dict(damage=p.damage, knockback=p.knockback), src_x=p.x - p.facing * 8)
+                    if not p.pierce: p.done = True; break
+                if abs(p.x - p.x0) >= p.max_range: p.done = True
+            else:                                                  # lob
+                u = min(1.0, p.t / p.flight)
+                p.x = p.x0 + (p.tx - p.x0) * u
+                p.height = p.chest * (1 - u) + 4 * p.apex * u * (1 - u)
+                if u >= 1.0:
+                    p.done = True; self.events.append(('impact', 'lob'))
+                    for tgt in targets:
+                        if tgt.invuln > 0 or abs(tgt.x - p.tx) > p.radius + tgt.hw or abs(tgt.y - p.ty) > C.VERTICAL_REACH:
+                            continue
+                        self._hit(p.owner, tgt, at=dict(damage=p.damage, knockback=p.knockback), src_x=p.tx - p.facing * 4)
+        self.projectiles = [p for p in self.projectiles if not p.done and abs(p.x - self.hero.x) < 900]
+
+    def _areas(self, dt):
+        for a in self.areas:
+            a.t += dt
+            if a.t < a.delay or a.t > a.delay + a.duration: continue
+            for tgt in self.targets_of(a.owner):
+                if tgt in a.hit_set or tgt.state == 'dead' or tgt.invuln > 0: continue
+                if abs(a.base_y - tgt.y) > C.VERTICAL_REACH: continue
+                if a.x0 <= tgt.x + tgt.hw and a.x1 >= tgt.x - tgt.hw:
+                    a.hit_set.append(tgt)
+                    self._hit(a.owner, tgt, at=dict(damage=a.damage, knockback=a.knockback), src_x=(a.x0 + a.x1) / 2)
+        self.areas = [a for a in self.areas if a.t <= a.delay + a.duration]
 
     def start_attack(self, f, attack_id):
         f.attack_id = attack_id; f.set_state('attack')

@@ -7,6 +7,9 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 
 ## [2026-10-12]
 
+### Arte
+- T04: novos sprites de projétil (`proj_arrow` + variantes inclinadas `u45/u90/d45/d90`, `proj_bolt`, `proj_knife`, `proj_fireball`, `proj_rock`) gerados por `art_tools/proj_gen.py` e desenhados em camada própria (com sombra no chão).
+
 ### Técnico
 - T00: `README.md` TODO reorganizado por fundação/cavaleiro/inimigos/fases/classes/economia (fases duplicadas unidas, vocabulário fixo fase/cenário/tela, IDs das tarefas do `TASKS_PLAN.md`).
 - `README.md`: nova seção **TODO** com as ideias planejadas (armas pickup com durabilidade, arco/besta, classes, inimigos, fases e bosses, loja, poções e armadura).
@@ -15,6 +18,10 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T01: `FIGHTER_DEFS[kind]` (vida, velocidade, meia-largura, mapa de animações, efeito de golpe, alcance, IA) substitui as tabelas soltas; `ANIM/SLASH/REACH` continuam como alias. Funil único de dano `World.apply_damage` e `World.stats` (kills, damage_dealt, damage_taken, gold_gained). Teste 22.
 - T02: `World.enemies` (lista) substitui o ogro único; estado de IA (`ai_wait`, `ai_cooldown`, `respawn_t`) passa para cada `Fighter`; golpes cruzam o herói com todos os inimigos (um golpe atinge todos ao alcance, um acerto por alvo por golpe, `hit_set`); no modo infinito o 'spawner' mantém `spawn_target` = 1 inimigo (comportamento igual ao anterior). `World.ogre`/`ai_wait`/`ai_cooldown` continuam como propriedades de compatibilidade. Teste 23.
 - T03: `ATTACKS[id]` (animação, dano, alcance, frames ativos, frame do rastro, efeito, fator de movimento, knockback, `guard_break`, cooldown, desgaste) e `Fighter.attack_id`; `World.start_attack()`. Ataques do herói (`sword`) e do ogro (`ogre_axe`) idênticos aos anteriores. Um ataque novo = uma entrada + uma linha de sheet. `load_timing` lê todo `*_spritesheet.json` e o lutador usa `defn['sheet']` para animação/desenho. Teste 24.
+- T04: `Projectile` (`straight`: voa reto e acerta o 1º alvo na faixa vertical, com `pierce` opcional; `lob`: parábola até onde o alvo estava, com marcador de queda no chão, dá para desviar), `AreaHit` (caixa com atraso/duração, multi-alvo, um acerto por alvo), `World.shoot()`, `World.add_area()`, eventos `shoot`/`impact`. Novas constantes `PROJ_CHEST`, `ARROW_SPEED`, `ARROW_RANGE`, `LOB_FLIGHT`, `LOB_APEX`, `LOB_RADIUS`. `_hit` aceita `at`/`src_x` (dano/knockback de projétil). `build_assets.py` não reescreve PNG com pixels idênticos. Teste 25.
+
+### Pendente de validação
+- Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).
 
 ## [2026-10-11]
 

@@ -19,6 +19,9 @@ class View:
         self.props = {n: load(n) for n in ('medieval_house', 'tree', 'well')}
         self.box = load('box')
         self.pickup_img = {'potion': load('potion'), 'coins': load('coin_bag')}; self.coin_icon = load('coin')
+        self.proj = {}
+        for n in ('arrow', 'bolt', 'knife', 'fireball', 'rock', 'arrow_u45', 'arrow_u90', 'arrow_d45', 'arrow_d90'):
+            im = load('proj_' + n); self.proj[(n, False)] = im; self.proj[(n, True)] = pygame.transform.flip(im, True, False)
         self.street = load('street_tile')
         self.street_h = self.street.get_height()
         self.font = pygame.font.Font(None, 16); self.font_big = pygame.font.Font(None, 20)
@@ -102,12 +105,33 @@ class View:
                 img = self.pickup_img[p.kind]; bob = int(round(1.4 * math.sin(p.t * 4))) if p.y <= 0 else 0
                 surf.blit(img, (int(round(p.x)) - cx - img.get_width() // 2,
                                 C.GROUND_Y - (img.get_height() - 2) - int(round(p.y)) - bob + oy))
+        self._projectiles(surf, world, cx, oy)
         for v in world.vfx:
             if v['t'] >= 0:
                 k = int(v['t'] * self.timing['vfx'][v['name']])
                 if 0 <= k < 6:
                     self.blit_char(surf, 'vfx', v['name'], k, v['x'], cx, v['flip'], oy - int(round(v.get('y', 0))))
         self._hud(surf, world, clock_t)
+
+    def _projectiles(self, surf, world, cx, oy):
+        for p in world.projectiles:
+            sx = int(round(p.x)) - cx
+            if not -20 < sx < C.SCREEN_W + 20: continue
+            gy = C.GROUND_Y - int(round(p.base_y if p.kind == 'straight' else p.ty)) + oy
+            if p.kind == 'lob':                                    # landing marker on the ground + shadow
+                mx = int(round(p.tx)) - cx
+                r = int(p.radius) + 6
+                col = (230, 80, 70) if int(world.time * 8) % 2 else (255, 190, 90)
+                surf.fill(col, (mx - r, gy - 1, 2 * r, 1)); surf.fill(col, (mx - r, gy + 1, 2 * r, 1))
+                u = min(1.0, p.t / p.flight)
+                name = p.sprite if p.sprite != 'arrow' else ('arrow_u90' if u < .25 else 'arrow_u45' if u < .45 else
+                                                              'arrow' if u < .55 else 'arrow_d45' if u < .75 else 'arrow_d90')
+                img = self.proj[(name, p.facing < 0)]
+                surf.blit(img, (sx - img.get_width() // 2, gy - int(p.height) - img.get_height() // 2))
+            else:
+                img = self.proj[(p.sprite, p.facing < 0)]
+                surf.fill((18, 18, 30), (sx - 3, gy, 6, 1))        # small shadow under the shot
+                surf.blit(img, (sx - img.get_width() // 2, gy - int(p.height) - img.get_height() // 2))
 
     # ------------------------------------------------------------------ HUD
     def _text(self, surf, s, x, y, color=(255, 255, 255), font=None, align='left'):

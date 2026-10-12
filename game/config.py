@@ -58,6 +58,14 @@ PICKUP_RADIUS = 14                 # horizontal distance (px) at which the hero 
 PICKUP_REACH_Y = 24                # vertical tolerance (px) between the hero's feet and the item
 PICKUP_MAX = 30                    # items kept in the world (oldest vanish)
 
+# ---- projectiles / areas ------------------------------------------------------------------
+PROJ_CHEST = 28                    # height (px above the shooter's feet) at which a shot leaves the hand
+ARROW_SPEED = 260.0                # px/s of a straight shot
+ARROW_RANGE = 280.0                # max distance of a straight shot
+LOB_FLIGHT = 0.95                  # seconds a lobbed shot stays in the air
+LOB_APEX = 70.0                    # extra height (px) of the top of the arc
+LOB_RADIUS = 12.0                  # landing zone half-width (px), plus the target's own half width
+
 # ---- ogre AI ------------------------------------------------------------------------------
 OGRE_ATTACK_DIST = 38              # distance at which the ogre stops walking and prepares to attack
 OGRE_WAIT_BEFORE_ATTACK = (0.35, 0.65)   # random pause (seconds) before each swing: the player's window
