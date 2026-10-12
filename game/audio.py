@@ -11,7 +11,9 @@ SOUND_FOR = {
     'hurt': {'knight': 'hurt_knight', 'ogre': 'hurt_ogre'},
     'death': {'knight': 'death_knight', 'ogre': 'death_ogre'},
     'spawn': {'knight': 'spawn_hero', 'ogre': 'spawn_ogre'},
-    'pickup': {'coins': 'coin_pickup', 'potion': 'coin_pickup', 'weapon': 'coin_pickup'},                            # kind = the item kind
+    'pickup': {'coins': 'coin_pickup', 'potion': 'coin_pickup', 'weapon': 'coin_pickup', 'armor': 'coin_pickup'},
+    'armor_hit': {'knight': 'hit_knight'}, 'armor_break': {'knight': 'death_ogre'},   # placeholders until T-audio
+                            # kind = the item kind
     'heal': {'knight': 'heal', 'ogre': 'heal'},                    # any life recovery (potions, future items)
 }
 

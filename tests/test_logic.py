@@ -191,7 +191,7 @@ def kill_ogre(w):
     assert w.ogre.state == 'dead'
 
 # 18) drop chances: forced 100% / 0%, and the rates are close to the configured ones over many ogres
-old = (C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE); old_axe = C.AXE_DROP_CHANCE; C.AXE_DROP_CHANCE = 0.0
+old = (C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE); old_axe = C.AXE_DROP_CHANCE; C.AXE_DROP_CHANCE = 0.0; old_arm = C.ARMOR_DROP_CHANCE; C.ARMOR_DROP_CHANCE = 0.0
 C.POTION_DROP_CHANCE = 1.0; C.COIN_BAG_DROP_CHANCE = 1.0
 w = fresh(0); w.ogre.x = 200.0; kill_ogre(w)
 kinds = sorted(p.kind for p in w.pickups); assert kinds == ['coins', 'potion'], kinds
@@ -199,7 +199,7 @@ bag = [p for p in w.pickups if p.kind == 'coins'][0]; assert 5 <= bag.amount <= 
 assert [p for p in w.pickups if p.kind == 'potion'][0].amount == 30
 C.POTION_DROP_CHANCE = 0.0; C.COIN_BAG_DROP_CHANCE = 0.0
 w = fresh(0); w.ogre.x = 200.0; kill_ogre(w); assert w.pickups == []
-C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE = old; C.AXE_DROP_CHANCE = old_axe
+C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE = old; C.AXE_DROP_CHANCE = old_axe; C.ARMOR_DROP_CHANCE = old_arm
 w = fresh(0); n_pot = n_bag = 0; amounts = set()
 for _ in range(2000):
     w.pickups.clear(); w._drop_loot(0.0)
@@ -447,5 +447,28 @@ for _ in range(40): w.start_attack(w.hero, 'sword')                           # 
 w = fresh(0); w.hero.weapon = dict(id='axe', durability=50.0); w.hero.hp = 1; w.hero.invuln = 0; w._hit(w.ogre, w.hero)
 run(w, 3.0, Inputs()); assert w.hero.state != 'dead' and w.hero.weapon is None
 print('28 ok: axe pickup (drop, equip, 20 dmg / +8 reach / slower, wear 3%/swing, breaks to the sword)')
+
+# 29) T15: armor soaks damage before life; the remainder passes to life when it breaks; hurt still plays; pickup refills
+w = fresh(0); w.hero.armor = 30
+w._hit(w.ogre, w.hero)                                              # 10 damage
+assert w.hero.armor == 20 and w.hero.hp == 100 and w.hero.state == 'hurt' and ('armor_hit', 'knight') in w.events
+assert w.stats['damage_taken'] == 10
+w.hero.armor = 4; w.hero.invuln = 0; w.events.clear(); w._hit(w.ogre, w.hero)
+assert w.hero.armor == 0 and w.hero.hp == 94 and ('armor_break', 'knight') in w.events       # 4 absorbed, 6 to life
+w.hero.invuln = 0; w._hit(w.ogre, w.hero); assert w.hero.hp == 84                              # no armor: life as before
+# pickup restores to the cap; not wasted when full; rare drop
+w = fresh(0); w.hero.armor = 0; w.pickups = [Pickup('armor', 0, C.ARMOR_PICKUP)]; run(w, 0.1, Inputs())
+assert w.hero.armor == C.ARMOR_PICKUP == C.ARMOR_MAX and w.pickups == []
+w = fresh(0); w.hero.armor = C.ARMOR_MAX; w.pickups = [Pickup('armor', 0, 50)]; run(w, 0.3, Inputs()); assert len(w.pickups) == 1
+old = C.ARMOR_DROP_CHANCE; C.ARMOR_DROP_CHANCE = 1.0
+w = fresh(0); w.ogre.x = 200.0; kill_ogre(w); assert any(p.kind == 'armor' for p in w.pickups)
+C.ARMOR_DROP_CHANCE = old
+# enemies have no armor; a dead hero's armor is gone with him; armor does not stop death once it is spent
+w = fresh(0); assert w.ogre.armor_max == 0 and w.hero.armor_max == C.ARMOR_MAX
+w.hero.armor = 20; w.hero.hp = 10
+w.hero.invuln = 0; w._hit(w.ogre, w.hero); w.hero.invuln = 0; w._hit(w.ogre, w.hero)
+assert w.hero.hp == 10 and w.hero.armor == 0; w.hero.invuln = 0; w._hit(w.ogre, w.hero)
+assert w.hero.state == 'dead'
+print('29 ok: armor absorbs first, remainder to life, hurt still plays, refill pickup')
 
 print('ALL LOGIC TESTS PASSED')

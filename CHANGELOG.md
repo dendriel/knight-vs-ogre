@@ -12,6 +12,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T10: poções agora vão para um **inventário** (até 10, `POTION_MAX_STOCK`; com 10 a poção fica no chão) e a tecla **1** bebe uma (+`POTION_HEAL`, só com vida < máxima). Substitui o antigo 'consumir ao pegar'. HUD mostra `n/10` com o ícone da poção; o estoque não zera quando o herói morre.
 - T11: **combo de 3 golpes** no botão esquerdo: clicar de novo durante o golpe (a partir do frame `COMBO_WINDOW_START` = 3 e até `COMBO_BUFFER` = 0,15 s depois do fim) encadeia corte ascendente e golpe final (dano 10/10/15; o 3º alcança 6 px a mais e empurra 24 px). Depois do 3º volta ao 1º; levar dano cancela a cadeia; segurar o botão sem clicar só repete o 1º golpe.
 - T13: o ogro derruba seu **machado** (`AXE_DROP_CHANCE` 0,15, sorteio separado) como pickup; o herói que o pega ataca com ele no lugar da espada: dano `AXE_DAMAGE` 20 (espada 10), alcance `AXE_REACH` +8, golpe `AXE_ANIM_SPEED` 1,26 (≈1,35x mais lento que o golpe 1), `AXE_MOVE_FACTOR` 0,8, empurra `AXE_KNOCKBACK` 24 e ignora guarda. Cada golpe gasta `AXE_WEAR` = 3% de durabilidade (barra no HUD); em 0% quebra (evento `break`, tremor) e o herói volta à espada, indestrutível. A arma é do herói: um herói novo nasce com a espada.
+- T15: **armadura**: o ogro tem `ARMOR_DROP_CHANCE` = 0,10 de derrubar uma peça (`ARMOR_PICKUP` 50, teto `ARMOR_MAX` 50, não é consumida com a barra cheia). Todo dano desconta da armadura antes da vida; ao zerar, a sobra do golpe vai para a vida e toca `armor_break`. O `hurt` continua tocando. Barra azul no HUD sob a vida.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -29,6 +30,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 
 ### Áudio
 - T10: pegar poção reaproveita o SFX `coin_pickup`; beber usa o `heal` existente (evento `potion`).
+- T15: eventos `armor_hit`/`armor_break` usam sons provisórios (`hit_knight`/`death_ogre`) até haver SFX próprios.
 
 ### Técnico
 - T00: `README.md` TODO reorganizado por fundação/cavaleiro/inimigos/fases/classes/economia (fases duplicadas unidas, vocabulário fixo fase/cenário/tela, IDs das tarefas do `TASKS_PLAN.md`).
@@ -44,6 +46,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T10: `World.potions`, `World.drink_potion()`; comandos ganham a tecla 1; testes 19–21 migrados e novo teste 26.
 - T11: `ATTACKS[x].next` encadeia os golpes (`sword` → `sword_2` → `sword_3`); `Fighter.combo_next/chain`. Teste 27. O mesmo sistema servirá às classes de distância (T42–T44).
 - T13: `WEAPONS` (arma → ataque + sheet), `Fighter.weapon/primary/sheet`, `Pickup('weapon', ..., item)`, `ATTACKS[x].wear`; `slash=None` = o próprio sprite já tem o rastro; `load_timing` aplica as velocidades de `knight` também a `knight_axe`; a View carrega todos os `*_spritesheet.png`. Teste 28.
+- T15: `apply_damage` passa a descontar da armadura (`Fighter.armor/armor_max`); `Pickup('armor')`; teste 29.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

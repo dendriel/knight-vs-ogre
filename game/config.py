@@ -76,6 +76,11 @@ AXE_MOVE_FACTOR = 0.8              # walking speed multiplier while the heavy sw
 AXE_WEAR = 3.0                     # durability (percent) lost per swing; at 0 the weapon breaks
 WEAPON_DURABILITY = 100.0
 
+# ---- armor (T15) --------------------------------------------------------------------------
+ARMOR_MAX = 50                     # armor points; damage is taken from them before the life bar
+ARMOR_PICKUP = 50                  # a found armor piece restores the bar to this much (capped at ARMOR_MAX)
+ARMOR_DROP_CHANCE = 0.10           # chance that a dying ogre drops armor (rare, separate roll)
+
 # ---- projectiles / areas ------------------------------------------------------------------
 PROJ_CHEST = 28                    # height (px above the shooter's feet) at which a shot leaves the hand
 ARROW_SPEED = 260.0                # px/s of a straight shot

@@ -75,7 +75,7 @@ class Fighter:
         self.air_t = 0.0; self.air_phase = None                 # time in the current rising / falling phase
         self.hit_done = False; self.slash_done = False
         self.kb_dir = 0; self.kb_t = 0.0; self.kb_speed = C.KNOCKBACK / C.KNOCKBACK_TIME
-        self.armor = 0; self.armor_max = 0; self.weapon = None   # equipment (T13, T15); weapon = dict(id, durability)
+        self.armor = 0; self.armor_max = C.ARMOR_MAX if self.defn['hero'] else 0; self.weapon = None   # equipment (T13, T15); weapon = dict(id, durability)
         self.attack_id = self.defn['primary']                   # which ATTACKS entry the 'attack' state plays
         self.hit_set = []                                       # targets already hit by the current swing
         self.combo_next = None; self.chain = None               # queued next stroke / (time, id) just after a stroke ended
@@ -124,7 +124,7 @@ class Fighter:
 
 
 class Pickup:
-    """An item lying in the world. kind: 'potion' | 'coins' | 'weapon' (item = weapon id, amount = durability). y = height above the ground; it pops up and falls."""
+    """An item lying in the world. kind: 'potion' | 'coins' | 'armor' | 'weapon' (item = weapon id, amount = durability). y = height above the ground; it pops up and falls."""
     def __init__(self, kind, x, amount=0, item=None):
         self.kind, self.x, self.amount, self.item = kind, float(x), amount, item
         self.y = 14.0; self.vy = 90.0; self.t = 0.0
@@ -157,7 +157,7 @@ class World:
         self.timing = timing; self.rng = random.Random(seed)
         self.hero = Fighter('knight', 0.0, +1)
         self.enemies = [Fighter('ogre', C.START_OGRE_OFFSET, -1)]
-        self.features = {'potions', 'weapon'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
+        self.features = {'potions', 'weapon', 'armor'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
         self.potions = 0; self.combo = 0                   # inventory / combo meter (T10, T12)
         self.spawn_target = 1                              # endless mode keeps this many enemies in the world (T02)
         self._jump_held = False; self._box_cache = {}
@@ -338,11 +338,16 @@ class World:
 
     def apply_damage(self, atk, tgt, amount):
         """The single funnel for damage: stats now, armor / guard / combo meter plug in here later."""
-        amount = min(amount, tgt.hp)
+        amount = min(amount, tgt.hp + tgt.armor)
+        absorbed = min(tgt.armor, amount)                     # armor soaks the blow first; what is left goes to life
+        if absorbed:
+            tgt.armor -= absorbed; amount -= absorbed
+            self.events.append(('armor_break' if tgt.armor <= 0 else 'armor_hit', tgt.kind))
         tgt.hp -= amount
-        if tgt is self.hero: self.stats['damage_taken'] += amount
-        else: self.stats['damage_dealt'] += amount
-        return amount
+        total = absorbed + amount
+        if tgt is self.hero: self.stats['damage_taken'] += total
+        else: self.stats['damage_dealt'] += total
+        return total
 
     def _hit(self, atk, tgt, at=None, src_x=None):
         """A connected blow. `at` = ATTACKS-like dict (damage, knockback); `src_x` = where it came from (a projectile
@@ -455,6 +460,7 @@ class World:
         if r.random() < C.POTION_DROP_CHANCE: items.append(Pickup('potion', 0, C.POTION_HEAL))
         if r.random() < C.COIN_BAG_DROP_CHANCE: items.append(Pickup('coins', 0, r.randint(*C.COIN_BAG_COINS)))
         if r.random() < C.AXE_DROP_CHANCE: items.append(Pickup('weapon', 0, C.WEAPON_DURABILITY, 'axe'))
+        if r.random() < C.ARMOR_DROP_CHANCE: items.append(Pickup('armor', 0, C.ARMOR_PICKUP))
         for i, p in enumerate(items):
             p.x = x + (i - (len(items) - 1) / 2) * 16        # side by side when both drop
             self.pickups.append(p)
@@ -468,8 +474,11 @@ class World:
                 p.y += p.vy * dt - 0.5 * g * dt * dt; p.vy -= g * dt
                 if p.y <= 0: p.y = 0.0; p.vy = 0.0
             if (h.state != 'dead' and abs(h.x - p.x) <= C.PICKUP_RADIUS and abs(h.y - p.y) <= C.PICKUP_REACH_Y
-                    and not (p.kind == 'potion' and self.potions >= C.POTION_MAX_STOCK)):   # full pouch: stays on the floor
+                    and not (p.kind == 'potion' and self.potions >= C.POTION_MAX_STOCK)    # full pouch: stays on the floor
+                    and not (p.kind == 'armor' and h.armor >= h.armor_max)):               # full armor: not wasted
                 if p.kind == 'potion': self.potions += 1                  # stored; drinking is a key press (T10)
+                elif p.kind == 'armor':
+                    h.armor = min(h.armor_max, max(h.armor, p.amount)); self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)
                 elif p.kind == 'weapon':                                 # replaces whatever the hero holds (T13)
                     h.weapon = dict(id=p.item, durability=p.amount); self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)
                 else:
