@@ -14,6 +14,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T13: o ogro derruba seu **machado** (`AXE_DROP_CHANCE` 0,15, sorteio separado) como pickup; o herói que o pega ataca com ele no lugar da espada: dano `AXE_DAMAGE` 20 (espada 10), alcance `AXE_REACH` +8, golpe `AXE_ANIM_SPEED` 1,26 (≈1,35x mais lento que o golpe 1), `AXE_MOVE_FACTOR` 0,8, empurra `AXE_KNOCKBACK` 24 e ignora guarda. Cada golpe gasta `AXE_WEAR` = 3% de durabilidade (barra no HUD); em 0% quebra (evento `break`, tremor) e o herói volta à espada, indestrutível. A arma é do herói: um herói novo nasce com a espada.
 - T15: **armadura**: o ogro tem `ARMOR_DROP_CHANCE` = 0,10 de derrubar uma peça (`ARMOR_PICKUP` 50, teto `ARMOR_MAX` 50, não é consumida com a barra cheia). Todo dano desconta da armadura antes da vida; ao zerar, a sobra do golpe vai para a vida e toca `armor_break`. O `hurt` continua tocando. Barra azul no HUD sob a vida.
 - T12: **barra de combo** (laranja, pisca quando cheia): +`COMBO_GAIN_DEALT` 1,5 por ponto de dano causado e +`COMBO_GAIN_TAKEN` 1,0 por ponto recebido, cheia em `COMBO_BAR_MAX` = 100. Com ela cheia, segurar o ataque por `SPECIAL_HOLD_MIN` = 0,25 s **carrega** (anda a `CHARGE_MOVE_FACTOR` 0,35) e soltar dispara o **giro especial**: 2 golpes de `SPECIAL_DAMAGE` 15 num raio de `SPECIAL_RADIUS` 56 para os dois lados, ignora invulnerabilidade e guarda, herói invulnerável durante o giro. Clique rápido com a barra cheia continua sendo golpe normal. A barra zera ao usar o especial e quando o herói morre (D2); o especial não recarrega a barra.
+- T14: **arco e besta** como pickups raros (`BOW_DROP_CHANCE` 0,06, `XBOW_DROP_CHANCE` 0,04; durabilidade como a do machado). O ataque primário vira um tiro em linha reta que nasce no frame 4 da animação: arco = dano `BOW_DAMAGE` 10, `BOW_RANGE` 280, `BOW_WEAR` 2,5%/tiro; besta = virote de `XBOW_DAMAGE` 20, `XBOW_RANGE` 380, recarga `XBOW_RELOAD` 0,8 s, `XBOW_WEAR` 4%/tiro. O herói anda a 50% / 40% da velocidade enquanto atira.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -26,11 +27,13 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T11: novas animações do cavaleiro `attack_sword_2` (corte ascendente) e `attack_sword_3` (golpe final por cima, corpo todo à frente) e efeitos `sword_slash_2` / `sword_slash_3`; `check_edges.py` sem cortes.
 - T13: novo `knight_axe_spritesheet` (cavaleiro empunhando o machado em todas as linhas: idle, run, ataque, hurt, death, pulo); ícone `icon_axe` serve de sprite do pickup.
 - T12: nova animação `attack_special` (frame 0 = carga, 1–5 giro) e efeitos `spin_slash` (aro de luz) e `charge` (brasas e anel no chão).
+- T14: novos `knight_bow_spritesheet` e `knight_xbow_spritesheet` (herói carregando arco / besta em todas as linhas; as linhas de tiro vêm das poses `attack_bow` / `attack_crossbow` já existentes).
 
 ### Contrato de arte
 - T11: `knight_spritesheet` ganha as linhas 11 (`attack_sword_2`) e 12 (`attack_sword_3`), frames de golpe 3–4; `vfx_spritesheet` ganha as linhas 6 (`sword_slash_2`) e 7 (`sword_slash_3`). Linhas anteriores inalteradas pixel a pixel.
 - T13: `knight_axe_spritesheet` tem as **mesmas linhas e nomes** do `knight_spritesheet` (o jogo usa `attack_axe`); gerado por `knight_gen.py write_sheet(out, 'axe')`. `sprite_rig.py`: com o corpo deitado (`wback`) a mão livre não é reposicionada pelo machado (evitava corte na morte).
 - T12: `knight_spritesheet` (e `knight_axe_spritesheet`) ganham a linha 13 `attack_special`; `vfx_spritesheet` ganha as linhas 8 (`spin_slash`) e 9 (`charge`). Estado `charge` do herói congela no frame 0 de `attack_special`.
+- T14: sheets `knight_bow` e `knight_xbow` com as **mesmas linhas e nomes** do `knight_spritesheet`; `sprite_rig.render` ganha `hold=` ('sword' | 'axe' | 'bow' | 'xbow') para carregar outra arma com uma pose de corpo a corpo (`held()`).
 
 ### Áudio
 - T10: pegar poção reaproveita o SFX `coin_pickup`; beber usa o `heal` existente (evento `potion`).
@@ -52,6 +55,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T13: `WEAPONS` (arma → ataque + sheet), `Fighter.weapon/primary/sheet`, `Pickup('weapon', ..., item)`, `ATTACKS[x].wear`; `slash=None` = o próprio sprite já tem o rastro; `load_timing` aplica as velocidades de `knight` também a `knight_axe`; a View carrega todos os `*_spritesheet.png`. Teste 28.
 - T15: `apply_damage` passa a descontar da armadura (`Fighter.armor/armor_max`); `Pickup('armor')`; teste 29.
 - T12: estado `charge`; `ATTACKS['special']` com `rehit` (acerta de novo no frame 4), `ignore_invuln` e alcance simétrico; `World.combo`; teste 30.
+- T14: `ATTACKS[x].shoot` (dados do projétil, nasce em `slash_frame`), `Fighter.cd` + `ATTACKS[x].cooldown` (recarga), `WEAPONS` com `bow`/`xbow`; teste 31.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

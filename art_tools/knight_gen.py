@@ -160,6 +160,10 @@ NOLOOP = ('attack', 'hurt', 'death')
 
 def carry(pose, weapon):
     """Same pose, holding another weapon (T13). Melee poses just swap the sword for the axe; ranged rows keep theirs."""
+    if weapon in ('bow', 'xbow') and pose['weapon'] == 'sword':
+        pose = dict(pose, hold=weapon)                               # melee pose, bow / crossbow carried in the hand
+        if weapon == 'xbow': pose['wang'] = (pose['wang'] + 2 * 165) / 3.0      # held more upright than a blade (stays inside the frame)
+        if pose.get('wpos'): pose['wpos'] = (pose['wpos'][0] - 8, pose['wpos'][1] - 3)     # keep the lying weapon inside the frame
     if weapon == 'axe' and pose['weapon'] == 'sword':
         pose = dict(pose, weapon='axe')
         if pose.get('wpos'): pose['wpos'] = (pose['wpos'][0], pose['wpos'][1] - 3)     # the axe head is bigger: keep it in the frame
@@ -167,7 +171,7 @@ def carry(pose, weapon):
 
 
 def write_sheet(out, weapon=None):
-    """weapon=None -> knight_spritesheet; weapon='axe' -> knight_axe_spritesheet (every row, hero holding that weapon)."""
+    """weapon=None -> knight_spritesheet; 'axe' / 'bow' / 'xbow' -> knight_<weapon>_spritesheet (every row, hero holding it)."""
     name = 'knight' + (f'_{weapon}' if weapon else '')
     sheet = Image.new('RGBA', (F * 6, F * len(ANIMS)), (0, 0, 0, 0))
     atlas = {'frames': [], 'animations': {}, 'meta': {'image': f'{name}_spritesheet.png', 'frame_size': [64, 64], 'facing': 'right'}}
@@ -185,3 +189,5 @@ if __name__ == '__main__':
     out = sys.argv[1] if len(sys.argv) > 1 else './out'; os.makedirs(out, exist_ok=True)
     write_sheet(out)
     write_sheet(out, 'axe')
+    write_sheet(out, 'bow')
+    write_sheet(out, 'xbow')

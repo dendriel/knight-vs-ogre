@@ -191,7 +191,7 @@ def kill_ogre(w):
     assert w.ogre.state == 'dead'
 
 # 18) drop chances: forced 100% / 0%, and the rates are close to the configured ones over many ogres
-old = (C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE); old_axe = C.AXE_DROP_CHANCE; C.AXE_DROP_CHANCE = 0.0; old_arm = C.ARMOR_DROP_CHANCE; C.ARMOR_DROP_CHANCE = 0.0
+old = (C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE); old_axe = C.AXE_DROP_CHANCE; C.AXE_DROP_CHANCE = 0.0; old_arm = C.ARMOR_DROP_CHANCE; C.ARMOR_DROP_CHANCE = 0.0; old_bw = (C.BOW_DROP_CHANCE, C.XBOW_DROP_CHANCE); C.BOW_DROP_CHANCE = C.XBOW_DROP_CHANCE = 0.0
 C.POTION_DROP_CHANCE = 1.0; C.COIN_BAG_DROP_CHANCE = 1.0
 w = fresh(0); w.ogre.x = 200.0; kill_ogre(w)
 kinds = sorted(p.kind for p in w.pickups); assert kinds == ['coins', 'potion'], kinds
@@ -199,7 +199,7 @@ bag = [p for p in w.pickups if p.kind == 'coins'][0]; assert 5 <= bag.amount <= 
 assert [p for p in w.pickups if p.kind == 'potion'][0].amount == 30
 C.POTION_DROP_CHANCE = 0.0; C.COIN_BAG_DROP_CHANCE = 0.0
 w = fresh(0); w.ogre.x = 200.0; kill_ogre(w); assert w.pickups == []
-C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE = old; C.AXE_DROP_CHANCE = old_axe; C.ARMOR_DROP_CHANCE = old_arm
+C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE = old; C.AXE_DROP_CHANCE = old_axe; C.ARMOR_DROP_CHANCE = old_arm; C.BOW_DROP_CHANCE, C.XBOW_DROP_CHANCE = old_bw
 w = fresh(0); n_pot = n_bag = 0; amounts = set()
 for _ in range(2000):
     w.pickups.clear(); w._drop_loot(0.0)
@@ -504,5 +504,39 @@ w = fresh(0); w.combo = C.COMBO_BAR_MAX; w.hero.invuln = 0; w._hit(w.ogre, w.her
 assert w.hero.state == 'hurt'; w.combo = C.COMBO_BAR_MAX
 run(w, 0.3, Inputs(attack=True)); assert w.hero.state == 'hurt'
 print('30 ok: combo meter fills, hold-to-charge, release fires a 2-hit spin, dies with the hero')
+
+# 31) T14: bow and crossbow pickups: the shot is born on frame 4, flies, hits at range, wears the weapon, xbow reloads
+w = fresh(0); w.pickups = [Pickup('weapon', 0, 100.0, 'bow')]; run(w, 0.1, Inputs())
+assert w.hero.weapon['id'] == 'bow' and w.hero.sheet == 'knight_bow' and w.hero.primary == 'bow'
+assert 'knight_bow' in T and 'knight_xbow' in T
+w.ogre.x = 200.0; w.ogre.ai_cooldown = 99; w.ogre.set_state('hurt'); w.ogre.invuln = 0          # target at range, standing still
+w.update(DT, Inputs(attack=True, attack_pressed=True)); assert w.hero.state == 'attack' and w.hero.anim == 'attack_bow'
+assert w.hero.weapon['durability'] == 100 - C.BOW_WEAR
+born = None
+for n in range(120):
+    w.update(DT, Inputs())
+    if w.projectiles and born is None: born = (w.hero.frame_index(T), w.projectiles[0].sprite, w.projectiles[0].damage)
+assert born is not None and born[0] == 4 and born[1:] == ('arrow', C.BOW_DAMAGE), born
+assert w.ogre.hp == 30 - C.BOW_DAMAGE or w.ogre.hp == 20, w.ogre.hp                              # hit from 200 px away
+# max range: a target past BOW_RANGE is never reached
+w = fresh(0); w.hero.weapon = dict(id='bow', durability=100.0); w.ogre.x = C.BOW_RANGE + 80; w.ogre.set_state('hurt'); w.ogre.ai_cooldown = 99
+w.update(DT, Inputs(attack=True, attack_pressed=True)); run(w, 1.5, Inputs()); assert w.ogre.hp == 30 and not w.projectiles
+# crossbow: bolt, 20 dmg, longer range, reload gap between shots even with the button held
+w = fresh(0); w.hero.weapon = dict(id='xbow', durability=100.0)
+assert C.XBOW_RANGE > C.BOW_RANGE and C.XBOW_DAMAGE == 2 * C.BOW_DAMAGE and C.XBOW_RELOAD > 0
+w.ogre.x = C.BOW_RANGE + 60; w.ogre.set_state('hurt'); w.ogre.ai_cooldown = 99; w.ogre.invuln = 0
+shots = []
+for n in range(int(4.0 / DT)):
+    before = len(w.projectiles); w.ogre.state == 'hurt' or None
+    w.update(DT, Inputs(attack=True))
+    w.ogre.set_state('hurt') if w.ogre.state == 'idle' else None
+    if len(w.projectiles) > before: shots.append(w.time)
+assert len(shots) >= 3 and all(b - a >= C.XBOW_RELOAD - 0.01 for a, b in zip(shots, shots[1:])), shots
+assert w.hero.weapon is None or w.hero.weapon['durability'] < 100 - C.XBOW_WEAR
+assert w.ogre.hp < 30 or w.ogre.state == 'dead'
+# the weapon breaks after enough shots and the hero is back to the sword
+w = fresh(0); w.ogre.x = 5000.0; w.hero.weapon = dict(id='bow', durability=C.BOW_WEAR + 0.1)
+w.start_attack(w.hero, 'bow'); w.start_attack(w.hero, 'bow'); assert w.hero.weapon is None and w.hero.primary == 'sword'
+print('31 ok: bow/crossbow pickups (shot on frame 4, range, wear, crossbow reload)')
 
 print('ALL LOGIC TESTS PASSED')

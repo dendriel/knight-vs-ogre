@@ -87,13 +87,14 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 | `knight_spritesheet` | idle(6fps), walk(10), run(12), attack_sword(12, golpe LATERAL), attack_axe(10), attack_bow(10), attack_crossbow(10), hurt(10), death(8), jump_up(12), jump_fall(10), attack_sword_2(12, combo: corte ascendente), attack_sword_3(12, combo: golpe final de cima para baixo), attack_special(12, giro: frame 0 = carga, congelado enquanto segura) |
 | `ogre_spritesheet` | idle(6), walk(10), attack(10, machado), hurt(10), death(8) |
 | `knight_axe_spritesheet` | **mesmas linhas e nomes do `knight_spritesheet`**, mas o herói empunha o machado (arquivo gerado por `knight_gen.py write_sheet(out, 'axe')`); o jogo usa a linha `attack_axe` |
+| `knight_bow_spritesheet`, `knight_xbow_spritesheet` | idem: **mesmas linhas e nomes** do `knight_spritesheet`, o herói carregando arco / besta nas poses de corpo a corpo (`render` aceita `hold='bow'/'xbow'`); o jogo usa `attack_bow` / `attack_crossbow` (flecha/virote nasce no frame 4) |
 | `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6), heal(10), coin_glint(12), sword_slash_2(12), sword_slash_3(12), spin_slash(12, aro do especial), charge(10, brasas enquanto segura) |
 
 - **Âncora**: coluna do quadril = 30 no frame normal, **33 quando espelhado** (63−30); linha do chão = 58 dentro do frame
   (no jogo `GROUND_Y = 217`). Posicione sempre por essa coluna, senão o sprite "pula" ao virar.
 - Animações de ataque têm o golpe nos **frames 3–4**; o efeito `i` toca junto com o frame `3+i` do ataque.
 - No cavaleiro o frame 4 do arco e da besta é o disparo (a flecha/virote só é desenhada nesse frame; o projétil de verdade
-  teria de ser criado pelo jogo). **Arco, besta e machado do cavaleiro existem nos sheets mas o jogo ainda não usa** (a animação `run` já é usada ao andar).
+  teria de ser criado pelo jogo). **Arco, besta e machado do cavaleiro são usados como armas pickup (T13/T14)** (a animação `run` já é usada ao andar).
 - Cenário: `tree` 112x128, `medieval_house` 160x160, `well` 48x64, `street_tile` 64x40 (repetível na horizontal),
   `box` 24x24 (caixote; contorno nas 4 bordas; caixas empilhadas compartilham a linha de contorno, 23 px por nível).
   O último pixel sólido de cada objeto é o chão (a linha de baixo é o contorno).

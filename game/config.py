@@ -31,6 +31,8 @@ KNIGHT_ATTACK_ANIM_SPEED = 1.7     # knight sword stroke 1 AND its slash effect 
 KNIGHT_COMBO2_ANIM_SPEED = 2.4     # combo stroke 2 (rising cut) AND sword_slash_2
 KNIGHT_COMBO3_ANIM_SPEED = 2.6     # combo stroke 3 (overhead chop) AND sword_slash_3
 SPECIAL_ANIM_SPEED = 1.5           # spin animation AND its ring effect (they must stay in sync)
+BOW_ANIM_SPEED = 1.3               # picked-up bow: draw and release
+XBOW_ANIM_SPEED = 1.0              # picked-up crossbow: slower aim
 AXE_ANIM_SPEED = 1.26              # picked-up axe: 1.35x slower than stroke 1 (KNIGHT_ATTACK_ANIM_SPEED / 1.35)
 COMBO_WINDOW_START = 3             # a new click chains the next stroke from this frame of the current one...
 COMBO_BUFFER = 0.15                # ...until this many seconds after it ended
@@ -41,6 +43,7 @@ RUN_ANIM_SPEED = 1.65              # the hero's movement uses the 'run' cycle (~
 ANIM_SPEED = {
     'knight': {'attack_special': SPECIAL_ANIM_SPEED, 'attack_sword': KNIGHT_ATTACK_ANIM_SPEED, 'attack_sword_2': KNIGHT_COMBO2_ANIM_SPEED,
                'attack_sword_3': KNIGHT_COMBO3_ANIM_SPEED, 'attack_axe': AXE_ANIM_SPEED,
+               'attack_bow': BOW_ANIM_SPEED, 'attack_crossbow': XBOW_ANIM_SPEED,
                'run': RUN_ANIM_SPEED, 'jump_up': 1.6},
     'ogre': {'attack': ATTACK_ANIM_SPEED, 'walk': WALK_ANIM_SPEED},
     'vfx': {'sword_slash': KNIGHT_ATTACK_ANIM_SPEED, 'sword_slash_2': KNIGHT_COMBO2_ANIM_SPEED,
@@ -77,6 +80,21 @@ AXE_KNOCKBACK = 24.0
 AXE_MOVE_FACTOR = 0.8              # walking speed multiplier while the heavy swing plays
 AXE_WEAR = 3.0                     # durability (percent) lost per swing; at 0 the weapon breaks
 WEAPON_DURABILITY = 100.0
+
+# bow and crossbow pickups (T14): same pickup / durability rules as the axe, but the strike is a shot
+BOW_DROP_CHANCE = 0.06             # rare drops (separate rolls)
+XBOW_DROP_CHANCE = 0.04
+BOW_DAMAGE = 10                    # an arrow = one sword stroke, from a distance
+BOW_SPEED = 260.0                  # px/s
+BOW_RANGE = 280.0                  # px
+BOW_WEAR = 2.5                     # durability (percent) per shot
+BOW_MOVE_FACTOR = 0.5
+XBOW_DAMAGE = 20                   # the crossbow hits harder, reaches further, but needs a reload
+XBOW_SPEED = 360.0
+XBOW_RANGE = 380.0
+XBOW_WEAR = 4.0
+XBOW_RELOAD = 0.8                  # seconds before the next shot can start
+XBOW_MOVE_FACTOR = 0.4
 
 # ---- armor (T15) --------------------------------------------------------------------------
 ARMOR_MAX = 50                     # armor points; damage is taken from them before the life bar

@@ -18,6 +18,8 @@ FIGHTER_DEFS = {
 #   knockback: pixels the victim is pushed | guard_break: ignores shields (T24) | cooldown: seconds before reuse
 WEAPONS = {                                  # pickup weapons the hero can hold (T13): attack id + sprite sheet
     'axe': dict(attack='axe', sheet='knight_axe'),
+    'bow': dict(attack='bow', sheet='knight_bow'),
+    'xbow': dict(attack='xbow', sheet='knight_xbow'),
 }
 
 ATTACKS = {
@@ -33,6 +35,13 @@ ATTACKS = {
     'axe': dict(anim='attack_axe', damage=C.AXE_DAMAGE, reach=C.AXE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                 slash=None, move_factor=C.AXE_MOVE_FACTOR, knockback=C.AXE_KNOCKBACK, guard_break=True, cooldown=0.0,
                 wear=C.AXE_WEAR, next=None),
+    'bow': dict(anim='attack_bow', damage=C.BOW_DAMAGE, reach=(0, 0), active=(), slash_frame=4, slash=None,
+                move_factor=C.BOW_MOVE_FACTOR, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0, wear=C.BOW_WEAR,
+                next=None, shoot=dict(kind='straight', sprite='arrow', speed=C.BOW_SPEED, max_range=C.BOW_RANGE)),
+    'xbow': dict(anim='attack_crossbow', damage=C.XBOW_DAMAGE, reach=(0, 0), active=(), slash_frame=4, slash=None,
+                 move_factor=C.XBOW_MOVE_FACTOR, knockback=C.KNOCKBACK * 1.5, guard_break=False, cooldown=C.XBOW_RELOAD,
+                 wear=C.XBOW_WEAR, next=None,
+                 shoot=dict(kind='straight', sprite='bolt', speed=C.XBOW_SPEED, max_range=C.XBOW_RANGE)),
     'special': dict(anim='attack_special', damage=C.SPECIAL_DAMAGE, reach=(-C.SPECIAL_RADIUS, C.SPECIAL_RADIUS),
                     active=(2, 3, 4, 5), slash_frame=1, slash='spin_slash', move_factor=0.0, knockback=C.SPECIAL_KNOCKBACK,
                     guard_break=True, cooldown=0.0, wear=0.0, next=None, rehit=4, ignore_invuln=True, ring=True),
@@ -82,7 +91,7 @@ class Fighter:
         self.armor = 0; self.armor_max = C.ARMOR_MAX if self.defn['hero'] else 0; self.weapon = None   # equipment (T13, T15); weapon = dict(id, durability)
         self.attack_id = self.defn['primary']                   # which ATTACKS entry the 'attack' state plays
         self.hit_set = []                                       # targets already hit by the current swing
-        self.rehit_done = False
+        self.rehit_done = False; self.cd = {}                    # cd: attack id -> time it can be used again
         self.combo_next = None; self.chain = None               # queued next stroke / (time, id) just after a stroke ended
         self.ai_wait = None; self.ai_cooldown = 0.6             # enemy AI state (per fighter, so many enemies can coexist)
         self.respawn_t = None                                   # enemies: countdown (after death) until the body is buried
@@ -299,7 +308,8 @@ class World:
         if h.state == 'attack' and inp.attack_pressed:                                # a click inside the window queues the next stroke
             nxt = ATTACKS[h.attack_id].get('next')
             if nxt and h.frame_index(self.timing) >= C.COMBO_WINDOW_START: h.combo_next = nxt
-        if h.state == 'attack' or inp.attack or (inp.attack_pressed and h.chain):  # can walk (not turn) while swinging
+        ready = h.state == 'attack' or self.time >= h.cd.get(h.primary, 0.0)         # (reload of a crossbow)
+        if h.state == 'attack' or ((inp.attack or (inp.attack_pressed and h.chain)) and ready):   # can walk (not turn) while swinging
             if h.state != 'attack':
                 if inp.attack_pressed and h.chain and self.time - h.chain[0] <= C.COMBO_BUFFER:
                     self.start_attack(h, h.chain[1])                                 # clicked just after the stroke ended
@@ -351,8 +361,11 @@ class World:
             at = ATTACKS[atk.attack_id]
             if idx >= at['slash_frame'] and not atk.slash_done:
                 atk.slash_done = True
-                if at['slash']: self.add_vfx(at['slash'], atk.x, atk.facing < 0, y=atk.y)   # (None: the sprite has its own trail)
-                self.events.append(('swing', atk.kind))
+                if at.get('shoot'):                                         # bows: the arrow leaves the hand on this frame
+                    self.shoot(atk, damage=at['damage'], knockback=at['knockback'], **at['shoot'])
+                else:
+                    if at['slash']: self.add_vfx(at['slash'], atk.x, atk.facing < 0, y=atk.y)   # (None: the sprite has its own trail)
+                    self.events.append(('swing', atk.kind))
             if at.get('rehit') and idx >= at['rehit'] and not atk.rehit_done:
                 atk.rehit_done = True; atk.hit_set = []                    # multi-hit moves (the spin) hit again here
             if tgt in atk.hit_set or idx not in at['active']: continue         # one hit per target per swing
@@ -474,6 +487,7 @@ class World:
 
     def start_attack(self, f, attack_id):
         f.attack_id = attack_id; f.set_state('attack'); f.chain = None
+        if ATTACKS[attack_id]['cooldown']: f.cd[attack_id] = self.time + ATTACKS[attack_id]['cooldown']
         wear = ATTACKS[attack_id].get('wear', 0.0)
         if wear and f.weapon:                                  # every swing wears the held weapon down
             f.weapon['durability'] -= wear
@@ -492,6 +506,8 @@ class World:
         if r.random() < C.COIN_BAG_DROP_CHANCE: items.append(Pickup('coins', 0, r.randint(*C.COIN_BAG_COINS)))
         if r.random() < C.AXE_DROP_CHANCE: items.append(Pickup('weapon', 0, C.WEAPON_DURABILITY, 'axe'))
         if r.random() < C.ARMOR_DROP_CHANCE: items.append(Pickup('armor', 0, C.ARMOR_PICKUP))
+        if r.random() < C.BOW_DROP_CHANCE: items.append(Pickup('weapon', 0, C.WEAPON_DURABILITY, 'bow'))
+        if r.random() < C.XBOW_DROP_CHANCE: items.append(Pickup('weapon', 0, C.WEAPON_DURABILITY, 'xbow'))
         for i, p in enumerate(items):
             p.x = x + (i - (len(items) - 1) / 2) * 16        # side by side when both drop
             self.pickups.append(p)

@@ -164,6 +164,17 @@ def tint(img, col, amt):
                 po[x, y] = (int(r + (col[0] - r) * amt), int(g + (col[1] - g) * amt), int(b + (col[2] - b) * amt), 255)
     return out
 
+def held(kind, pos, ang):
+    """Layers of a weapon simply carried in the hand at `pos`, pointing along `ang` (sword / axe / bow / xbow)."""
+    if kind == 'sword': return [sword(pos, ang)]
+    if kind == 'axe': return [axe(pos, ang)]
+    if kind == 'bow':
+        bl, st, _ = bow(pos, 90 - ang, 0)                      # limbs along the direction the blade used to point
+        return [bl, st]
+    xs, xst = xbow(pos, ang, False)
+    return [xs, xst]
+
+
 def render(p):
     if p['weapon'] in ('bow', 'xbow'): return render_ranged(p)
     hxw = CX + p.get('hx', 0); hy = 0
@@ -191,10 +202,12 @@ def render(p):
     kn = p.get('knee', 'x')
     order = [armF, leg(H, p['footF'], PF, LEATH_D, kn), plume, torso(H, S, p.get('flap', 0), p.get('cloth_ang', 0), p.get('tabard', True)), hd,
              leg(H, p['footN'], PN, LEATH, kn), armN]
-    if p.get('wback'): order.insert(0, sword(p['wpos'], p['wang']) if p['weapon'] == 'sword' else axe(p['wpos'], p['wang']))
+    kind = p.get('hold') or p['weapon']                    # 'hold': carry another weapon with a melee pose (T14)
+    if p.get('wback'):
+        for l in reversed(held(kind, p['wpos'], p['wang'])): order.insert(0, l)
     if p.get('trail'): order.append(trail(hand, *p['trail']))
     wp = p.get('wpos') or hand
-    if not p.get('wback'): order.append(sword(wp, p['wang']) if p['weapon'] == 'sword' else axe(wp, p['wang']))
+    if not p.get('wback'): order.extend(held(kind, wp, p['wang']))
     for l in order: img.alpha_composite(l)
     LAST.update(S=S, H=H, hand=hand)
     if p.get('flash'): img = tint(img, (255, 255, 255, 255), p['flash'])

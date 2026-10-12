@@ -22,6 +22,7 @@ Para gerar um `.exe`: `build_exe.bat` (resultado em `dist\KnightVsOgre.exe`).
 - O golpe so acerta nos frames de impacto da animacao (o rastro da arma mostra onde).
 - Itens: cada ogro derrotado tem 30% de chance de derrubar uma pocao vermelha e 50% de derrubar uma bolsa de 5 a 10 moedas de ouro. So o heroi pega (basta chegar perto). A pocao vai para o inventario (ate 10; com 10 ela fica no chao) e a tecla 1 bebe uma (+30 de vida, so se estiver ferido). O ouro e as pocoes aparecem no HUD, nao zeram quando o heroi morre.
 - Machado: 15% dos ogros derrubam o proprio machado; ao pegar, o heroi passa a atacar com ele no lugar da espada (dano 20, alcance +8, golpe 1,35x mais lento, anda a 80% da velocidade; ignora defesa). Cada golpe gasta 3% de durabilidade (barra no HUD); em 0% ele quebra e o heroi volta a espada. O heroi que morre perde a arma.
+- Arco e besta: 6% / 4% dos ogros derrubam um (pickup raro, mesma durabilidade e HUD do machado). O arco dispara uma flecha a cada golpe (dano 10, alcance 280, 2,5% de desgaste por tiro); a besta, virote de dano 20 e alcance 380, com recarga de 0,8 s e 4% de desgaste. A flecha so acerta alvos na faixa vertical do heroi (em linha reta).
 - Armadura: 10% dos ogros derrubam uma peca (barra azul no HUD, ate 50 pontos). Todo dano desconta primeiro dela; quando acaba, o resto do golpe vai para a vida e a armadura quebra. Nao e consumida se a barra ja esta cheia.
 - Barra de combo (laranja no HUD): enche com o dano causado (x1,5) e recebido (x1,0). Com a barra cheia, segure o botao de ataque (0,25 s) para carregar e solte para disparar o **giro especial** (2 golpes de 15 em volta, ignora a invulnerabilidade dos alvos e o heroi fica invulneravel durante o giro). Um clique rapido com a barra cheia ainda e um golpe normal. A barra zera ao usar e quando o heroi morre.
 - Ogro morreu: o corpo fica no chao e outro ogro entra pela direita. Heroi morreu: outro heroi nasce na esquerda.
@@ -55,7 +56,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 - [x] T13 machado como pickup, com durabilidade e efeito proprio (mais dano/alcance, golpe mais lento) **(arte)**
 - [x] T15 armadura (o dano desconta dela antes da vida)
 - [x] T12 barra de combo e ataque especial (segurar com a barra cheia, soltar para disparar) **(arte)**
-- [ ] T14 arco e besta como pickups (projetil, durabilidade) **(arte)**
+- [x] T14 arco e besta como pickups (projetil, durabilidade) **(arte)**
 
 ### Inimigos
 - [ ] T20 IA modular | T26 fichas de ataque e elites (veterano, bruto, agil)
