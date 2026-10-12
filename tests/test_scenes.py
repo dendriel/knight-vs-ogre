@@ -113,4 +113,22 @@ assert isinstance(g.scene, S.PlayScene) and g.world.gold == 12 and g.world.potio
 assert g.world.time < 0.5 and g.world.next_enc == 0
 print('7 ok: defeat screen (revive costs gold, restart restores the stage-start snapshot)')
 
+# 8) stage clear -> summary with the stage numbers -> Continue carries gold / potions / weapon to the next stage -> the end
+def finish(g):
+    w = g.world; w.next_enc = len(w.stage.encounters); w.queue = []; w.enemies = []; w.hero.x = w.stage.length - 5
+    step(g, 3)
+g = main.Game('stage1'); step(g, 3)
+g.world.gold = 77; g.world.potions = 4; g.world.hero.weapon = dict(id='axe', durability=55.0)
+g.world.stats.update(kills=9, damage_dealt=120, gold_gained=40)
+finish(g); assert isinstance(g.scene, S.SummaryScene)
+assert dict(g.scene.rows)['Monstros derrotados'] == '9' and dict(g.scene.rows)['Dano causado'] == '120' and dict(g.scene.rows)['Ouro adquirido'] == '40'
+key(g, fp.K_RETURN)
+assert isinstance(g.scene, S.PlayScene) and g.world.stage.id == 'stage2'
+assert g.world.gold == 77 and g.world.potions == 4 and g.world.hero.weapon == dict(id='axe', durability=55.0)
+assert g.world.stats['kills'] == 0, 'numbers are per stage'
+finish(g); key(g, fp.K_RETURN); assert g.world.stage.id == 'stage3'
+finish(g); assert isinstance(g.scene, S.SummaryScene); key(g, fp.K_RETURN); assert isinstance(g.scene, S.EndScene)
+key(g, fp.K_RETURN); assert isinstance(g.scene, S.TitleScene)
+print('8 ok: stage summary, run state carried to the next stage, end screen, back to the title')
+
 print('ALL SCENE TESTS PASSED')

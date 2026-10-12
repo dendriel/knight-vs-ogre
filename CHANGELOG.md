@@ -25,6 +25,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T30: o jogo agora abre num **menu inicial** (Campanha · Modo infinito · Ver comandos · Sair); `--endless` / `--stage N` pulam o menu.
 - T36: **dificuldade crescente**: cada fase tem 3 trechos por progresso (abertura 0–35%, meio 35–75%, pré-boss 75–100%) com `max_alive` e `max_attackers` próprios (fase 1: 2/1 → 3/2 → 3/2; fase 2: 3/2 → 4/2 → 5/3; fase 3: 4/2 → 5/3 → 6/3). Os encontros entram numa fila e os inimigos aparecem pela borda direita enquanto houver menos de `max_alive` vivos; a fração de elites sorteados cresce com o progresso (fase 1 só a partir de 75%); as bolsas de ouro pagam mais no fim (fase 1 ×1,0→1,4; fase 3 ×1,6→2,2). Encontros da fase 1 conforme a seção 4.2 do plano.
 - T37: **tela de derrota** (só em fase): *Renascer aqui — 100 ouro* (`REVIVE_COST`; desabilitado com aviso se faltar ouro) levanta o herói onde caiu com vida cheia, `REVIVE_INVULN` 2 s, barra de combo zerada; inimigos, fila e encontros mantêm o estado e poções/arma/armadura são mantidas (D10). *Reiniciar a fase* volta ao **snapshot do início da fase** (ouro, poções, arma, armadura da entrada; D9), o mesmo vale para *Reiniciar fase* do Esc. *Menu inicial* volta ao título.
+- T31: **tela de conclusão** da fase: monstros derrotados, dano causado, dano recebido, ouro adquirido (só desta fase), renascimentos e tempo; *Continuar* leva o estado da run (ouro, poções, arma, armadura — D6) para a fase seguinte; depois da fase 3 aparece "FIM DA DEMO" com volta ao menu inicial.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -85,6 +86,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T30: `World(stage=...)`, `_stage()`, `_spawn_encounter()`, `Game.start(stage_id)`, `TitleScene`; constantes `STAGE_END_MARGIN`, `STAGE_FINISH_DIST`, `ENCOUNTER_SPACING`; testes de cena passam a iniciar com `Game('endless')`. Teste 40 + cena 6.
 - T36: `Stage.difficulty(p)`, `Stage.threat(section)`, `THREAT`, `World.queue/diff`; teste 41 verifica que a ameaça cresce entre trechos e entre fases e que nunca há mais de `max_alive` vivos. Bot ingênuo (aperta sem esquivar): fase 1 vence 1 de 3 seeds, fase 2 vence 3 de 3, fase 3 perde — a fase 3 exige esquiva, poções e especial.
 - T37: `World.revive()/can_revive()/export_run()/apply_run()`, `DefeatScene`, `Game.run/run_start/start(stage, run)/to_title()`; `stats['revives']`. Teste 42 + cena 7.
+- T31: `SummaryScene`, `EndScene`, `Game.after_summary()` (a loja da T50 entra aqui); cena 8.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

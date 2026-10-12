@@ -125,6 +125,66 @@ class DefeatScene(Scene):
         game.view.draw_menu(surf, self.menu)
 
 
+class SummaryScene(Scene):
+    """Stage completed (T31): the numbers of this stage only, then Continue (-> shop / next stage / the end)."""
+    transparent = True
+
+    def __init__(self, game):
+        w = game.world; st = w.stats
+        secs = int(w.time)
+        self.rows = [('Monstros derrotados', str(st['kills'])), ('Dano causado', str(st['damage_dealt'])),
+                     ('Dano recebido', str(st['damage_taken'])), ('Ouro adquirido', str(st['gold_gained'])),
+                     ('Renascimentos', str(st['revives'])), ('Tempo', f'{secs // 60}:{secs % 60:02d}')]
+        self.title = (w.stage.name if w.stage else 'FASE') + ' - COMPLETA'
+        self.menu = Menu([('Continuar', 'continue', True)], x=(C.SCREEN_W - 150) // 2, y=C.SCREEN_H - 62, w=150, row_h=22)
+
+    def act(self, action, game):
+        if action == 'continue': game.after_summary()
+
+    def handle_event(self, e, game):
+        if key_pressed(e, pygame.K_RETURN, pygame.K_SPACE): self.act('continue', game)
+        elif e.type == pygame.MOUSEMOTION: self.menu.mouse_move(game.to_internal(e.pos))
+        elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+            a = self.menu.click(game.to_internal(e.pos))
+            if a: self.act(a, game)
+
+    def draw(self, surf, game):
+        game.view.dim(surf, 190)
+        game.view.title(surf, self.title, 30)
+        y = 62
+        for label, value in self.rows:
+            game.view.text(surf, label, 130, y, (235, 240, 255))
+            game.view.text(surf, value, 340, y, (255, 224, 150), align='right')
+            y += 16
+        game.view.draw_menu(surf, self.menu)
+
+
+class EndScene(Scene):
+    """After the last stage (the demo ends here)."""
+    def __init__(self):
+        self.menu = Menu([('Menu inicial', 'title', True), ('Sair', 'quit', True)], x=(C.SCREEN_W - 150) // 2, y=140, w=150, row_h=22)
+
+    def act(self, action, game):
+        if action == 'title': game.to_title()
+        elif action == 'quit': game.running = False
+
+    def handle_event(self, e, game):
+        if key_pressed(e, pygame.K_UP, pygame.K_w): self.menu.move(-1)
+        elif key_pressed(e, pygame.K_DOWN, pygame.K_s): self.menu.move(1)
+        elif key_pressed(e, pygame.K_RETURN): self.act(self.menu.current(), game)
+        elif e.type == pygame.MOUSEMOTION: self.menu.mouse_move(game.to_internal(e.pos))
+        elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+            a = self.menu.click(game.to_internal(e.pos))
+            if a: self.act(a, game)
+
+    def draw(self, surf, game):
+        game.view.draw(surf, game.world, 0.0, hud=False)
+        game.view.dim(surf, 190)
+        game.view.title(surf, 'FIM DA DEMO', 70)
+        game.view.center(surf, 'Obrigado por jogar!', 98, (235, 240, 255))
+        game.view.draw_menu(surf, self.menu)
+
+
 class ControlsScene(Scene):
     """'Ver comandos': one table (config.CONTROLS) is the single source of the key list."""
     transparent = True

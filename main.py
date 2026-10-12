@@ -4,8 +4,8 @@ import pygame
 from game import config as C
 from game.logic import World, Inputs, load_timing
 from game.view import View
-from game.scenes import PlayScene, TitleScene, DefeatScene
-from game.stages import STAGES
+from game.scenes import PlayScene, TitleScene, DefeatScene, SummaryScene, EndScene
+from game.stages import STAGES, CAMPAIGN
 from game.audio import Audio
 
 
@@ -73,6 +73,15 @@ class Game:
         """Reacts to what the world just decided: the defeat screen (T37); the summary arrives with T31."""
         w = self.world
         if w.defeated and not isinstance(self.scene, DefeatScene): self.push(DefeatScene(self))
+        elif w.stage_clear and isinstance(self.scene, PlayScene): self.push(SummaryScene(self))
+
+    def after_summary(self):
+        """Continue after the stage summary: carry the run state to the next stage of the campaign, or end."""
+        self.run = self.world.export_run()
+        i = CAMPAIGN.index(self.stage_id) if self.stage_id in CAMPAIGN else -1
+        if 0 <= i < len(CAMPAIGN) - 1: self.start(CAMPAIGN[i + 1], self.run)
+        else:
+            self.scenes = [EndScene()]; self._lock = True
 
     # ------------------------------------------------------------------ input
     def to_internal(self, pos):
