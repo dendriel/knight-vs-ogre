@@ -12,6 +12,8 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - `README.md`: nova seção **TODO** com as ideias planejadas (armas pickup com durabilidade, arco/besta, classes, inimigos, fases e bosses, loja, poções e armadura).
 - `TASKS_PLAN.md`: plano de execução das tarefas do TODO (incoerências corrigidas, dependências, ordem, proposta por tarefa e decisões D1–D7 incorporadas; D8–D10 em aberto com padrão recomendado). `README.md` TODO ganhou dificuldade crescente, derrota (renascer por 100 de ouro ou reiniciar) e menu do Esc.
 - `README.md` TODO: 3 fases temáticas (planície, floresta inglesa, cidade), novos inimigos humanos (cavaleiro, arqueiro, lanceiro, cavaleiro com escudo), combo de até 3 golpes no ataque primário e ataque especial com barra de combo.
+- T01: `FIGHTER_DEFS[kind]` (vida, velocidade, meia-largura, mapa de animações, efeito de golpe, alcance, IA) substitui as tabelas soltas; `ANIM/SLASH/REACH` continuam como alias. Funil único de dano `World.apply_damage` e `World.stats` (kills, damage_dealt, damage_taken, gold_gained). Teste 22.
+
 
 ## [2026-10-11]
 

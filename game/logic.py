@@ -2,11 +2,19 @@
 import json, math, os, random
 from . import config as C
 
-ANIM = {'knight': {'idle': 'idle', 'walk': 'run', 'attack': 'attack_sword', 'hurt': 'hurt', 'dead': 'death'},
-        'ogre': {'idle': 'idle', 'walk': 'walk', 'attack': 'attack', 'hurt': 'hurt', 'dead': 'death'}}
+# One entry per kind of fighter: everything that differs between a knight and an ogre lives here (T01).
+FIGHTER_DEFS = {
+    'knight': dict(hero=True, max_hp=C.HERO_MAX_HP, speed=C.HERO_SPEED, half_width=8, sheet='knight', ai=None,
+                   anim={'idle': 'idle', 'walk': 'run', 'attack': 'attack_sword', 'hurt': 'hurt', 'dead': 'death'},
+                   slash='sword_slash', reach=C.KNIGHT_REACH),
+    'ogre': dict(hero=False, max_hp=C.OGRE_MAX_HP, speed=C.OGRE_SPEED, half_width=10, sheet='ogre', ai='melee',
+                 anim={'idle': 'idle', 'walk': 'walk', 'attack': 'attack', 'hurt': 'hurt', 'dead': 'death'},
+                 slash='axe_slash', reach=C.OGRE_REACH),
+}
+ANIM = {k: d['anim'] for k, d in FIGHTER_DEFS.items()}          # (aliases kept for old code / tests)
+SLASH = {k: d['slash'] for k, d in FIGHTER_DEFS.items()}
+REACH = {k: d['reach'] for k, d in FIGHTER_DEFS.items()}
 LOOPING = ('idle', 'walk')
-SLASH = {'knight': 'sword_slash', 'ogre': 'axe_slash'}
-REACH = {'knight': C.KNIGHT_REACH, 'ogre': C.OGRE_REACH}
 
 
 def load_timing(assets_dir):
@@ -26,7 +34,7 @@ class Inputs:
 
 class Fighter:
     def __init__(self, kind, x, facing, hp=None, invuln=0.0):
-        self.max_hp = C.HERO_MAX_HP if kind == 'knight' else C.OGRE_MAX_HP
+        self.defn = FIGHTER_DEFS[kind]; self.max_hp = self.defn['max_hp']
         if hp is None: hp = self.max_hp
         self.kind, self.x, self.facing, self.hp, self.invuln = kind, float(x), facing, hp, invuln
         self.state = 'idle'; self.t = 0.0
@@ -48,7 +56,7 @@ class Fighter:
         return ANIM[self.kind][self.state]
 
     @property
-    def hw(self): return C.HALF_WIDTH[self.kind]
+    def hw(self): return self.defn['half_width']
 
     def frame_index(self, timing):
         a = self.anim
@@ -83,6 +91,7 @@ class World:
         self.cam_off = C.SCREEN_W / 2 - C.START_HERO_SCREEN_X     # hero starts on the left, camera glides to center
         self.shake = 0.0; self.time = 0.0
         self.events = []                                           # (name, kind) for the audio layer; main.py drains it
+        self.stats = dict(kills=0, damage_dealt=0, damage_taken=0, gold_gained=0)
         self.ai_wait = None; self.ai_cooldown = 0.6
 
     # ------------------------------------------------------------------ helpers
@@ -214,8 +223,16 @@ class World:
                 atk.hit_done = True; hits.append((atk, tgt))
         for atk, tgt in hits: self._hit(atk, tgt)          # applied together, so trades are possible
 
+    def apply_damage(self, atk, tgt, amount):
+        """The single funnel for damage: stats now, armor / guard / combo meter plug in here later."""
+        amount = min(amount, tgt.hp)
+        tgt.hp -= amount
+        if tgt is self.hero: self.stats['damage_taken'] += amount
+        else: self.stats['damage_dealt'] += amount
+        return amount
+
     def _hit(self, atk, tgt):
-        tgt.hp = max(0, tgt.hp - C.DAMAGE)
+        self.apply_damage(atk, tgt, C.DAMAGE)
         self.add_vfx('blood_splash', tgt.x, tgt.x > atk.x, y=tgt.y)
         self.shake = C.SHAKE_TIME
         self.events.append(('hit', tgt.kind))
@@ -225,6 +242,7 @@ class World:
         if tgt.hp <= 0:
             tgt.set_state('dead'); tgt.invuln = 999.0
             self.events.append(('death', tgt.kind))
+            if tgt is not self.hero: self.stats['kills'] += 1
             if tgt is self.ogre: self._drop_loot(tgt.x)
             self.add_vfx('spirit', tgt.x, tgt.x > atk.x, delay=C.SPIRIT_DELAY, y=tgt.y)
             if tgt is self.hero: self.hero_deaths += 1; self.hero_timer = C.RESPAWN_DELAY
@@ -262,7 +280,7 @@ class World:
                     and not (p.kind == 'potion' and h.hp >= h.max_hp)):          # a potion is not wasted on a full bar
                 if p.kind == 'potion': self.heal(h, p.amount)
                 else:
-                    self.gold += p.amount; self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)
+                    self.gold += p.amount; self.stats['gold_gained'] += p.amount; self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)
                 self.events.append(('pickup', p.kind)); continue
             keep.append(p)
         self.pickups = keep

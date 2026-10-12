@@ -245,4 +245,13 @@ for ev, kinds in SOUND_FOR.items():
     for k, snd in kinds.items(): assert os.path.exists(os.path.join(sfx, snd + '.wav')), snd
 print('21 ok: heal / coin effects, events and sound files')
 
+# 22) T01: damage funnel and statistics; fighter definitions drive max hp / half width
+from game.logic import FIGHTER_DEFS
+w = fresh(0); assert w.hero.max_hp == FIGHTER_DEFS['knight']['max_hp'] and w.ogre.hw == FIGHTER_DEFS['ogre']['half_width']
+assert w.apply_damage(w.ogre, w.hero, 7) == 7 and w.hero.hp == 93 and w.stats['damage_taken'] == 7
+assert w.apply_damage(w.hero, w.ogre, 999) == 30 and w.stats['damage_dealt'] == 30     # capped at the remaining hp
+w = fresh(0); w.ogre.hp = 10; w._hit(w.hero, w.ogre); assert w.stats['kills'] == 1 and w.stats['damage_dealt'] == 10
+w.pickups = [Pickup('coins', 0, 4)]; run(w, 0.05, Inputs()); assert w.stats['gold_gained'] == 4
+print('22 ok: apply_damage funnel + stats')
+
 print('ALL LOGIC TESTS PASSED')
