@@ -203,11 +203,14 @@ Fluxo econômico quando delegar: (1) Haiku gera numa pasta de saída/worktree se
 aprova ou pede ajuste; (4) integra em `assets/` só depois de aprovado. Limite: Claude não ouve áudio nem julga estética
 com precisão — o veredito final de visual/som é do usuário. Na dúvida entre os dois casos, use Sonnet.
 
-### 6.2 Changelog
+### 6.2 Changelog e lista de features
 
 Mantenha `CHANGELOG.md` atualizado **na mesma sessão** de cada mudança (e inclua-o no commit). Formato: um bloco por
 data, mais recente primeiro; **todos os commits do mesmo dia ficam no mesmo bloco** (sem subtítulo); o que ainda não foi
-commitado entra no bloco do dia. Categorias: Jogabilidade, Balanceamento (cite a
+commitado entra no bloco do dia. **Lista de features:** a última seção do `README.md` ("Lista de features") deve refletir o jogo: ao acrescentar, alterar ou remover
+uma feature, atualize a lista na mesma sessão e no mesmo commit.
+
+Categorias: Jogabilidade, Balanceamento (cite a
 constante de `config.py` e o valor antes → depois), Arte, Contrato de arte (linhas dos sheets, âncora, frames de golpe),
 Áudio, Técnico, Correções, Pendente de validação. Só inclua as categorias que têm itens.
 

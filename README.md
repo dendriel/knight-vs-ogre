@@ -75,3 +75,46 @@ escopo) e a validacao por jogo real (feeling, sons, estetica), que e do usuario.
 - [x] T30-T37 fases (sistema, dificuldade, derrota, conclusao, temas, boss e arena)
 - [x] T40-T45 classes (arqueiro, besteiro, mago, secundario, selecao)
 - [x] T50 loja e fluxo da run
+
+## Lista de features
+> Mantida atualizada a cada mudanca de jogo (regra no `CLAUDE.md`, secao 6.2). Detalhes e numeros: `CHANGELOG.md`.
+
+**Modos e fluxo**
+- Menu inicial (Campanha, Modo infinito, Ver comandos, Sair) e tela de selecao de classe (cartas com retrato, atributos e ataques)
+- Campanha de 3 fases (Planicie, Floresta, Cidade), cada uma com encontros por progresso, arena fechada e chefe
+- Modo infinito: respawn automatico, elenco de inimigos que cresce com os abates, multidao maxima 3
+- Conclusao de fase com estatisticas (abates, dano causado/recebido, ouro, renascimentos, tempo) e tela de fim
+- Loja entre as fases (pocao, armadura, machado, arco, besta, bomba); estado da run (ouro, itens) passa de fase em fase
+- Tela de derrota: renascer no mesmo ponto por 100 de ouro ou reiniciar a fase (volta ao estado do inicio)
+- Menu de pausa (Esc): continuar, ver comandos, reiniciar fase, sair; opcoes `--endless`, `--stage N`, `--class X`
+
+**Heroi e classes**
+- 4 classes: Cavaleiro, Arqueiro, Besteiro e Mago (vida, velocidade, pulo, combo, secundario e especial proprios)
+- Combo de 3 golpes no botao esquerdo (janela generosa, descanso de 0,5 s ao fim); o heroi avanca durante o combo
+- Ataque secundario no botao direito: facas (3 cargas, 5 s cada), espada curta, machado pequeno, espinhos de pedra
+- Barra de combo (laranja) que enche com dano causado/recebido; segurar o ataque com ela cheia carrega e solta o especial da classe
+- Especiais: giro, chuva de flechas, rajada de virotes, tempestade de fogo (3x mais lentos para carregar e para executar, 2x mais dano)
+- Pulo, caixas empilhaveis como plataformas, alcance vertical dos golpes
+- Pickups: pocao (inventario de 3, tecla 1), ouro, armadura (barra azul), machado/arco/besta com durabilidade (tecla E pega/solta/troca), bomba (tecla 2)
+- Heroi pode ficar em stunlock; invulnerabilidade curta apos dano e ao nascer/renascer
+
+**Inimigos**
+- Ogro, soldado, lanceiro (alcance longo com zona morta), arqueiro (flecha em parabola com marcador), escudeiro, orc, goblin (bando), kobold (pedras), minotauro (investida telegrafada)
+- Escudeiro: bloqueia de frente, estamina do escudo (3 golpes quebram a defesa), a besta quebra em 1 tiro; machado e especial ignoram
+- Variantes elite por cor (veterano, bruto, agil); fichas de ataque limitam quantos atacam ao mesmo tempo
+- 3 chefes com arena travada: Ogro-Capitao, Rei Minotauro, Cavaleiro Negro (combo proprio, guarda, chama reforcos)
+- IA modular (corpo a corpo, lanca, arremesso em parabola, guarda, investida, chefe); inimigos nao saem da tela travada
+- Sem invulnerabilidade pos-dano nos inimigos: combo prende em stunlock
+
+**Arte, audio e interface**
+- Toda a arte em pixel art gerada por codigo (Pillow): personagens num esqueleto compartilhado, chefes 96x96, 3 temas de cenario com parallax, efeitos, projeteis e icones
+- Efeitos: rastros de golpe por golpe do combo, sangue, espirito, cura, faiscas de escudo, escudo se partindo, explosoes, espinhos de pedra
+- 30 efeitos sonoros sintetizados por codigo e trilha em loop; mudo com M
+- HUD em slots (vida, armadura, combo, arma e durabilidade, secundario, pocoes, bombas, ouro), barra de vida e estamina do inimigo, barra do chefe
+- Janela redimensionavel com escala inteira, tela cheia (F11), controles listados em "Ver comandos"
+
+**Ferramentas e qualidade**
+- Dados em `config.py` / `stages.py`: ataques, inimigos, classes, fases e temas sao tabelas
+- Testes: regras (69), telas, fuzz de entradas aleatorias, smoke com pygame real, contrato arte x dados; `build_assets.py --check`
+- Build do `.exe` com PyInstaller (`build_exe.bat`)
+
