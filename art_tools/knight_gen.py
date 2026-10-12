@@ -118,11 +118,32 @@ def jump_fall(i):
                 plume=[(-7, 2), (-8, 3), (-7, 3), (-8, 2), (-7, 3), (-8, 3)][i],
                 flap=[3, 4, 3, 4, 3, 4][i])
 
+def atk_sword_2(i):
+    # 2o golpe do combo: corte ASCENDENTE de baixo-tras para cima-frente (varre perto do chao e sobe); golpe nos frames 3-4
+    return dict(weapon='sword', hx=[-1, -3, -2, 3, 5, 2][i], footN=(CX + 8, GY), footF=(CX - 5, GY),
+                sink=[1, 3, 3.5, 2, 2.5, 2][i], lean=[-2, -12, -16, 10, 20, 8][i],
+                handN=[(5, -2), (-2, 6), (-5, 8), (6, -5), (11, -8), (6, -2)][i],
+                wang=[175, 300, 320, 70, 112, 122][i],
+                handF=[(-1, 10), (-6, 6), (-8, 4), (-5, 0), (-2, -2), (0, 10)][i],
+                plume=[(-7, -1), (-8, 1), (-9, 2), (-9, 0), (-10, 2), (-8, 0)][i],
+                flap=[0, -1, -2, -2, -3, -1][i], shift=[0, 1, 3, -1, -3, 0][i])
+
+def atk_sword_3(i):
+    # 3o golpe (finalizador): a espada sobe acima da cabeca e desce em um golpe forte, com o corpo todo para a frente
+    return dict(weapon='sword', hx=[-1, -1, 0, 4, 6, 1][i], footN=(CX + 9, GY), footF=(CX - 6, GY),
+                sink=[1, 0, 0, 3, 4.5, 3][i], lean=[-4, -8, -12, 16, 28, 12][i],
+                handN=[(5, -2), (4, -6), (2, -8), (8, -4), (11, 5), (3, 3)][i],
+                wang=[175, 185, 196, 128, 72, 90][i],
+                handF=[(-1, 10), (0, 0), (0, -6), (-2, -2), (2, 4), (0, 10)][i],
+                plume=[(-7, -1), (-8, 0), (-9, -2), (-9, 1), (-11, 3), (-8, 0)][i],
+                flap=[0, -1, -1, -3, -4, -1][i], shift=[0, 0, 1, -2, -4, -2][i])
+
 ANIMS = [('idle', idle, 6), ('walk', walk, 10), ('run', lambda i: walk(i, True), 12),
          ('attack_sword', atk_sword, 12), ('attack_axe', atk_axe, 10),
          ('attack_bow', atk_bow, 10), ('attack_crossbow', atk_xbow, 10),
          ('hurt', hurt, 10), ('death', death, 8),
-         ('jump_up', jump_up, 12), ('jump_fall', jump_fall, 10)]
+         ('jump_up', jump_up, 12), ('jump_fall', jump_fall, 10),
+         ('attack_sword_2', atk_sword_2, 12), ('attack_sword_3', atk_sword_3, 12)]
 NOLOOP = ('attack', 'hurt', 'death')
 
 if __name__ == '__main__':

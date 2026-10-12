@@ -323,6 +323,114 @@
         "w": 64,
         "h": 64
       }
+    },
+    {
+      "filename": "sword_slash_2_0",
+      "frame": {
+        "x": 0,
+        "y": 384,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_2_1",
+      "frame": {
+        "x": 64,
+        "y": 384,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_2_2",
+      "frame": {
+        "x": 128,
+        "y": 384,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_2_3",
+      "frame": {
+        "x": 192,
+        "y": 384,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_2_4",
+      "frame": {
+        "x": 256,
+        "y": 384,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_2_5",
+      "frame": {
+        "x": 320,
+        "y": 384,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_3_0",
+      "frame": {
+        "x": 0,
+        "y": 448,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_3_1",
+      "frame": {
+        "x": 64,
+        "y": 448,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_3_2",
+      "frame": {
+        "x": 128,
+        "y": 448,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_3_3",
+      "frame": {
+        "x": 192,
+        "y": 448,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_3_4",
+      "frame": {
+        "x": 256,
+        "y": 448,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "sword_slash_3_5",
+      "frame": {
+        "x": 320,
+        "y": 448,
+        "w": 64,
+        "h": 64
+      }
     }
   ],
   "animations": {
@@ -397,6 +505,30 @@
       ],
       "fps": 12,
       "loop": false
+    },
+    "sword_slash_2": {
+      "frames": [
+        "sword_slash_2_0",
+        "sword_slash_2_1",
+        "sword_slash_2_2",
+        "sword_slash_2_3",
+        "sword_slash_2_4",
+        "sword_slash_2_5"
+      ],
+      "fps": 12,
+      "loop": false
+    },
+    "sword_slash_3": {
+      "frames": [
+        "sword_slash_3_0",
+        "sword_slash_3_1",
+        "sword_slash_3_2",
+        "sword_slash_3_3",
+        "sword_slash_3_4",
+        "sword_slash_3_5"
+      ],
+      "fps": 12,
+      "loop": false
     }
   },
   "meta": {
@@ -405,6 +537,6 @@
       64,
       64
     ],
-    "note": "sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life (any healing item); coin_glint: on the hero when he picks up gold. Same anchor as the character frames."
+    "note": "sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life (any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i. Same anchor as the character frames."
   }
 }

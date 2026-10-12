@@ -234,8 +234,31 @@ def coin_glint(i):
         if k % 3 == 0: put(im, x, y + 1, GC_DARK, al); put(im, x + 1, y + 1, GC_DARK, al)
     return im
 
+# ---- 7) combo strokes: same palette/timing as sword_slash; effect frame i plays with attack_sword_2/3 frame 3+i ----
+def _slash(i, pts, win_set, seed):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0))
+    c, R, t0, t1 = arc_through(*pts)
+    r = R - 2
+    win = win_set[i]
+    if win:
+        tail, head, tmax, al = win
+        crescent(im, c, r, t0, t1, tail, head, tmax, SWORD, al)
+        sparks(im, c, r, t0, t1, max(tail, .3), head, [3, 6, 5, 4, 3][i], SPARK_S, seed + i, al)
+    else:
+        sparks(im, c, r, t0, t1, .75, 1.0, 5, SPARK_S, seed + 90, .6, spread=(-2, 6))
+    return im
+
+def sword_slash_2(i):      # rising cut: from low behind up to high in front
+    return _slash(i, ((6, 47), (36, 55), (60, 26)),
+                  [(0.0, 0.5, 4, 1), (0.0, 1.0, 6, 1), (0.3, 1.0, 5, 1), (0.6, 1.0, 3.5, .7), (0.8, 1.0, 2.5, .4), None], 30)
+
+def sword_slash_3(i):      # overhead chop: from above the head down to the front, wider and brighter
+    return _slash(i, ((14, 6), (47, 8), (59, 42)),
+                  [(0.0, 0.5, 5, 1), (0.0, 1.0, 8, 1), (0.25, 1.0, 7, 1), (0.55, 1.0, 5, .8), (0.8, 1.0, 3, .45), None], 50)
+
 EFFECTS = [('sword_slash', sword_slash, 12), ('axe_slash', axe_slash, 10), ('blood_splash', blood, 12), ('spirit', spirit, 6),
-           ('heal', heal, 10), ('coin_glint', coin_glint, 12)]
+           ('heal', heal, 10), ('coin_glint', coin_glint, 12),
+           ('sword_slash_2', sword_slash_2, 12), ('sword_slash_3', sword_slash_3, 12)]
 
 if __name__ == '__main__':
     out = sys.argv[1] if len(sys.argv) > 1 else './out'; os.makedirs(out, exist_ok=True)
@@ -243,7 +266,7 @@ if __name__ == '__main__':
     atlas = {'frames': [], 'animations': {}, 'meta': {'image': 'vfx_spritesheet.png', 'frame_size': [64, 64], 'note':
              'sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; '
              'blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life '
-             '(any healing item); coin_glint: on the hero when he picks up gold. Same anchor as the character frames.'}}
+             '(any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i. Same anchor as the character frames.'}}
     for r, (name, fn, fps) in enumerate(EFFECTS):
         for i in range(6):
             sheet.alpha_composite(fn(i), (i * F, r * F))

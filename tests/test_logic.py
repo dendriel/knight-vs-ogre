@@ -347,4 +347,72 @@ assert w.hero.state == 'dead' and not w.drink_potion()                          
 run(w, 3.0, Inputs()); assert w.hero.state != 'dead' and w.potions == 4           # stock survives the new hero
 print('26 ok: potion inventory (limit 10, key 1, only when hurt, survives death)')
 
+# 27) T11: 3-stroke combo: a click inside the window chains; outside it does not; max 3; hurt cancels; holding repeats stroke 1
+def combo_world():
+    w = fresh(0); w.ogre.x = 5000.0; return w
+def frame_idx(w): return w.hero.frame_index(T)
+def click_at_frame(w, frame, hold=False):
+    """run until the hero's current stroke reaches `frame`, then press the button once"""
+    for _ in range(600):
+        if frame_idx(w) >= frame: break
+        w.update(DT, Inputs(attack=hold))
+    w.update(DT, Inputs(attack=True, attack_pressed=True))
+w = combo_world(); w.update(DT, Inputs(attack=True, attack_pressed=True)); w.update(DT, Inputs())   # click: stroke 1
+assert w.hero.state == 'attack' and w.hero.attack_id == 'sword'
+click_at_frame(w, C.COMBO_WINDOW_START); run(w, 0.0, Inputs())
+for _ in range(120):
+    if w.hero.attack_id == 'sword_2': break
+    w.update(DT, Inputs())
+assert w.hero.state == 'attack' and w.hero.attack_id == 'sword_2' and w.hero.anim == 'attack_sword_2'
+click_at_frame(w, C.COMBO_WINDOW_START)
+for _ in range(120):
+    if w.hero.attack_id == 'sword_3': break
+    w.update(DT, Inputs())
+assert w.hero.attack_id == 'sword_3'
+click_at_frame(w, C.COMBO_WINDOW_START); run(w, 1.5, Inputs())                        # 3rd stroke has no next
+assert w.hero.state == 'idle', 'no 4th stroke'
+w.update(DT, Inputs(attack=True, attack_pressed=True)); assert w.hero.attack_id == 'sword'   # back to stroke 1
+# a click BEFORE the window (frame 0-2) does not chain
+w = combo_world(); w.update(DT, Inputs(attack=True, attack_pressed=True))
+w.update(DT, Inputs(attack=False, attack_pressed=False)); assert frame_idx(w) < C.COMBO_WINDOW_START
+w.update(DT, Inputs(attack=True, attack_pressed=True)); run(w, 1.0, Inputs())
+assert w.hero.attack_id == 'sword' and w.hero.state == 'idle'
+# a click shortly AFTER the stroke ended still chains (buffer); too late does not
+w = combo_world(); w.update(DT, Inputs(attack=True, attack_pressed=True))
+for _ in range(300):
+    w.update(DT, Inputs())
+    if w.hero.state == 'idle': break
+run(w, C.COMBO_BUFFER - 0.05, Inputs()); w.update(DT, Inputs(attack=True, attack_pressed=True))
+assert w.hero.attack_id == 'sword_2'
+w = combo_world(); w.update(DT, Inputs(attack=True, attack_pressed=True))
+for _ in range(300):
+    w.update(DT, Inputs())
+    if w.hero.state == 'idle': break
+run(w, C.COMBO_BUFFER + 0.1, Inputs()); w.update(DT, Inputs(attack=True, attack_pressed=True))
+assert w.hero.attack_id == 'sword'
+# hurt cancels the queued stroke
+w = combo_world(); w.update(DT, Inputs(attack=True, attack_pressed=True)); click_at_frame(w, C.COMBO_WINDOW_START)
+assert w.hero.combo_next == 'sword_2'
+w.hero.invuln = 0; w._hit(w.ogre, w.hero); run(w, 1.2, Inputs()); assert w.hero.attack_id != 'sword_2' or w.hero.state != 'attack'
+assert w.hero.combo_next is None
+# holding the button (no new clicks) only repeats stroke 1
+w = combo_world(); seen = set()
+for _ in range(int(3 / DT)):
+    w.update(DT, Inputs(attack=True)); seen.add(w.hero.attack_id)
+assert seen == {'sword'}, seen
+# stroke 1 is slower than the chained ones; damage 10/10/15; finisher reaches further and pushes harder
+sp = {k: T['knight'][ATTACKS_k] for k, ATTACKS_k in (('1', 'attack_sword'), ('2', 'attack_sword_2'), ('3', 'attack_sword_3'))}
+assert sp['1'] < sp['2'] < sp['3'] + 1e-9
+from game.logic import ATTACKS as AT
+assert [AT[k]['damage'] for k in ('sword', 'sword_2', 'sword_3')] == [10, 10, 15]
+assert AT['sword_3']['knockback'] > AT['sword']['knockback'] and AT['sword_3']['reach'][1] > AT['sword']['reach'][1]
+# the 3 strokes kill an ogre (30 hp) = 10 + 10 + 15 once the invulnerability is skipped
+w = combo_world(); w.ogre.x = 20.0; w.ogre.ai_cooldown = 99
+for aid in ('sword', 'sword_2', 'sword_3'): w.ogre.invuln = 0; w.hero.hit_set = []; w._hit(w.hero, w.ogre) if False else None
+w.ogre.hp = 30
+for aid in ('sword', 'sword_2', 'sword_3'):
+    w.ogre.invuln = 0; w.hero.attack_id = aid; w._hit(w.hero, w.ogre)
+assert w.ogre.state == 'dead'
+print('27 ok: combo chains in the window, 3 strokes max, buffer 0.15 s, hurt cancels, hold repeats stroke 1')
+
 print('ALL LOGIC TESTS PASSED')

@@ -27,14 +27,22 @@ VERTICAL_REACH = 30                # a swing only connects if both fighters' fee
 
 # animation speed multipliers, applied on top of the fps stored in the sprite atlases (.json stays untouched)
 ATTACK_ANIM_SPEED = 1.5            # ogre axe swing AND its slash effect (they must stay in sync)
-KNIGHT_ATTACK_ANIM_SPEED = 2.0     # knight sword swing AND its slash effect (they must stay in sync)
+KNIGHT_ATTACK_ANIM_SPEED = 1.7     # knight sword stroke 1 AND its slash effect (they must stay in sync); slower than the chained ones
+KNIGHT_COMBO2_ANIM_SPEED = 2.4     # combo stroke 2 (rising cut) AND sword_slash_2
+KNIGHT_COMBO3_ANIM_SPEED = 2.6     # combo stroke 3 (overhead chop) AND sword_slash_3
+COMBO_WINDOW_START = 3             # a new click chains the next stroke from this frame of the current one...
+COMBO_BUFFER = 0.15                # ...until this many seconds after it ended
+COMBO_DAMAGE = (10, 10, 15)        # damage of strokes 1, 2, 3
+COMBO_KNOCKBACK = (14.0, 14.0, 24.0)
 WALK_ANIM_SPEED = 1.2              # ogre walk cycle; keep it proportional to OGRE_SPEED so the feet don't slide
 RUN_ANIM_SPEED = 1.65              # the hero's movement uses the 'run' cycle (~72 px/s per 1.0x), proportional to HERO_SPEED
 ANIM_SPEED = {
-    'knight': {'attack_sword': KNIGHT_ATTACK_ANIM_SPEED, 'attack_axe': KNIGHT_ATTACK_ANIM_SPEED, 'run': RUN_ANIM_SPEED,
-               'jump_up': 1.6},
+    'knight': {'attack_sword': KNIGHT_ATTACK_ANIM_SPEED, 'attack_sword_2': KNIGHT_COMBO2_ANIM_SPEED,
+               'attack_sword_3': KNIGHT_COMBO3_ANIM_SPEED, 'attack_axe': KNIGHT_ATTACK_ANIM_SPEED,
+               'run': RUN_ANIM_SPEED, 'jump_up': 1.6},
     'ogre': {'attack': ATTACK_ANIM_SPEED, 'walk': WALK_ANIM_SPEED},
-    'vfx': {'sword_slash': KNIGHT_ATTACK_ANIM_SPEED, 'axe_slash': ATTACK_ANIM_SPEED},
+    'vfx': {'sword_slash': KNIGHT_ATTACK_ANIM_SPEED, 'sword_slash_2': KNIGHT_COMBO2_ANIM_SPEED,
+            'sword_slash_3': KNIGHT_COMBO3_ANIM_SPEED, 'axe_slash': ATTACK_ANIM_SPEED},
 }
 HURT_INVULN_EXTRA = 0.6            # extra invulnerable seconds after the hurt animation (prevents stun-lock)
 OGRE_HURT_INVULN = True            # True: the ogre cannot be hit again during hurt + OGRE_HURT_INVULN_EXTRA
@@ -76,7 +84,7 @@ OGRE_ATTACK_DIST = 38              # distance at which the ogre stops walking an
 OGRE_WAIT_BEFORE_ATTACK = (0.35, 0.65)   # random pause (seconds) before each swing: the player's window
 OGRE_PATIENCE_DIST = 22            # if the hero steps back less than this, the ogre keeps its attack plan
 OGRE_COOLDOWN = (0.8, 1.3)         # random rest (seconds) after a swing
-OGRE_RETALIATE_WAIT = (0.15, 0.35) # shorter pause when the ogre has just recovered from a hit
+OGRE_RETALIATE_WAIT = (0.05, 0.18) # shorter pause when the ogre has just recovered from a hit (its strike must land inside its own invulnerable window, or button mashing becomes a stun-lock)
 
 # ---- spawning / camera --------------------------------------------------------------------
 RESPAWN_DELAY = 1.6                # seconds between a death and the new fighter appearing
@@ -102,7 +110,7 @@ SLOT_W = 176                       # width of one scenery slot (house / tree / w
 CONTROLS = [
     ('Setas / A D', 'Andar'),
     ('Espaço', 'Pular'),
-    ('Mouse esquerdo', 'Atacar (segurar repete)'),
+    ('Mouse esquerdo', 'Atacar; clicar de novo = combo (3 golpes)'),
     ('1', 'Beber poção'),
     ('M', 'Liga / desliga o som'),
     ('F11', 'Tela cheia'),

@@ -17,12 +17,18 @@ FIGHTER_DEFS = {
 #   where the trail effect is born | slash: vfx row | move_factor: walking speed multiplier while swinging |
 #   knockback: pixels the victim is pushed | guard_break: ignores shields (T24) | cooldown: seconds before reuse
 ATTACKS = {
-    'sword': dict(anim='attack_sword', damage=C.DAMAGE, reach=C.KNIGHT_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
-                  slash='sword_slash', move_factor=C.ATTACK_MOVE_FACTOR, knockback=C.KNOCKBACK, guard_break=False,
-                  cooldown=0.0, wear=0.0),
+    'sword': dict(anim='attack_sword', damage=C.COMBO_DAMAGE[0], reach=C.KNIGHT_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
+                  slash='sword_slash', move_factor=C.ATTACK_MOVE_FACTOR, knockback=C.COMBO_KNOCKBACK[0], guard_break=False,
+                  cooldown=0.0, wear=0.0, next='sword_2'),
+    'sword_2': dict(anim='attack_sword_2', damage=C.COMBO_DAMAGE[1], reach=C.KNIGHT_REACH, active=C.ACTIVE_FRAMES,
+                    slash_frame=3, slash='sword_slash_2', move_factor=C.ATTACK_MOVE_FACTOR,
+                    knockback=C.COMBO_KNOCKBACK[1], guard_break=False, cooldown=0.0, wear=0.0, next='sword_3'),
+    'sword_3': dict(anim='attack_sword_3', damage=C.COMBO_DAMAGE[2], reach=(C.KNIGHT_REACH[0], C.KNIGHT_REACH[1] + 6),
+                    active=C.ACTIVE_FRAMES, slash_frame=3, slash='sword_slash_3', move_factor=C.ATTACK_MOVE_FACTOR,
+                    knockback=C.COMBO_KNOCKBACK[2], guard_break=False, cooldown=0.0, wear=0.0, next=None),
     'ogre_axe': dict(anim='attack', damage=C.DAMAGE, reach=C.OGRE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                      slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
-                     wear=0.0),
+                     wear=0.0, next=None),
 }
 ANIM = {k: d['anim'] for k, d in FIGHTER_DEFS.items()}          # (aliases kept for old code / tests)
 SLASH = {k: d['slash'] for k, d in FIGHTER_DEFS.items()}
@@ -65,11 +71,12 @@ class Fighter:
         self.armor = 0; self.armor_max = 0; self.weapon = None   # equipment (T13, T15); weapon = dict(id, durability)
         self.attack_id = self.defn['primary']                   # which ATTACKS entry the 'attack' state plays
         self.hit_set = []                                       # targets already hit by the current swing
+        self.combo_next = None; self.chain = None               # queued next stroke / (time, id) just after a stroke ended
         self.ai_wait = None; self.ai_cooldown = 0.6             # enemy AI state (per fighter, so many enemies can coexist)
         self.respawn_t = None                                   # enemies: countdown (after death) until the body is buried
 
     def set_state(self, s):
-        self.state = s; self.t = 0.0; self.hit_done = False; self.slash_done = False; self.hit_set = []
+        self.state = s; self.t = 0.0; self.hit_done = False; self.slash_done = False; self.hit_set = []; self.combo_next = None
 
     @property
     def is_hero(self): return self.defn['hero']
@@ -249,8 +256,14 @@ class World:
         if jump_edge and h.grounded:
             h.vy = 2 * C.JUMP_HEIGHT / C.JUMP_RISE_TIME; h.grounded = False; h.air_phase = None
             self.events.append(('jump', 'knight'))
-        if h.state == 'attack' or inp.attack:                                         # can walk (not turn) while swinging
-            if h.state != 'attack': self.start_attack(h, h.defn['primary'])
+        if h.state == 'attack' and inp.attack_pressed:                                # a click inside the window queues the next stroke
+            nxt = ATTACKS[h.attack_id].get('next')
+            if nxt and h.frame_index(self.timing) >= C.COMBO_WINDOW_START: h.combo_next = nxt
+        if h.state == 'attack' or inp.attack or (inp.attack_pressed and h.chain):  # can walk (not turn) while swinging
+            if h.state != 'attack':
+                if inp.attack_pressed and h.chain and self.time - h.chain[0] <= C.COMBO_BUFFER:
+                    self.start_attack(h, h.chain[1])                                 # clicked just after the stroke ended
+                else: self.start_attack(h, h.defn['primary'])
             h.x += dx * h.defn['speed'] * ATTACKS[h.attack_id]['move_factor'] * dt
             return
         if dx:
@@ -324,6 +337,7 @@ class World:
         self.add_vfx('blood_splash', tgt.x, tgt.x > sx, y=tgt.y)
         self.shake = C.SHAKE_TIME
         self.events.append(('hit', tgt.kind))
+        tgt.chain = None; tgt.combo_next = None                  # a hit breaks the combo
         dirn = 1 if tgt.x >= sx else -1
         tgt.facing = -dirn                                   # turns toward the attacker, recoils backwards
         tgt.kb_dir = dirn; tgt.kb_t = C.KNOCKBACK_TIME; tgt.kb_speed = at['knockback'] / C.KNOCKBACK_TIME
@@ -408,7 +422,7 @@ class World:
         return True
 
     def start_attack(self, f, attack_id):
-        f.attack_id = attack_id; f.set_state('attack')
+        f.attack_id = attack_id; f.set_state('attack'); f.chain = None
 
     def heal(self, f, amount):
         """Restores life (capped at max_hp) with the heal effect and sound. Any healing item should go through here."""
@@ -445,7 +459,11 @@ class World:
         for f in self.fighters():
             if f.state in ('attack', 'hurt') and f.t >= f.duration(self.timing):
                 was_attack = f.state == 'attack'
+                nxt = ATTACKS[f.attack_id].get('next') if was_attack else None; queued = f.combo_next
                 f.set_state('idle')
+                if f.is_hero and was_attack and nxt:
+                    if queued: self.start_attack(f, queued); continue              # chained: no gap between strokes
+                    f.chain = (self.time, nxt)                                       # a click in the next 0.15 s still chains
                 if not f.is_hero:
                     if was_attack: f.ai_cooldown = self.rng.uniform(*C.OGRE_COOLDOWN)
                     else: f.ai_cooldown = 0.0; f.ai_wait = self.rng.uniform(*C.OGRE_RETALIATE_WAIT)

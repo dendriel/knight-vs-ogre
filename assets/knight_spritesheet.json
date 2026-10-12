@@ -593,6 +593,114 @@
         "w": 64,
         "h": 64
       }
+    },
+    {
+      "filename": "attack_sword_2_0",
+      "frame": {
+        "x": 0,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_2_1",
+      "frame": {
+        "x": 64,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_2_2",
+      "frame": {
+        "x": 128,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_2_3",
+      "frame": {
+        "x": 192,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_2_4",
+      "frame": {
+        "x": 256,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_2_5",
+      "frame": {
+        "x": 320,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3_0",
+      "frame": {
+        "x": 0,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3_1",
+      "frame": {
+        "x": 64,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3_2",
+      "frame": {
+        "x": 128,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3_3",
+      "frame": {
+        "x": 192,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3_4",
+      "frame": {
+        "x": 256,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3_5",
+      "frame": {
+        "x": 320,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
     }
   ],
   "animations": {
@@ -727,6 +835,30 @@
       ],
       "fps": 10,
       "loop": true
+    },
+    "attack_sword_2": {
+      "frames": [
+        "attack_sword_2_0",
+        "attack_sword_2_1",
+        "attack_sword_2_2",
+        "attack_sword_2_3",
+        "attack_sword_2_4",
+        "attack_sword_2_5"
+      ],
+      "fps": 12,
+      "loop": false
+    },
+    "attack_sword_3": {
+      "frames": [
+        "attack_sword_3_0",
+        "attack_sword_3_1",
+        "attack_sword_3_2",
+        "attack_sword_3_3",
+        "attack_sword_3_4",
+        "attack_sword_3_5"
+      ],
+      "fps": 12,
+      "loop": false
     }
   },
   "meta": {

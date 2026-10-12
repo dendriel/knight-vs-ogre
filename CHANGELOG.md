@@ -10,10 +10,19 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 ### Jogabilidade
 - T05: **Esc abre o menu** (Continuar · Ver comandos · Reiniciar fase · Sair) em vez de fechar o jogo; navegação por ↑/↓/W/S + Enter ou por mouse; o mundo fica congelado. 'Ver comandos' lê a tabela `CONTROLS` de `config.py`. Reiniciar fase recria o mundo (ouro e itens da tentativa voltam ao zero). O clique que fecha um menu não dispara um golpe.
 - T10: poções agora vão para um **inventário** (até 10, `POTION_MAX_STOCK`; com 10 a poção fica no chão) e a tecla **1** bebe uma (+`POTION_HEAL`, só com vida < máxima). Substitui o antigo 'consumir ao pegar'. HUD mostra `n/10` com o ícone da poção; o estoque não zera quando o herói morre.
+- T11: **combo de 3 golpes** no botão esquerdo: clicar de novo durante o golpe (a partir do frame `COMBO_WINDOW_START` = 3 e até `COMBO_BUFFER` = 0,15 s depois do fim) encadeia corte ascendente e golpe final (dano 10/10/15; o 3º alcança 6 px a mais e empurra 24 px). Depois do 3º volta ao 1º; levar dano cancela a cadeia; segurar o botão sem clicar só repete o 1º golpe.
+
+### Balanceamento
+- T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
+- T11: `OGRE_RETALIATE_WAIT` (0,15–0,35) → (0,05–0,18): com o golpe 1 mais lento, apertar sem parar travava o ogro (o revide dele caía fora da janela de invulnerabilidade); agora o revide acontece antes de ela acabar.
 
 ### Arte
 - T04: novos sprites de projétil (`proj_arrow` + variantes inclinadas `u45/u90/d45/d90`, `proj_bolt`, `proj_knife`, `proj_fireball`, `proj_rock`) gerados por `art_tools/proj_gen.py` e desenhados em camada própria (com sombra no chão).
 - T06: ícones de HUD 12x12 (`icon_armor`, `icon_sword`, `icon_axe`, `icon_bow`, `icon_xbow`, `icon_knife`, `icon_staff`) gerados por `art_tools/icons_gen.py`.
+- T11: novas animações do cavaleiro `attack_sword_2` (corte ascendente) e `attack_sword_3` (golpe final por cima, corpo todo à frente) e efeitos `sword_slash_2` / `sword_slash_3`; `check_edges.py` sem cortes.
+
+### Contrato de arte
+- T11: `knight_spritesheet` ganha as linhas 11 (`attack_sword_2`) e 12 (`attack_sword_3`), frames de golpe 3–4; `vfx_spritesheet` ganha as linhas 6 (`sword_slash_2`) e 7 (`sword_slash_3`). Linhas anteriores inalteradas pixel a pixel.
 
 ### Áudio
 - T10: pegar poção reaproveita o SFX `coin_pickup`; beber usa o `heal` existente (evento `potion`).
@@ -30,9 +39,11 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T05: `Inputs` ganha `attack_pressed/released`, `attack_held_t`, `secondary(_pressed)`, `potion_pressed` (bordas calculadas em `Game.sample_inputs`); pilha de cenas em `main.py` (`PlayScene`, `PauseScene`, `ControlsScene` em `game/scenes.py`; menu em `game/ui.py`); `Game.to_internal` converte o mouse para a tela de 480x270. `fake_pygame` simula botão direito, tecla 1, Enter, cliques e movimento do mouse. Novos `tests/test_scenes.py` e `tests/real_pygame_smoke.py` (jogo com o pygame real em modo headless).
 - T06: HUD do herói reorganizado em slots que empilham sob a barra de vida e só existem quando a feature existe (`World.features`: `armor`, `combo`, `weapon`, `potions`); posições fixas em `config.HUD`; novas constantes `COMBO_BAR_MAX` = 100 e `POTION_MAX_STOCK` = 10. Com nenhuma feature o HUD fica igual ao anterior.
 - T10: `World.potions`, `World.drink_potion()`; comandos ganham a tecla 1; testes 19–21 migrados e novo teste 26.
+- T11: `ATTACKS[x].next` encadeia os golpes (`sword` → `sword_2` → `sword_3`); `Fighter.combo_next/chain`. Teste 27. O mesmo sistema servirá às classes de distância (T42–T44).
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).
+- Poses do combo vistas só em imagem estática; o feeling da janela do combo e do golpe 1 mais lento precisa de teste real.
 
 ## [2026-10-11]
 

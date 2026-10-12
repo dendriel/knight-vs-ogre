@@ -11,7 +11,7 @@ Para gerar um `.exe`: `build_exe.bat` (resultado em `dist\KnightVsOgre.exe`).
 - Setas esquerda/direita ou A / D: andar
 - Espaco: pular
 - 1: beber uma pocao do inventario
-- Botao esquerdo do mouse: atacar com a espada (golpe lateral); da para andar enquanto ataca
+- Botao esquerdo do mouse: atacar com a espada (golpe lateral); da para andar enquanto ataca. Clicar de novo durante o golpe (a partir do impacto) encadeia o combo de 3 golpes (corte, corte ascendente, golpe final mais forte); segurar o botao so repete o primeiro golpe
 - M: liga/desliga o som | F11: tela cheia
 - Esc: menu (continuar, ver comandos, reiniciar fase, sair); navegue com as setas + Enter ou com o mouse
 
@@ -48,7 +48,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 
 ### Cavaleiro
 - [x] T10 pocoes no inventario (ate 10, tecla 1; **substitui** o "consumir ao pegar")
-- [ ] T11 combo de 3 golpes (sistema unico, serve a todas as classes) **(arte)**
+- [x] T11 combo de 3 golpes (sistema unico, serve a todas as classes) **(arte)**
 - [ ] T13 machado como pickup, com durabilidade e efeito proprio (mais dano/alcance, golpe mais lento) **(arte)**
 - [ ] T15 armadura (o dano desconta dela antes da vida)
 - [ ] T12 barra de combo e ataque especial (segurar com a barra cheia, soltar para disparar) **(arte)**
