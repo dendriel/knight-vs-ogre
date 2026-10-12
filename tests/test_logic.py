@@ -798,4 +798,24 @@ C.COIN_BAG_DROP_CHANCE = C_old
 assert amt >= C.COIN_BAG_COINS[0] * 2, amt                              # x ~2.1 near the end of stage 3
 print('41 ok: difficulty curve, queue capped at max_alive, tokens per section, elites late, loot grows')
 
+# 42) T37: revive: needs REVIVE_COST gold, same spot, full life, invulnerable, combo emptied; enemies / items kept
+st = STAGES['stage1']
+def dead_world(gold):
+    w = World(T, stage=st); w.hero.x = 800.0; w.enemies = [Fighter('ogre', 900, -1)]; w.gold = gold; w.potions = 3
+    w.hero.weapon = dict(id='axe', durability=40.0); w.combo = 77
+    w.hero.hp = 1; w.hero.invuln = 0; w._hit(w.enemies[0], w.hero); w.hero.armor = 10   # (armor found earlier, kept)
+    run(w, C.RESPAWN_DELAY + 0.3, Inputs()); assert w.defeated and w.hero.state == 'dead'
+    return w
+w = dead_world(C.REVIVE_COST - 1); assert not w.can_revive() and not w.revive() and w.defeated and w.gold == C.REVIVE_COST - 1
+w = dead_world(C.REVIVE_COST + 40); hero = w.hero; ogre_hp = w.enemies[0].hp; n_en = len(w.enemies); x_fall = w.hero.x
+assert w.revive() and w.gold == 40 and w.stats['revives'] == 1 and not w.defeated
+assert w.hero is hero and w.hero.x == x_fall and w.hero.hp == w.hero.max_hp and w.hero.state == 'idle'
+assert abs(w.hero.invuln - C.REVIVE_INVULN) < 1e-9 and w.combo == 0
+assert w.potions == 3 and w.hero.weapon['durability'] == 40.0 and w.hero.armor == 10          # D10: items kept
+assert len(w.enemies) == n_en and w.enemies[0].hp == ogre_hp
+w.enemies[0].ai_cooldown = 0; run(w, 1.0, Inputs()); assert w.hero.hp == w.hero.max_hp, 'invulnerable right after reviving'
+# the run state travels (D6): export / apply
+w2 = World(T, stage=st); w2.apply_run(w.export_run()); assert w2.gold == w.gold and w2.potions == 3 and w2.hero.weapon == w.hero.weapon
+print('42 ok: paid revive (100 gold, same spot, 2 s invulnerable, items kept) + run state export / apply')
+
 print('ALL LOGIC TESTS PASSED')

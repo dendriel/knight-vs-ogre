@@ -219,6 +219,10 @@ STAGE_END_MARGIN = 40              # px of scenery shown past the end of the pat
 STAGE_FINISH_DIST = 30             # the hero must be this close to the end line (and everything dead) to finish the stage
 ENCOUNTER_SPACING = 30             # px between the enemies of one encounter as they enter
 
+# ---- defeat (T37) -------------------------------------------------------------------------
+REVIVE_COST = 100                  # gold to come back to life exactly where the hero fell
+REVIVE_INVULN = 2.0                # seconds of invulnerability after reviving
+
 # ---- spawning / camera --------------------------------------------------------------------
 RESPAWN_DELAY = 1.6                # seconds between a death and the new fighter appearing
 SPIRIT_DELAY = 0.45                # the spirit leaves the body this long after the death starts

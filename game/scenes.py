@@ -88,6 +88,43 @@ class PauseScene(Scene):
         game.view.draw_menu(surf, self.menu)
 
 
+class DefeatScene(Scene):
+    """The hero fell in a stage (T37): pay REVIVE_COST gold to get up where he fell, or restart the stage."""
+    transparent = True
+
+    def __init__(self, game):
+        w = game.world
+        self.menu = Menu([(f'Renascer aqui - {C.REVIVE_COST} ouro', 'revive', w.gold >= C.REVIVE_COST),
+                          ('Reiniciar a fase', 'restart', True), ('Menu inicial', 'title', True)],
+                         x=(C.SCREEN_W - 190) // 2, y=112, w=190, row_h=22)
+        self.menu.index = 0 if w.gold >= C.REVIVE_COST else 1
+
+    def act(self, action, game):
+        if action == 'revive':
+            if game.world.revive(): game.pop()
+        elif action == 'restart': game.restart_stage()
+        elif action == 'title': game.to_title()
+
+    def handle_event(self, e, game):
+        if key_pressed(e, pygame.K_UP, pygame.K_w): self.menu.move(-1)
+        elif key_pressed(e, pygame.K_DOWN, pygame.K_s): self.menu.move(1)
+        elif key_pressed(e, pygame.K_RETURN): self.act(self.menu.current(), game)
+        elif e.type == pygame.MOUSEMOTION: self.menu.mouse_move(game.to_internal(e.pos))
+        elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+            a = self.menu.click(game.to_internal(e.pos))
+            if a: self.act(a, game)
+
+    def draw(self, surf, game):
+        game.view.dim(surf, 150)
+        game.view.title(surf, 'DERROTA', 70)
+        w = game.world
+        if w.gold < C.REVIVE_COST:
+            game.view.center(surf, f'Ouro: {w.gold}  (faltam {C.REVIVE_COST - w.gold} para renascer)', 92, (255, 190, 150))
+        else:
+            game.view.center(surf, f'Ouro: {w.gold}', 92, (255, 214, 80))
+        game.view.draw_menu(surf, self.menu)
+
+
 class ControlsScene(Scene):
     """'Ver comandos': one table (config.CONTROLS) is the single source of the key list."""
     transparent = True

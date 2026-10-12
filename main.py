@@ -4,7 +4,7 @@ import pygame
 from game import config as C
 from game.logic import World, Inputs, load_timing
 from game.view import View
-from game.scenes import PlayScene, TitleScene
+from game.scenes import PlayScene, TitleScene, DefeatScene
 from game.stages import STAGES
 from game.audio import Audio
 
@@ -31,6 +31,8 @@ class Game:
         self.screen = pygame.Surface((C.SCREEN_W, C.SCREEN_H))     # internal low-res canvas
         self.clock = pygame.time.Clock(); self.running = True; self.t = 0.0
         self.stage_id = 'endless'
+        self.run = dict(gold=0, potions=0, weapon=None, armor=0)     # what travels between stages (D6)
+        self.run_start = dict(self.run)                              # snapshot at the start of the stage (D9)
         self.scenes = [PlayScene()]                                 # scene stack: the last one is on top
         self._scale, self._off = 1, (0, 0)                          # window -> internal canvas mapping (set by present())
         self._prev = dict(attack=False, secondary=False, potion=False); self._attack_t = 0.0; self._lock = False
@@ -47,19 +49,30 @@ class Game:
         self._lock = True
     def replace(self, scene): self.scenes[-1] = scene; self._lock = True
 
-    def start(self, stage_id):
-        """Begins a stage ('stage1'...) or the endless mode ('endless') with a fresh world."""
+    def start(self, stage_id, run=None):
+        """Begins a stage ('stage1'...) or the endless mode ('endless') with a fresh world. `run` = the run state to
+        carry in (default: the current one); it is also stored as the snapshot a restart goes back to (D9)."""
         self.stage_id = stage_id
-        self.world = World(self.timing, stage=STAGES.get(stage_id))
+        stage = STAGES.get(stage_id)
+        if stage is None: run = dict(gold=0, potions=0, weapon=None, armor=0)     # endless: nothing carries over
+        elif run is None: run = self.run
+        self.run_start = {k: (dict(v) if isinstance(v, dict) else v) for k, v in run.items()}
+        self.world = World(self.timing, stage=stage)
+        self.world.apply_run(self.run_start)
         self.scenes = [PlayScene()]; self.t = 0.0; self._lock = True
+
+    def to_title(self):
+        self.run = dict(gold=0, potions=0, weapon=None, armor=0)
+        self.world = World(self.timing); self.scenes = [TitleScene()]; self._lock = True
 
     def restart_stage(self):
         """Restarts the current stage from scratch (the infinite mode has no stage state: a fresh world)."""
-        self.start(self.stage_id)
+        self.start(self.stage_id, self.run_start)               # back to the state the stage began with (D9)
 
     def after_world_update(self):
-        """Hooks that react to what the world just decided (stage end / defeat screens arrive with T31 / T37)."""
-        pass
+        """Reacts to what the world just decided: the defeat screen (T37); the summary arrives with T31."""
+        w = self.world
+        if w.defeated and not isinstance(self.scene, DefeatScene): self.push(DefeatScene(self))
 
     # ------------------------------------------------------------------ input
     def to_internal(self, pos):

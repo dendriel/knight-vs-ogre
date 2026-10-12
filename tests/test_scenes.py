@@ -90,4 +90,27 @@ key(g, fp.K_ESCAPE); r = g.scene.menu.rect(2); click(g, (r.x + 5, r.y + 5))     
 assert isinstance(g.scene, S.PlayScene) and g.world.stage.id == 'stage2' and g.world.time < 0.5
 print('6 ok: title menu, campaign / endless start, restart keeps the stage')
 
+# 7) defeat screen: opens when the hero falls in a stage; revive needs gold; restart goes back to the stage-start snapshot
+def kill_hero(g, gold):
+    w = g.world; w.gold = gold; w.potions = 2
+    from game.logic import Fighter
+    o = Fighter('ogre', w.hero.x + 30, -1); w.enemies = [o]
+    w.hero.hp = 1; w.hero.invuln = 0; w._hit(o, w.hero)
+    step(g, int((C.RESPAWN_DELAY + 0.5) * 60))
+g = main.Game('stage1'); step(g, 3); g.run_start['gold'] = 7                                  # snapshot taken at the stage start
+kill_hero(g, 30); assert isinstance(g.scene, S.DefeatScene), type(g.scene)
+assert g.scene.menu.items[0][2] is False and g.scene.menu.index == 1                          # cannot afford: only restart
+assert g.scene.menu.current() == 'restart'; key(g, fp.K_UP); assert g.scene.menu.current() != 'revive'   # disabled entry is skipped
+fp.EVENTS.append(fp.Event(fp.MOUSEBUTTONDOWN, pos=(0, 0), button=1)); step(g); assert isinstance(g.scene, S.DefeatScene)
+g = main.Game('stage1'); step(g, 3); kill_hero(g, 250); x = g.world.hero.x
+assert isinstance(g.scene, S.DefeatScene) and g.scene.menu.items[0][2] is True and g.scene.menu.index == 0
+key(g, fp.K_RETURN); assert isinstance(g.scene, S.PlayScene) and g.world.gold == 150 and g.world.hero.state == 'idle'
+assert g.world.hero.x == x and g.world.hero.hp == 100
+g = main.Game('stage1'); step(g, 3); g.run_start = dict(gold=12, potions=1, weapon=None, armor=0)
+g.world.apply_run(g.run_start); kill_hero(g, 999)
+key(g, fp.K_DOWN); key(g, fp.K_RETURN)                                                       # Reiniciar a fase
+assert isinstance(g.scene, S.PlayScene) and g.world.gold == 12 and g.world.potions == 1 and g.world.hero.hp == 100
+assert g.world.time < 0.5 and g.world.next_enc == 0
+print('7 ok: defeat screen (revive costs gold, restart restores the stage-start snapshot)')
+
 print('ALL SCENE TESTS PASSED')

@@ -285,7 +285,7 @@ class World:
         self.cam_off = C.SCREEN_W / 2 - C.START_HERO_SCREEN_X     # hero starts on the left, camera glides to center
         self.shake = 0.0; self.time = 0.0
         self.events = []                                           # (name, kind) for the audio layer; main.py drains it
-        self.stats = dict(kills=0, damage_dealt=0, damage_taken=0, gold_gained=0)
+        self.stats = dict(kills=0, damage_dealt=0, damage_taken=0, gold_gained=0, revives=0)
 
     # ------------------------------------------------------------------ helpers
     def cam_x(self):
@@ -710,6 +710,31 @@ class World:
         h = self.hero
         if self.potions <= 0 or h.state == 'dead' or h.hp >= h.max_hp: return False
         self.potions -= 1; self.heal(h, C.POTION_HEAL); self.events.append(('potion', 'knight'))
+        return True
+
+    # ------------------------------------------------------------------ run state / revive (T37)
+    def export_run(self):
+        """What travels between stages (D6): gold, potions, weapon, armor."""
+        h = self.hero
+        return dict(gold=self.gold, potions=self.potions, weapon=dict(h.weapon) if h.weapon else None, armor=h.armor)
+
+    def apply_run(self, run):
+        h = self.hero
+        self.gold = run.get('gold', 0); self.potions = run.get('potions', 0)
+        h.weapon = dict(run['weapon']) if run.get('weapon') else None
+        h.armor = min(h.armor_max, run.get('armor', 0))
+
+    def can_revive(self): return self.defeated and self.gold >= C.REVIVE_COST
+
+    def revive(self):
+        """Paid revival (D1/D10): same spot, full life, a short invulnerability, combo meter empty; enemies, queue and
+        encounters keep their state; potions / weapon / armor are kept; costs REVIVE_COST gold."""
+        if not self.can_revive(): return False
+        h = self.hero
+        self.gold -= C.REVIVE_COST; self.stats['revives'] += 1
+        h.hp = h.max_hp; h.set_state('idle'); h.invuln = C.REVIVE_INVULN; h.kb_t = 0.0
+        self.combo = 0; self.defeated = False; self.hero_timer = None
+        self.add_vfx('heal', h.x, h.facing < 0, y=h.y); self.events.append(('revive', 'knight'))
         return True
 
     def start_attack(self, f, attack_id):
