@@ -222,3 +222,125 @@ Corpos quase pretos; só a borda voltada para o sol é iluminada (cor de brasa) 
 
 ![Cena: Silhueta e luz de contorno](personagens/estilos/06_silhueta.png)
 
+---
+
+# Variações do chibi heroico (10 propostas)
+
+Aprofundamento do estilo **Chibi heroico**: cabeça grande (cerca de 1/3 da altura) e corpo curto, em duas direções.
+Gerador: `python art_tools/chibi_variants.py` (grava em `out/art_chibi/` e atualiza `docs/personagens/chibi/`). Cada proposta traz o
+herói, um **orc** inimigo no mesmo nível de detalhe e um soldado humano inimigo (cores violeta) na cena.
+
+## Grupo R — chibi realista (mais detalhe)
+
+Proporção chibi, mas desenhado como uma ilustração realista: placas sobrepostas, malha texturizada, correias, bolsas,
+emblemas e materiais com luz e sombra próprios, em paletas mais naturais.
+
+![Grupo R](personagens/chibi/00_realista_linha.png)
+
+### R1  Cavaleiro de placas
+
+Todas as placas: peitoral com nervura, tassets, joelheiras, grevas, ombreira em laminas, aventail de malha, capa com dobras e escudo nas costas.
+
+| Herói | Orc inimigo |
+|---|---|
+| ![r1_placas](personagens/chibi/r1_placas_hero.png) | ![r1_placas](personagens/chibi/r1_placas_orc.png) |
+
+![Cena R1  Cavaleiro de placas](personagens/chibi/R1_placas.png)
+
+### R2  Patrulheiro
+
+Capuz e capa, couro com costuras, bandoleira, aljava, bracadeiras, arco; tons de floresta.
+
+| Herói | Orc inimigo |
+|---|---|
+| ![r2_patrulheiro](personagens/chibi/r2_patrulheiro_hero.png) | ![r2_patrulheiro](personagens/chibi/r2_patrulheiro_orc.png) |
+
+![Cena R2  Patrulheiro](personagens/chibi/R2_patrulheiro.png)
+
+### R3  Mago arcano
+
+Manto em camadas com runas na barra, cinto com bolsas, chapeu largo, barba, cajado com orbe luminoso.
+
+| Herói | Orc inimigo |
+|---|---|
+| ![r3_arcano](personagens/chibi/r3_arcano_hero.png) | ![r3_arcano](personagens/chibi/r3_arcano_orc.png) |
+
+![Cena R3  Mago arcano](personagens/chibi/R3_arcano.png)
+
+### R4  Barbaro nortenho
+
+Gorro de pele com chifre, barba ruiva, manto de pele, torso de couro, ombreiras de ferro com espinhos, machado.
+
+| Herói | Orc inimigo |
+|---|---|
+| ![r4_barbaro](personagens/chibi/r4_barbaro_hero.png) | ![r4_barbaro](personagens/chibi/r4_barbaro_orc.png) |
+
+![Cena R4  Barbaro nortenho](personagens/chibi/R4_barbaro.png)
+
+### R5  Paladino
+
+Placas brancas com bordas douradas, elmo alado, tabardo com cruz, capa azul clara, macas; brilho quente.
+
+| Herói | Orc inimigo |
+|---|---|
+| ![r5_paladino](personagens/chibi/r5_paladino_hero.png) | ![r5_paladino](personagens/chibi/r5_paladino_orc.png) |
+
+![Cena R5  Paladino](personagens/chibi/R5_paladino.png)
+
+## Grupo H — chibi no estilo dos humanos escuros
+
+O mesmo equipamento e a mesma paleta fosca dos estilos A–F de `art_humanos` (elmo de aba, elmo fechado, chifres, malha,
+cruzado), mas em corpos chibi, com contorno preto e pouca textura: leitura clara em tela pequena.
+
+![Grupo H](personagens/chibi/00_humanos_linha.png)
+
+### H1  Soldado robusto (chibi)
+
+Elmo de aba, peitoral, ombreira redonda; aco escuro, tabardo vinho.
+
+| Herói | Orc inimigo |
+|---|---|
+| ![h1_soldado](personagens/chibi/h1_soldado_hero.png) | ![h1_soldado](personagens/chibi/h1_soldado_orc.png) |
+
+![Cena H1  Soldado robusto (chibi)](personagens/chibi/H1_soldado.png)
+
+### H2  Cavaleiro blindado (chibi)
+
+Elmo fechado com fenda e furos, ombreiras grandes com espinhos, grevas, pluma curta.
+
+| Herói | Orc inimigo |
+|---|---|
+| ![h2_blindado](personagens/chibi/h2_blindado_hero.png) | ![h2_blindado](personagens/chibi/h2_blindado_orc.png) |
+
+![Cena H2  Cavaleiro blindado (chibi)](personagens/chibi/H2_blindado.png)
+
+### H3  Guarda sombrio (chibi)
+
+Armadura preta-arroxeada, elmo com chifres de osso e fenda vermelha, capa rasgada.
+
+| Herói | Orc inimigo |
+|---|---|
+| ![h3_sombrio](personagens/chibi/h3_sombrio_hero.png) | ![h3_sombrio](personagens/chibi/h3_sombrio_orc.png) |
+
+![Cena H3  Guarda sombrio (chibi)](personagens/chibi/H3_sombrio.png)
+
+### H4  Veterano de malha (chibi)
+
+Touca de malha com rosto a mostra, cota de malha texturizada, tunica longa verde-musgo.
+
+| Herói | Orc inimigo |
+|---|---|
+| ![h4_veterano](personagens/chibi/h4_veterano_hero.png) | ![h4_veterano](personagens/chibi/h4_veterano_orc.png) |
+
+![Cena H4  Veterano de malha (chibi)](personagens/chibi/H4_veterano.png)
+
+### H5  Cavaleiro cruzado (chibi)
+
+Elmo de balde com fenda em cruz, sobreveste longa clara com cruz, capa; destaca no escuro.
+
+| Herói | Orc inimigo |
+|---|---|
+| ![h5_cruzado](personagens/chibi/h5_cruzado_hero.png) | ![h5_cruzado](personagens/chibi/h5_cruzado_orc.png) |
+
+![Cena H5  Cavaleiro cruzado (chibi)](personagens/chibi/H5_cruzado.png)
+
