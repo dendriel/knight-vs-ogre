@@ -176,11 +176,23 @@ def special():             # releasing the special: a big whoosh with a ring
     return finish(mix([(air, 1.0, 0), (ring, 0.35, 0.02)]), peak=0.85)
 
 
-def spikes():              # stone spikes erupting: rumble + cracks
+def spikes():              # stone spikes erupting: a deep rumble, a low thud and heavy crumbling stone
     r = rng('spikes')
-    rumble = env_exp(lowpass(noise(0.4, r), 500, 200), 0.14)
-    cracks = [(env_exp(highpass(noise(0.05, r), 1500), 0.01), 0.6, d) for d in (0.0, 0.05, 0.1)]
-    return finish(mix([(rumble, 1.0, 0)] + cracks), peak=0.8)
+    rumble = env_exp(lowpass(noise(0.6, r), 260, 110), 0.22)
+    thud = env_exp(tone(78, 0.45, 38, 'sine'), 0.16)
+    grind = env_hump(lowpass(tone(52, 0.5, 70, 'saw'), 220, 120), power=1.0, peak=0.35)
+    cracks = [(env_exp(lowpass(noise(0.09, r), 1100, 500), 0.025), a, d) for a, d in ((0.7, 0.0), (0.5, 0.07), (0.6, 0.13), (0.35, 0.2))]
+    return finish(mix([(rumble, 1.0, 0), (thud, 1.0, 0), (grind, 0.5, 0)] + cracks), peak=0.9)
+
+
+def fireball():            # a burning ball flying: rushing air + a flame crackle + a falling hum (the flight, the trail)
+    r = rng('fireball')
+    air = env_hump(highpass(lowpass(noise(0.55, r), 2200, 700), 220), power=1.1, peak=0.45)
+    hum = env_hump(lowpass(tone(240, 0.55, 150, 'saw'), 900, 500), power=0.9, peak=0.5)
+    ember = [(env_exp(highpass(noise(0.025, r), 2800), 0.006), 0.35 + 0.25 * ((i * 7) % 3) / 2.0, 0.04 + i * 0.037)
+             for i in range(12)]                                          # sparks popping along the trail
+    whoosh = env_exp(lowpass(noise(0.2, r), 1500, 400), 0.07)             # the burst of the cast
+    return finish(mix([(air, 1.0, 0), (hum, 0.55, 0), (whoosh, 0.6, 0)] + ember), peak=0.7)
 
 
 def explosion():           # a fireball / bomb bursting: boom + crackle
@@ -240,7 +252,7 @@ def guard_break():         # a shield giving way: a heavy clang, a crack and met
 
 SOUNDS = {f.__name__: f for f in (sword_swing, axe_swing, hit_knight, hit_ogre, hurt_knight, hurt_ogre,
                                   death_knight, death_ogre, spawn_hero, spawn_ogre, coin_pickup, heal,
-                                  shoot, throw, impact, block, guard_break, armor_hit, armor_break, weapon_break, charge, special,
+                                  shoot, fireball, throw, impact, block, guard_break, armor_hit, armor_break, weapon_break, charge, special,
                                   spikes, explosion, telegraph, boss_start, victory, revive, gulp, jump)}
 
 

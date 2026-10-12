@@ -42,6 +42,8 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - **Estamina do escudo** (escudeiro e Cavaleiro Negro): cada golpe bloqueado gasta o dano dele da estamina (`GUARD_STAMINA` 30 = 3 golpes de espada); ao zerar a defesa **quebra**: efeito `shield_break` + som `guard_break`, o escudo abaixa (animação idle) e não sobe por `GUARD_BREAK_TIME` 2,5 s, quando volta com a estamina cheia. Sem bloquear por 1,5 s a estamina volta devagar. Barra fina azul sob a vida do inimigo (vermelha enquanto quebrada).
 - **A besta quebra o escudo com um único tiro** (pickup e classe Besteiro, `shield_break` em `xbow`, `xb_1`..`xb_3`); o virote é absorvido, mas a defesa vai ao chão.
 - **Facas de arremesso com cargas**: o cavaleiro tem 3 facas (`KNIFE_CHARGES`); cada arremesso gasta uma, com `KNIFE_COOLDOWN` de intervalo, e cada faca volta depois de `KNIFE_RECHARGE` 5 s. A barrinha do secundário no HUD tem 3 divisões (cheia = pronta, parcial = recarregando).
+- **Todas as classes pegam armas** (machado, arco, besta; tecla E): usam a própria ficha (as linhas de ataque existem em todas) e a loja oferece as armas a todas as classes. Antes só o cavaleiro conseguia.
+- **Mago**: o 3º ataque da cadeia lança uma bola de fogo maior (`fireball_big`) que explode; as bolas deixam um rastro de brasas; ritmo da cadeia um pouco mais lento; secundário (espinhos) mais variado e ligado ao chão.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -56,6 +58,9 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - Vida dos inimigos: o mais fraco passa a aguentar exatamente **um combo inteiro do cavaleiro** (`ENEMY_MIN_HP` = 10+10+15 = 35) e os demais ×`ENEMY_HP_SCALE` 1,5 arredondado a 5, nunca abaixo desse mínimo. Ogro 30 → 45, soldado 20 → 35, lanceiro 25 → 40, arqueiro 15 → 35, escudeiro 30 → 45, orc 40 → 60, goblin 10 → 35, kobold 12 → 35, minotauro 50 → 75, Ogro-Capitão 90 → 135, Rei Minotauro 120 → 180, Cavaleiro Negro 110 → 165.
 - Facas: `KNIFE_COOLDOWN` 1,0 → 0,4 (intervalo entre arremessos); novas `KNIFE_CHARGES` 3 e `KNIFE_RECHARGE` 5,0 s (cada faca volta sozinha).
 - Escudo: `GUARD_STAMINA` 30, `GUARD_BREAK_TIME` 2,5 s, `GUARD_REGEN_DELAY` 1,5 s, `GUARD_REGEN` 6/s (novos).
+- `COMBO_END_DELAY` = 0,5 s (novo): depois do último golpe de qualquer combo do herói ele não ataca por esse tempo; um clique nesse intervalo é ignorado.
+- `MAGE_STROKE_GAP` = 0,12 s (novo): descanso entre os golpes da cadeia do mago (ritmo um pouco mais lento).
+- Especiais: `SPECIAL_SLOW` = 3 (duram 3x mais: giro 0,33 → 1,0 s, chuva 0,55 → 1,64 s, rajada 0,6 → 1,8 s, tempestade 0,55 → 1,64 s) e o dano dobra: `SPECIAL_DAMAGE` 15 → 30 (por golpe, 2 golpes), `RAIN_DAMAGE` 8 → 16, `VOLLEY_DAMAGE` 10 → 20, `STORM_DAMAGE` 10 → 20. Os projéteis das rajadas foram redistribuídos dentro da animação (`RAIN_T0/DT`, `VOLLEY_T0/DT`, `STORM_T0/DT`): antes parte deles era cortada porque a animação acabava antes do último. `SPECIAL_INVULN_MAX` = 1,0 s (a invulnerabilidade do especial não triplica junto).
 
 ### Arte
 - T04: novos sprites de projétil (`proj_arrow` + variantes inclinadas `u45/u90/d45/d90`, `proj_bolt`, `proj_knife`, `proj_fireball`, `proj_rock`) gerados por `art_tools/proj_gen.py` e desenhados em camada própria (com sombra no chão).
@@ -78,6 +83,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T43: `crossbowman_spritesheet` (besta em todas as linhas) com `attack_crossbow_2`, `attack_crossbow_3`, `attack_axe_small` e `attack_special`.
 - T44: camada `staff` no rig (cajado com orbe), chapéu de mago, `mage_spritesheet` (`attack_staff`, `_2`, `_3`, `attack_stomp`, `attack_special`) e efeitos `stone_spikes` e `fire_burst`.
 - T50: sprite `proj_bomb` (bomba com pavio).
+- Dentes de pedra do mago: espinhos variados (altura, largura e inclinação), faces facetadas, lascas voando e poeira; a base agora toca o chão com terra revolvida e rachaduras. Bola de fogo: cabeça de chama com cauda; a do 3º golpe é 2x maior; no jogo deixa um rastro de brasas e faíscas (`view._projectiles`).
 
 ### Contrato de arte
 - T11: `knight_spritesheet` ganha as linhas 11 (`attack_sword_2`) e 12 (`attack_sword_3`), frames de golpe 3–4; `vfx_spritesheet` ganha as linhas 6 (`sword_slash_2`) e 7 (`sword_slash_3`). Linhas anteriores inalteradas pixel a pixel.
@@ -93,11 +99,14 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T42: sheet de classe = linhas do `knight_spritesheet` + extras; `attack_special` é substituída pela da classe.
 - T44: `vfx_spritesheet` ganha as linhas 11 (`stone_spikes`) e 12 (`fire_burst`); `sprite_rig.held()` aceita `staff`.
 - `vfx_spritesheet`: nova linha no final, `shield_break`(12 fps, 6 quadros: escudo rachado e depois estilhaços; na frente do defensor, mesma âncora do `block_spark`). Novo SFX `guard_break.wav`.
+- Novo PNG solto `proj_fireball_big.png` (26x12, a bola do 3º golpe do mago); `proj_fireball.png` redesenhada (14x7, cabeça de chama com cauda irregular). Linha `stone_spikes` do `vfx_spritesheet` redesenhada (mesmo nome, mesma posição, 6 quadros): 6 espinhos de alturas e larguras diferentes, faces com luz/sombra, terra revolvida e rachaduras na base.
 
 ### Áudio
 - T10: pegar poção reaproveita o SFX `coin_pickup`; beber usa o `heal` existente (evento `potion`).
 - T15: eventos `armor_hit`/`armor_break` usam sons provisórios (`hit_knight`/`death_ogre`) até haver SFX próprios.
 - Passada de áudio: 17 novos SFX sintetizados (`shoot`, `throw`, `impact`, `block`, `armor_hit`, `armor_break`, `weapon_break`, `charge`, `special`, `spikes`, `explosion`, `telegraph`, `boss_start`, `victory`, `revive`, `gulp`, `jump`) e mapeados nos eventos; os sons provisórios das T14–T25 foram trocados. Monstros usam a família 'ogro' e humanos/classes a do cavaleiro (`audio.FAMILY`). `sfx_gen.py` regenera tudo (os 12 sons antigos continuam idênticos byte a byte).
+- Novo SFX `fireball`: ar em fuga + zumbido grave caindo + faíscas estalando ao longo do voo (evento `fireball`, só os tiros do mago; os demais tiros seguem com `shoot`).
+- `spikes` refeito mais grave: estrondo de 110–260 Hz, baque de 78→38 Hz, rangido e pedras caindo (passa-baixa).
 
 ### Técnico
 - T00: `README.md` TODO reorganizado por fundação/cavaleiro/inimigos/fases/classes/economia (fases duplicadas unidas, vocabulário fixo fase/cenário/tela, IDs das tarefas do `TASKS_PLAN.md`).
@@ -141,6 +150,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - Novo `tests/test_fuzz.py` (60 s de teclas aleatórias, poções, bombas e renascimentos para cada classe no modo infinito e nas três fases, em várias posições, incluindo os chefes) e teste 51 (cada chefe roda a própria IA).
 - Teste 52: contrato arte × dados (toda animação e efeito que `FIGHTER_DEFS`/`ATTACKS` pedem existe no sheet que desenharia).
 - Desgaste das armas movido de `start_attack` para `World._hit` (cobra uma vez por golpe/tiro que acerta, inclusive no escudo); projéteis levam `next`/`wear`/`shield_break` do golpe que os disparou (`World._proj_at`). `World.charges()` / `can_use()` cuidam das cargas das facas.
+- `Fighter.pending` / `gap_until`: descanso entre golpes (atributo `gap` do ataque; `FINISHERS` = último golpe de cada combo). `Fighter.sheet` só troca para a ficha de arma do cavaleiro; as outras classes usam a própria ficha (têm as linhas `attack_axe/bow/crossbow`). O evento de tiro vira `fireball` para projéteis `fireball*`.
 
 ### Correções
 - `Game.run` (o laço principal) estava sobrescrito pelo atributo `self.run` (estado da run, T37): o jogo empacotado quebrava com 'dict object is not callable' ao iniciar. Atributo renomeado para `run_state`; achado ao rodar o executável do PyInstaller. Novos testes cobrem o laço principal (`Game.run`) com o stand-in e com o pygame real.

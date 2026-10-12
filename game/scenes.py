@@ -188,7 +188,7 @@ class DefeatScene(Scene):
 
 
 class ShopScene(Scene):
-    """Shop between stages (T50): spend the run's gold on potions, armor, pickup weapons (knight only) and bombs, then go
+    """Shop between stages (T50): spend the run's gold on potions, armor, pickup weapons and bombs, then go
     on to `next_stage`. Purchases change `run` (gold, potions, weapon, armor, bombs); it is what the stage starts with."""
     def __init__(self, game, next_stage, run):
         self.next_stage = next_stage; self.run = dict(run); self.msg = ''
@@ -198,7 +198,7 @@ class ShopScene(Scene):
 
     # item id -> (label, price, can buy?)
     def _entries(self):
-        r = self.run; P = C.SHOP_PRICES; knight = self.cls == 'knight'
+        r = self.run; P = C.SHOP_PRICES; knight = True                       # every class can use the pickup weapons now
         out = [('potion', f"Pocao de vida  ({r['potions']}/{C.POTION_MAX_STOCK})", P['potion'], r['potions'] < C.POTION_MAX_STOCK),
                ('armor', f"Armadura  ({r['armor']}/{C.ARMOR_MAX})", P['armor'], r['armor'] < C.ARMOR_MAX),
                ('bomb', f"Bomba, tecla 2  ({r.get('bombs', 0)}/{C.BOMB_MAX_STOCK})", P['bomb'], r.get('bombs', 0) < C.BOMB_MAX_STOCK)]

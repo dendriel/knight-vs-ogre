@@ -165,7 +165,7 @@ ATTACKS = {
                       cooldown=C.AXE_SMALL_COOLDOWN, wear=0.0, next=None),
     'bolt_volley': dict(anim='attack_special', damage=C.VOLLEY_DAMAGE, reach=(0, 0), active=(), slash_frame=99, slash=None,
                         move_factor=0.0, knockback=C.KNOCKBACK, guard_break=True, cooldown=0.0, wear=0.0, next=None,
-                        burst=[dict(t=0.1 + 0.07 * i, type='shot', damage=C.VOLLEY_DAMAGE,
+                        burst=[dict(t=C.VOLLEY_T0 + C.VOLLEY_DT * i, type='shot', damage=C.VOLLEY_DAMAGE,
                                     shoot=dict(kind='straight', sprite='bolt', speed=440.0, max_range=380.0, pierce=True))
                                for i in range(C.VOLLEY_COUNT)]),
     'mg_1': dict(anim='attack_staff', damage=C.FIREBALL_DAMAGE[0], reach=(0, 0), active=(), slash_frame=3, slash=None,
@@ -176,7 +176,7 @@ ATTACKS = {
                  shoot=dict(kind='straight', sprite='fireball', speed=C.FIREBALL_SPEED[1], max_range=C.FIREBALL_RANGE)),
     'mg_3': dict(anim='attack_staff_3', damage=C.FIREBALL_DAMAGE[2], reach=(0, 0), active=(), slash_frame=3, slash=None,
                  move_factor=0.4, knockback=C.KNOCKBACK * 1.5, guard_break=False, cooldown=0.0, wear=0.0, next=None,
-                 shoot=dict(kind='straight', sprite='fireball', speed=C.FIREBALL_SPEED[2], max_range=C.FIREBALL_RANGE,
+                 shoot=dict(kind='straight', sprite='fireball_big', speed=C.FIREBALL_SPEED[2], max_range=C.FIREBALL_RANGE,
                             explode=C.FIREBALL_EXPLOSION)),
     'spikes': dict(anim='attack_stomp', damage=C.SPIKES_DAMAGE, reach=(0, 0), active=(), slash_frame=3, slash=None,
                    move_factor=0.3, knockback=C.KNOCKBACK * 1.2, guard_break=False, cooldown=C.SPIKES_COOLDOWN, wear=0.0,
@@ -184,7 +184,7 @@ ATTACKS = {
                                         vfx='stone_spikes', vfx_offsets=(12, 48, 84))),
     'fire_storm': dict(anim='attack_special', damage=C.STORM_DAMAGE, reach=(0, 0), active=(), slash_frame=99, slash=None,
                        move_factor=0.0, knockback=C.KNOCKBACK, guard_break=True, cooldown=0.0, wear=0.0, next=None,
-                       burst=[dict(t=0.2 + 0.05 * i, type='rain', abs=True, damage=C.STORM_DAMAGE, sprite='fireball',
+                       burst=[dict(t=C.STORM_T0 + C.STORM_DT * i, type='rain', abs=True, damage=C.STORM_DAMAGE, sprite='fireball',
                                    radius=C.STORM_RADIUS,
                                    off=(-1 if i % 2 else 1) * C.STORM_SPAN * ((i // 2 + 1) / (C.STORM_COUNT // 2)))
                               for i in range(C.STORM_COUNT)]),
@@ -193,7 +193,7 @@ ATTACKS = {
                         cooldown=C.RANGER_SHORT_COOLDOWN, wear=0.0, next=None),
     'arrow_rain': dict(anim='attack_special', damage=C.RAIN_DAMAGE, reach=(0, 0), active=(), slash_frame=99, slash=None,
                        move_factor=0.0, knockback=C.KNOCKBACK, guard_break=True, cooldown=0.0, wear=0.0, next=None,
-                       burst=[dict(t=0.18 + 0.045 * i, type='rain',
+                       burst=[dict(t=C.RAIN_T0 + C.RAIN_DT * i, type='rain',
                                    off=C.RAIN_SPAN[0] + (C.RAIN_SPAN[1] - C.RAIN_SPAN[0]) * i / (C.RAIN_COUNT - 1),
                                    sprite='arrow', damage=C.RAIN_DAMAGE, radius=C.RAIN_RADIUS) for i in range(C.RAIN_COUNT)]),
     'special': dict(anim='attack_special', damage=C.SPECIAL_DAMAGE, reach=(-C.SPECIAL_RADIUS, C.SPECIAL_RADIUS),
@@ -245,6 +245,8 @@ for _k in ('bk_1', 'bk_2'): ATTACKS[_k]['knockback'] = C.COMBO_KNOCKBACK[0]
 for _k in ('bk_1', 'bk_2', 'bk_3'): ATTACKS[_k]['move_factor'] = C.COMBO_MOVE_FACTOR
 for _k in ('xbow', 'xb_1', 'xb_2', 'xb_3'): ATTACKS[_k]['shield_break'] = True      # one bolt shatters a guard
 ATTACKS['knife'].update(charges=C.KNIFE_CHARGES, recharge=C.KNIFE_RECHARGE)       # 3 knives, each recharges alone
+for _k in ('mg_1', 'mg_2', 'mg_3'): ATTACKS[_k]['gap'] = C.MAGE_STROKE_GAP       # a slightly slower rhythm
+FINISHERS = {a['next'] for a in ATTACKS.values() if a.get('next')} - {k for k, a in ATTACKS.items() if a.get('next')}
 ANIM = {k: d['anim'] for k, d in FIGHTER_DEFS.items()}          # (aliases kept for old code / tests)
 SLASH = {k: d['slash'] for k, d in FIGHTER_DEFS.items()}
 REACH = {k: d['reach'] for k, d in FIGHTER_DEFS.items()}
@@ -301,6 +303,7 @@ class Fighter:
         self.guard_stamina = C.GUARD_STAMINA if self.defn.get('guard') else 0   # shield bearers (T24)
         self.guard_t = 0.0; self.guard_idle = 0.0                 # guard broken for this long / time since the last block
         self.recharge = {}; self.wear_done = False                # attack id -> ready times (knives); wear taken by this swing
+        self.pending = None; self.gap_until = 0.0               # (next stroke id, when) queued behind a rest / no attack before
         self.combo_open = None                                  # (attacker, its next stroke id, expiry time): hit by a combo stroke
         self.combo_next = None; self.chain = None               # queued next stroke / (time, id) just after a stroke ended
         self.ai_wait = None; self.ai_cooldown = 0.6             # enemy AI state (per fighter, so many enemies can coexist)
@@ -335,7 +338,7 @@ class Fighter:
 
     @property
     def sheet(self):
-        if self.weapon: return WEAPONS[self.weapon['id']]['sheet']        # the hero draws with the weapon in hand
+        if self.weapon and self.kind == 'knight': return WEAPONS[self.weapon['id']]['sheet']   # the knight draws with the weapon in hand
         return self.defn['sheet']
 
     @property
@@ -541,7 +544,7 @@ class World:
             h.charge_fx -= dt
             if h.charge_fx <= 0: h.charge_fx = 0.4; self.add_vfx('charge', h.x, h.facing < 0, y=h.y)
             if not inp.attack:                                                        # released: fire the special
-                self.combo = 0; self.start_attack(h, h.defn['special']); h.invuln = max(h.invuln, h.duration(self.timing))
+                self.combo = 0; self.start_attack(h, h.defn['special']); h.invuln = max(h.invuln, min(h.duration(self.timing), C.SPECIAL_INVULN_MAX))
                 self.events.append(('special', h.voice)); return
             h.x += dx * h.defn['speed'] * C.CHARGE_MOVE_FACTOR * dt
             return
@@ -562,7 +565,12 @@ class World:
         if h.state == 'attack' and inp.attack_pressed:                                # a click inside the window queues the next stroke
             nxt = ATTACKS[h.attack_id].get('next')
             if nxt and h.frame_index(self.timing) >= C.COMBO_WINDOW_START: h.combo_next = nxt
-        ready = h.state == 'attack' or self.time >= h.cd.get(h.primary, 0.0)         # (reload of a crossbow)
+        if h.pending and h.state in ('idle', 'walk') and self.time >= h.pending[1]:   # the rest is over: the queued stroke starts
+            nid = h.pending[0]; h.pending = None; self.start_attack(h, nid)
+        if (h.state in ('idle', 'walk') and self.time < h.gap_until and inp.attack_pressed and h.chain
+                and not h.pending):                                              # a click during the rest is remembered
+            h.pending = (h.chain[1], h.gap_until)
+        ready = h.state == 'attack' or (self.time >= h.cd.get(h.primary, 0.0) and self.time >= h.gap_until)   # (reload; rest)
         if h.state == 'attack' or ((inp.attack or (inp.attack_pressed and h.chain)) and ready):   # can walk (not turn) while swinging
             if h.state != 'attack':
                 if inp.attack_pressed and h.chain and self.time - h.chain[0] <= C.COMBO_BUFFER:
@@ -841,7 +849,7 @@ class World:
         self.add_vfx('blood_splash', tgt.x, tgt.x > sx, y=tgt.y)
         self.shake = C.SHAKE_TIME
         self.events.append(('hit', tgt.voice))
-        tgt.chain = None; tgt.combo_next = None                  # a hit breaks the combo
+        tgt.chain = None; tgt.combo_next = None; tgt.pending = None   # a hit breaks the combo
         nxt = at.get('next')
         tgt.combo_open = (atk, nxt, self.time + C.COMBO_OPEN_TIME) if nxt else None   # stunlock: next stroke still lands
         tgt.token = False
@@ -894,7 +902,8 @@ class World:
             tgt = self.hero if not owner.is_hero else (self.ogre or self.hero)
             p.tx = tgt.x; p.ty = tgt.y
             p.facing = 1 if p.tx >= x else -1
-        self.projectiles.append(p); self.events.append(('shoot', owner.voice))
+        self.projectiles.append(p)
+        self.events.append(('fireball' if sprite.startswith('fireball') else 'shoot', owner.voice))
         return p
 
     def add_area(self, owner, x0, x1, damage, delay=0.0, duration=0.1, **kw):
@@ -1018,7 +1027,7 @@ class World:
         return c is None or c[0] > 0
 
     def start_attack(self, f, attack_id):
-        f.attack_id = attack_id; f.set_state('attack'); f.chain = None; f.wear_done = False
+        f.attack_id = attack_id; f.set_state('attack'); f.chain = None; f.wear_done = False; f.pending = None
         at = ATTACKS[attack_id]
         if at['cooldown']: f.cd[attack_id] = self.time + at['cooldown']
         if at.get('charges'):
@@ -1065,8 +1074,7 @@ class World:
             if (h.state != 'dead' and abs(h.x - p.x) <= C.PICKUP_RADIUS and abs(h.y - p.y) <= C.PICKUP_REACH_Y
                     and (interact and not took if manual else True)
                     and not (p.kind == 'potion' and self.potions >= C.POTION_MAX_STOCK)    # full pouch: stays on the floor
-                    and not (p.kind == 'armor' and h.armor >= h.armor_max)                 # full armor: not wasted
-                    and not (p.kind == 'weapon' and h.kind != 'knight')):                  # only the knight has weapon sheets
+                    and not (p.kind == 'armor' and h.armor >= h.armor_max)):                # full armor: not wasted
                 if p.kind == 'potion': self.potions += 1                  # stored; drinking is a key press (T10)
                 elif p.kind == 'armor':
                     h.armor = min(h.armor_max, max(h.armor, p.amount)); self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)
@@ -1095,9 +1103,14 @@ class World:
                 was_attack = f.state == 'attack'
                 nxt = ATTACKS[f.attack_id].get('next') if was_attack else None; queued = f.combo_next
                 f.set_state('idle')
-                if f.is_hero and was_attack and nxt:
-                    if queued: self.start_attack(f, queued); continue              # chained: no gap between strokes
-                    f.chain = (self.time, nxt)                                       # a click in the next 0.15 s still chains
+                if f.is_hero and was_attack:
+                    gap = ATTACKS[f.attack_id].get('gap', 0.0)
+                    if not nxt and f.attack_id in FINISHERS: gap = max(gap, C.COMBO_END_DELAY)   # a rest after a whole combo
+                    if gap: f.gap_until = self.time + gap
+                    if nxt and queued:
+                        if gap: f.pending = (queued, f.gap_until)                   # chained, but after the rest
+                        else: self.start_attack(f, queued); continue                # chained: no gap between strokes
+                    elif nxt: f.chain = (self.time + gap, nxt)                       # a click soon after still chains
                 f.token = False
                 if (not f.is_hero and was_attack and nxt and f.defn.get('chain_chance')
                         and self.rng.random() < f.defn['chain_chance']):

@@ -30,7 +30,7 @@ class View:
         self.pickup_img = {'potion': load('potion'), 'coins': load('coin_bag')}; self.coin_icon = load('coin')
         self.icons = {n: load('icon_' + n) for n in ('armor', 'sword', 'axe', 'bow', 'xbow', 'knife', 'staff')}
         self.proj = {}
-        for n in ('arrow', 'bolt', 'knife', 'fireball', 'rock', 'bomb', 'arrow_u45', 'arrow_u90', 'arrow_d45', 'arrow_d90'):
+        for n in ('arrow', 'bolt', 'knife', 'fireball', 'fireball_big', 'rock', 'bomb', 'arrow_u45', 'arrow_u90', 'arrow_d45', 'arrow_d90'):
             im = load('proj_' + n); self.proj[(n, False)] = im; self.proj[(n, True)] = pygame.transform.flip(im, True, False)
         self.font = pygame.font.Font(None, 16); self.font_big = pygame.font.Font(None, 20)
         self.clouds = self._make_clouds()
@@ -233,6 +233,13 @@ class View:
             else:
                 img = self.proj[(p.sprite, p.facing < 0)]
                 surf.fill((18, 18, 30), (sx - 3, gy, 6, 1))        # small shadow under the shot
+                if p.sprite.startswith('fireball'):                # a trail of embers and sparks behind a fireball
+                    big = p.sprite.endswith('big'); n = 7 if big else 5
+                    for k in range(1, n + 1):
+                        j = ((int(p.t * 40) + k * 7) * 2654435761) % 5 - 2          # flicker, no random state
+                        tx = sx - p.facing * (img.get_width() // 2 + k * 3); ty = gy - int(p.height) + j - (k // 3)
+                        col = (255, 214, 96) if k < 3 else ((246, 138, 52) if k < 5 else (188, 66, 40))
+                        surf.fill(col, (tx, ty, 2 if k < 4 and big else 1, 2 if k < 3 and big else 1))
                 surf.blit(img, (sx - img.get_width() // 2, gy - int(p.height) - img.get_height() // 2))
 
     # ------------------------------------------------------------------ HUD

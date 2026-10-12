@@ -30,7 +30,7 @@ A lista que o jogo mostra em "Ver comandos" vem de `CONTROLS` em `game/config.py
 | Besteiro | 110 | 105 | besta (14/14/22, a 3a atravessa; recarga) | machado pequeno | rajada de 6 virotes |
 | Mago | 70 | 115 | bolas de fogo (12/12/16, a 3a explode) | espinhos de pedra (area) | tempestade de fogo |
 
-Armas pickup (machado, arco, besta) valem so para o cavaleiro.
+Armas pickup (machado, arco, besta) servem a qualquer classe (tecla E). Depois do ultimo golpe de um combo ha um descanso de 0,5 s. Os especiais duram 3x mais e batem 2x mais forte.
 
 ## Regras
 - Cada golpe tira vida conforme o ataque (espada 10, machado 20, flechas 8-14...). Ao ser atingido o personagem toca

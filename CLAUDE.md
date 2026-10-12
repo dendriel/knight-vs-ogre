@@ -39,7 +39,7 @@ game/audio.py           toca os SFX a partir de `world.events` (falha em silênc
 assets/                 spritesheets (png + json) e cenário (png) usados pelo jogo
 assets/sfx/             efeitos sonoros .wav (gerados por código, ver skill game-audio-synthesis)
 assets/music/           trilha .wav em loop (`music_gen.py` da mesma skill regenera)
-tests/                  test_logic.py (63 testes), test_scenes.py, test_fuzz.py, real_pygame_smoke.py, simulate.py, fake_pygame.py (stand-in em Pillow)
+tests/                  test_logic.py (67 testes), test_scenes.py, test_fuzz.py, real_pygame_smoke.py, simulate.py, fake_pygame.py (stand-in em Pillow)
 art_tools/              geradores da arte (ver seção 5); build_assets.py regenera tudo em assets/ (knight/ogre/enemy/class/vfx/theme/proj/icons_gen)
 .claude/skills/         4 skills do projeto (carregadas automaticamente pelo Claude Code, ver seção 6)
 install_skills.py       OPCIONAL: instala as skills também como skills pessoais (~/.claude/skills)
@@ -127,7 +127,7 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
   `box` 24x24 (caixote; contorno nas 4 bordas; caixas empilhadas compartilham a linha de contorno, 23 px por nível).
   O último pixel sólido de cada objeto é o chão (a linha de baixo é o contorno).
 - Temas de fase (`game/stages.py THEMES`, arte em `art_tools/theme_gen.py`): cada tema tem tile de chão 64x40 repetível, props (mesma convenção: último pixel sólido = chão, linha abaixo = contorno), cores de céu/colinas e decorações de parallax (`castle`). `plain`: tent 82x60, banner 24x66, palisade 68x36, planted_swords 34x36, dead_tree 64x90, cart 80x48, campfire 24x20, grass_tile. `forest`: oak 140x156, fern 34x26, log 78x30, mushrooms 26x20, stone_wall 88x50, bush 50x34, forest_tile; parallax `treeline` + `fog` (gerados no `view.py`). `city`: market_stall 90x70, barrels 42x40, lamppost 22x80 (+ medieval_house, well, street_tile); parallax `skyline` + `wall`.
-- Projéteis (`art_tools/proj_gen.py`, PNG soltos `proj_*.png` virados para a direita): arrow (+ `u45/u90/d45/d90` inclinadas), bolt, knife, fireball, rock, bomb. Ícones de HUD 12x12 (`icons_gen.py`): armor, sword, axe, bow, xbow, knife, staff.
+- Projéteis (`art_tools/proj_gen.py`, PNG soltos `proj_*.png` virados para a direita): arrow (+ `u45/u90/d45/d90` inclinadas), bolt, knife, fireball, fireball_big (3º golpe do mago), rock, bomb. Ícones de HUD 12x12 (`icons_gen.py`): armor, sword, axe, bow, xbow, knife, staff.
 - Estilo: contorno 1 px `(18,18,30)`, só pixels opacos (transparência de efeitos é simulada com dithering), luz vinda do
   topo-esquerda, paleta compartilhada entre personagens e cenário.
 
@@ -214,7 +214,7 @@ constante de `config.py` e o valor antes → depois), Arte, Contrato de arte (li
 ## 7. O que foi e o que NÃO foi testado (leia antes de mexer)
 
 **Testado automaticamente** (rode tudo antes de commitar; os três primeiros não precisam de janela):
-- `tests/test_logic.py` (63 testes, inclui o contrato arte × dados): dano/hurt/invulnerabilidade, vários inimigos, ataques como dados, projéteis e
+- `tests/test_logic.py` (67 testes, inclui o contrato arte × dados): dano/hurt/invulnerabilidade, vários inimigos, ataques como dados, projéteis e
   áreas, poções, combo, machado/arco/besta, armadura, barra de combo e especial, fichas e elites, cada inimigo, fases
   (encontros, arena, boss, derrota, renascer), curva de dificuldade, classes, secundário, loja/bombas, mapa de áudio.
 - `tests/test_scenes.py`: pilha de telas com o stand-in Pillow (título, classe, pausa, comandos, derrota, conclusão,

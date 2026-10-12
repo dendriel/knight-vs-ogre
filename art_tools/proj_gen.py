@@ -58,13 +58,16 @@ knife = outline(from_grid([
     "llggssss.",
     ".......S.",
 ], PAL))
-fireball = outline(from_grid([
-    "..dccd...",
-    ".dcbbcd..",
-    "ddcbaabcd",
-    ".dcbbcd..",
-    "..dccd...",
-], PAL))
+FB_ROWS = [
+    "..d....dcd..",
+    ".dd..dccbcd.",
+    "dccdcbbbabcd",
+    ".dd..dccbcd.",
+    "..d....dcd..",
+]
+fireball = outline(from_grid(FB_ROWS, PAL))                      # a flame head with a ragged tail behind it
+_fb = from_grid(FB_ROWS, PAL)
+fireball_big = outline(_fb.resize((_fb.width * 2, _fb.height * 2), Image.NEAREST))   # 3rd fireball of the mage: twice as big
 rock = outline(from_grid([
     ".xxy.",
     "xxyyz",
@@ -88,7 +91,7 @@ bomb = outline(from_grid([
     ".zzzz.",
 ], dict(PAL, g=GOLD, s=C(255, 120, 60), z=C(20, 20, 30), x=C(120, 124, 148), y=C(54, 56, 72))))
 
-sprites = {'bomb': bomb, 'arrow': arrow, 'bolt': bolt, 'knife': knife, 'fireball': fireball, 'rock': rock,
+sprites = {'bomb': bomb, 'arrow': arrow, 'bolt': bolt, 'knife': knife, 'fireball': fireball, 'fireball_big': fireball_big, 'rock': rock,
            'arrow_u45': rot(arrow, 45), 'arrow_u90': rot(arrow, 90),
            'arrow_d45': rot(arrow, -45), 'arrow_d90': rot(arrow, -90)}
 for name, im in sprites.items():

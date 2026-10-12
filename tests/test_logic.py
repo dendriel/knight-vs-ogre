@@ -967,10 +967,11 @@ assert sum(1 for e in en if e.hp < 30) >= 2 and w.timers == [], [e.hp for e in e
 w = ranger_world(); w.combo = C.COMBO_BAR_MAX; w.hero.invuln = 0
 run(w, C.SPECIAL_HOLD_MIN + 0.1, Inputs(attack=True)); w.update(DT, Inputs(attack=False)); run(w, 0.1, Inputs())
 left = len(w.timers); assert left > 0
-w.hero.invuln = 0; w._hit(w.ogre, w.hero); run(w, 1.2, Inputs()); assert w.timers == [] and sum(1 for p in w.projectiles if p.fall) < left   # hurt: the rest of the rain is lost
-# the ranger ignores weapon pickups (no art for them)
-w = ranger_world(); w.pickups = [Pickup('weapon', 0, 100.0, 'axe')]; run(w, 0.3, Inputs()); assert w.hero.weapon is None and len(w.pickups) == 1
-print('46 ok: ranger (bow chain with piercing 3rd arrow, short sword, arrow rain, no pickups)')
+w.hero.invuln = 0; w._hit(w.ogre, w.hero); run(w, 2.0, Inputs()); assert w.timers == [] and sum(1 for p in w.projectiles if p.fall) < left   # hurt: the rest of the rain is lost
+# every class can pick up weapons now (E); the class sheet has the weapon rows
+w = ranger_world(); w.pickups = [Pickup('weapon', 0, 100.0, 'axe')]; run(w, 0.3, Inputs()); w.update(DT, Inputs(interact_pressed=True))
+assert w.hero.weapon['id'] == 'axe' and w.hero.sheet == 'ranger' and w.hero.anim in ('idle', 'walk') and w.hero.primary == 'axe'
+print('46 ok: ranger (bow chain with piercing 3rd arrow, short sword, arrow rain, picks up weapons)')
 
 # 47) T43: crossbowman: heavy, slow, bolt chain (3rd pierces) with a reload before a new chain, small axe, bolt volley
 assert 'crossbowman' in CLASSES and 'crossbowman' in T
@@ -1004,7 +1005,7 @@ run(w, 0.6, Inputs()); assert e.hp == 30 - C.AXE_SMALL_DAMAGE, e.hp             
 w = xb_world(); w.combo = C.COMBO_BAR_MAX
 run(w, C.SPECIAL_HOLD_MIN + 0.1, Inputs(attack=True)); w.update(DT, Inputs(attack=False))
 assert w.hero.attack_id == 'bolt_volley' and len(w.timers) == C.VOLLEY_COUNT
-w.events.clear(); run(w, 1.0, Inputs())
+w.events.clear(); run(w, 2.0, Inputs())
 fired = sum(1 for ev in w.events if ev[0] == 'shoot')
 assert fired == C.VOLLEY_COUNT and w.timers == [], fired
 print('47 ok: crossbowman (slow and tough, bolt chain with piercing 3rd, reload gate, small axe, bolt volley)')
@@ -1025,7 +1026,7 @@ for n in range(int(4 / DT)):
         inp = Inputs(attack=True, attack_pressed=True)
     n0 = len(w.projectiles); w.update(DT, inp)
     for p in w.projectiles[n0:]: shots.append((h.attack_id, p.damage, p.sprite, p.explode))
-assert [s[0] for s in shots] == ['mg_1', 'mg_2', 'mg_3'] and all(s[2] == 'fireball' for s in shots)
+assert [s[0] for s in shots] == ['mg_1', 'mg_2', 'mg_3'] and [s[2] for s in shots] == ['fireball', 'fireball', 'fireball_big']
 assert [s[1] for s in shots] == list(C.FIREBALL_DAMAGE) and [s[3] for s in shots] == [None, None, C.FIREBALL_EXPLOSION]
 # the explosion hurts the neighbours of the target (once), and the target takes the direct hit only
 w = mage_world(); a = Fighter('ogre', 120, -1); b = Fighter('ogre', 140, -1); far = Fighter('ogre', 400, -1)
@@ -1288,5 +1289,63 @@ ready, left = w.charges(w.hero, 'knife'); assert ready == 0 and len(left) == 3 a
 run(w, C.KNIFE_RECHARGE + 0.2, Inputs()); assert w.charges(w.hero, 'knife')[0] >= 1
 w.update(DT, Inputs(secondary=True, secondary_pressed=True)); assert w.hero.attack_id == 'knife' and w.hero.state == 'attack'
 print('63 ok: 3 knives, gap between throws, recharge one by one')
+
+# 64) a rest after a whole combo (COMBO_END_DELAY) for every class; a slightly slower rhythm for the mage
+w = fresh(0); w.enemies = []
+w.update(DT, Inputs(attack=True, attack_pressed=True)); ids = []; t_end = None
+for _ in range(int(3.0 / DT)):
+    pressed = w.hero.state == 'attack' and w.hero.frame_index(T) == 2 and w.hero.attack_id != 'sword_3'
+    w.update(DT, Inputs(attack=True, attack_pressed=pressed))
+    if not ids or ids[-1][1] != w.hero.attack_id or ids[-1][2] != w.hero.state: ids.append((w.time, w.hero.attack_id, w.hero.state))
+swords = [(t, a, st) for t, a, st in ids if st == 'attack']
+# stroke 3 ends, then the button is held: the next stroke 1 may not start before COMBO_END_DELAY has passed
+i3 = next(i for i, (t, a, st) in enumerate(ids) if a == 'sword_3' and st == 'attack')
+t_idle = next(t for t, a, st in ids[i3:] if st == 'idle'); t_next = next(t for t, a, st in ids[i3:] if a == 'sword' and st == 'attack')
+assert t_next - t_idle >= C.COMBO_END_DELAY - 0.05, (t_idle, t_next)
+# a click right after the finisher is not lost: it waits (pending) or is ignored, never starts early
+w = fresh(0); w.enemies = []; h = w.hero
+h.set_state('attack'); h.attack_id = 'sword_3'; h.t = 0.0; run(w, 0.5, Inputs())
+assert h.state == 'idle' and h.gap_until > w.time
+w.update(DT, Inputs(attack=True, attack_pressed=True)); assert h.state == 'idle'                # still resting
+run(w, C.COMBO_END_DELAY + 0.05, Inputs()); w.update(DT, Inputs(attack=True, attack_pressed=True)); assert h.state == 'attack'
+# mage: a short gap between strokes (the chain still flows, a bit slower than the same chain without the gap)
+def chain_time(gap):
+    old = C.MAGE_STROKE_GAP
+    for k in ('mg_1', 'mg_2', 'mg_3'): ATTACKS[k]['gap'] = gap
+    w = World(T, hero_class='mage'); w.enemies = []; w.update(DT, Inputs(attack=True, attack_pressed=True)); t3 = None
+    for _ in range(int(3 / DT)):
+        pressed = w.hero.state == 'attack' and w.hero.frame_index(T) >= 1 and not w.hero.combo_next and w.hero.attack_id != 'mg_3'
+        w.update(DT, Inputs(attack=True, attack_pressed=pressed))
+        if w.hero.attack_id == 'mg_3' and w.hero.state == 'attack' and t3 is None: t3 = w.time
+    for k in ('mg_1', 'mg_2', 'mg_3'): ATTACKS[k]['gap'] = old
+    return t3
+assert chain_time(C.MAGE_STROKE_GAP) > chain_time(0.0) + C.MAGE_STROKE_GAP, (chain_time(C.MAGE_STROKE_GAP), chain_time(0.0))
+print('64 ok: rest of %.1f s after a whole combo, mage strokes with a %.2f s gap' % (C.COMBO_END_DELAY, C.MAGE_STROKE_GAP))
+
+# 65) specials last 3x longer and hit 2x as hard; their pieces all fire inside the animation
+assert C.SPECIAL_SLOW == 3.0 and C.SPECIAL_DAMAGE == 30 and C.RAIN_DAMAGE == 16 and C.STORM_DAMAGE == 20 and C.VOLLEY_DAMAGE == 20
+for cls, sheet, aid in (('knight', 'knight', 'special'), ('ranger', 'ranger', 'arrow_rain'), ('crossbowman', 'crossbowman', 'bolt_volley'),
+                        ('mage', 'mage', 'fire_storm')):
+    dur = 6.0 / T[sheet][ATTACKS[aid]['anim']]
+    assert dur >= 1.0, (cls, dur)
+    for b in ATTACKS[aid].get('burst', ()): assert b['t'] < dur - 0.1, (cls, b['t'], dur)
+assert 6.0 / T['knight']['attack_special'] >= 3 * 0.33 - 0.01 and T['vfx']['spin_slash'] == T['knight']['attack_special']
+print('65 ok: specials 3x longer, 2x damage, every piece inside the animation')
+
+# 66) any class picks up weapons (E); the mage with an axe uses its own sheet and the axe attack
+w = World(T, hero_class='mage'); w.enemies = []; w.pickups = [Pickup('weapon', 0, C.WEAPON_DURABILITY, 'axe')]
+run(w, 0.3, Inputs()); assert w.hero.weapon is None; w.update(DT, Inputs(interact_pressed=True))
+assert w.hero.weapon['id'] == 'axe' and w.hero.sheet == 'mage' and w.hero.primary == 'axe'
+w.update(DT, Inputs(attack=True, attack_pressed=True)); assert w.hero.attack_id == 'axe' and w.hero.anim == 'attack_axe' and w.hero.anim in T['mage']
+for aid in ('bow', 'xbow'):
+    w = World(T, hero_class='mage'); w.enemies = []; w.hero.weapon = dict(id=aid, durability=C.WEAPON_DURABILITY)
+    w.update(DT, Inputs(attack=True, attack_pressed=True)); assert w.hero.attack_id == aid and w.hero.anim in T['mage']
+print('66 ok: mage (and the other classes) pick up and use axe / bow / crossbow')
+
+# 67) the fireball has its own sound event, the 3rd fireball of the mage is a bigger sprite
+w = World(T, hero_class='mage'); w.enemies = []; w.update(DT, Inputs(attack=True, attack_pressed=True)); run(w, 0.6, Inputs())
+assert ('fireball', 'knight') in w.events and not any(e[0] == 'shoot' for e in w.events)
+assert ATTACKS['mg_3']['shoot']['sprite'] == 'fireball_big' and ATTACKS['mg_1']['shoot']['sprite'] == 'fireball'
+print('67 ok: fireball sound event + bigger 3rd fireball')
 
 print('ALL LOGIC TESTS PASSED')

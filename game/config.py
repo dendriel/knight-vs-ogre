@@ -108,7 +108,8 @@ ATTACK_ANIM_SPEED = 1.5            # ogre axe swing AND its slash effect (they m
 KNIGHT_ATTACK_ANIM_SPEED = 1.7     # knight sword stroke 1 AND its slash effect (they must stay in sync); slower than the chained ones
 KNIGHT_COMBO2_ANIM_SPEED = 2.4     # combo stroke 2 (rising cut) AND sword_slash_2
 KNIGHT_COMBO3_ANIM_SPEED = 2.6     # combo stroke 3 (overhead chop) AND sword_slash_3
-SPECIAL_ANIM_SPEED = 1.5           # spin animation AND its ring effect (they must stay in sync)
+SPECIAL_SLOW = 3.0                 # every special lasts this many times longer than it used to
+SPECIAL_ANIM_SPEED = 1.5 / SPECIAL_SLOW           # spin animation AND its ring effect (they must stay in sync)
 BOW_ANIM_SPEED = 1.3               # picked-up bow: draw and release
 XBOW_ANIM_SPEED = 1.0              # picked-up crossbow: slower aim
 AXE_ANIM_SPEED = 1.26              # picked-up axe: 1.35x slower than stroke 1 (KNIGHT_ATTACK_ANIM_SPEED / 1.35)
@@ -134,13 +135,13 @@ SPEAR_ATTACK_ANIM_SPEED = 1.3        # slow, telegraphed thrust (row fps 12)
 SOLDIER_WALK_ANIM_SPEED = 1.55      # soldier walk cycle, proportional to SOLDIER_SPEED (62)
 SOLDIER_ATTACK_ANIM_SPEED = KNIGHT_ATTACK_ANIM_SPEED   # same sword stroke as the hero's stroke 1 AND its slash effect
 ANIM_SPEED = {
-    'mage': {'attack_staff': 1.2, 'attack_staff_2': 1.8, 'attack_staff_3': 1.3, 'attack_stomp': 1.4, 'attack_special': 1.1,
+    'mage': {'attack_staff': 1.2, 'attack_staff_2': 1.8, 'attack_staff_3': 1.3, 'attack_stomp': 1.4, 'attack_special': 1.1 / SPECIAL_SLOW,
              'run': RUN_ANIM_SPEED * MAGE_SPEED / HERO_SPEED, 'jump_up': 1.6},
     'crossbowman': {'attack_crossbow': 0.9, 'attack_crossbow_2': 1.5, 'attack_crossbow_3': 1.2, 'attack_axe_small': 1.6,
-                    'attack_special': 1.0, 'run': RUN_ANIM_SPEED * CROSSBOWMAN_SPEED / HERO_SPEED, 'jump_up': 1.6},
-    'ranger': {'attack_bow': 1.1, 'attack_bow_2': 1.7, 'attack_bow_3': 1.3, 'attack_short': 2.0, 'attack_special': 1.1,
+                    'attack_special': 1.0 / SPECIAL_SLOW, 'run': RUN_ANIM_SPEED * CROSSBOWMAN_SPEED / HERO_SPEED, 'jump_up': 1.6},
+    'ranger': {'attack_bow': 1.1, 'attack_bow_2': 1.7, 'attack_bow_3': 1.3, 'attack_short': 2.0, 'attack_special': 1.1 / SPECIAL_SLOW,
                'run': RUN_ANIM_SPEED * RANGER_SPEED / HERO_SPEED, 'jump_up': 1.6},
-    'ranger': {'attack_bow': 1.1, 'attack_bow_2': 1.7, 'attack_bow_3': 1.3, 'attack_short': 2.0, 'attack_special': 1.1,
+    'ranger': {'attack_bow': 1.1, 'attack_bow_2': 1.7, 'attack_bow_3': 1.3, 'attack_short': 2.0, 'attack_special': 1.1 / SPECIAL_SLOW,
                'run': RUN_ANIM_SPEED * RANGER_SPEED / HERO_SPEED, 'jump_up': 1.6},
     'knight': {'throw': 1.5, 'attack_special': SPECIAL_ANIM_SPEED, 'attack_sword': KNIGHT_ATTACK_ANIM_SPEED, 'attack_sword_2': KNIGHT_COMBO2_ANIM_SPEED,
                'attack_sword_3': KNIGHT_COMBO3_ANIM_SPEED, 'attack_axe': AXE_ANIM_SPEED,
@@ -227,7 +228,7 @@ RANGER_ARROW_RANGE = 300.0
 RANGER_SHORT_DAMAGE = 10           # secondary: a short sword slash
 RANGER_SHORT_REACH = (-10, 32)
 RANGER_SHORT_COOLDOWN = 0.45
-RAIN_DAMAGE = 8                    # special: arrows falling over an area in front of the ranger
+RAIN_DAMAGE = 16                    # special: arrows falling over an area in front of the ranger
 RAIN_COUNT = 10
 RAIN_SPAN = (60, 230)              # px in front of the ranger covered by the rain
 RAIN_FALL_TIME = 0.55
@@ -243,7 +244,7 @@ RANGER_ARROW_RANGE = 300.0
 RANGER_SHORT_DAMAGE = 10           # secondary: a short sword slash
 RANGER_SHORT_REACH = (-10, 32)
 RANGER_SHORT_COOLDOWN = 0.45
-RAIN_DAMAGE = 8                    # special: arrows falling over an area in front of the ranger
+RAIN_DAMAGE = 16                    # special: arrows falling over an area in front of the ranger
 RAIN_COUNT = 10
 RAIN_SPAN = (60, 230)              # px in front of the ranger covered by the rain
 RAIN_FALL_TIME = 0.55
@@ -259,7 +260,7 @@ SPIKES_FROM_TO = (22, 104)
 SPIKES_DELAY = 0.12
 SPIKES_COOLDOWN = 1.4
 STORM_COUNT = 12                   # special: a rain of fireballs around the mage
-STORM_DAMAGE = 10
+STORM_DAMAGE = 20
 STORM_SPAN = 170                   # px each side of the mage
 STORM_FALL_TIME = 0.6
 STORM_RADIUS = 22
@@ -273,7 +274,7 @@ AXE_SMALL_DAMAGE = 12              # secondary: a small axe
 AXE_SMALL_REACH = (-10, 38)
 AXE_SMALL_COOLDOWN = 0.6
 VOLLEY_COUNT = 6
-VOLLEY_DAMAGE = 10
+VOLLEY_DAMAGE = 20
 
 # ---- shop and consumables (T50, D8) -------------------------------------------------------
 SHOP_PRICES = dict(potion=25, armor=60, axe=70, bow=80, xbow=100, bomb=30)
@@ -303,7 +304,7 @@ COMBO_BAR_MAX = 100                # points (damage dealt / taken, weighted belo
 COMBO_GAIN_DEALT = 1.5             # meter points per point of damage the hero deals
 COMBO_GAIN_TAKEN = 1.0             # meter points per point of damage the hero takes
 SPECIAL_HOLD_MIN = 0.25            # seconds the attack button must be held (with a full meter) to charge the special
-SPECIAL_DAMAGE = 15                # per hit; the spin hits twice (30 = one whole ogre)
+SPECIAL_DAMAGE = 30                # per hit (was 15: doubled); the spin hits twice (60 = more than a whole ogre)
 SPECIAL_RADIUS = 56                # px each side of the hero
 SPECIAL_KNOCKBACK = 26.0
 CHARGE_MOVE_FACTOR = 0.35          # walking speed multiplier while charging
@@ -424,3 +425,16 @@ GUARD_BACK_MARGIN = 14             # an attacker this close behind the hip (over
 # thrown knives: three in the belt, each one comes back by itself
 KNIFE_CHARGES = 3
 KNIFE_RECHARGE = 5.0               # seconds for a thrown knife to be ready again (each one on its own clock)
+
+# ---- third play-test ----------------------------------------------------------------------
+COMBO_END_DELAY = 0.5              # seconds the hero cannot attack after the last stroke of a combo
+MAGE_STROKE_GAP = 0.12             # extra rest between two strokes of the mage's primary chain (slightly slower casting)
+SPECIAL_INVULN_MAX = 1.0           # the hero is invulnerable for the first part of the (now 3x longer) special only
+# the specials made of many pieces are spread over the longer animation (they used to be cut short by it)
+RAIN_T0, RAIN_DT = 0.5, 0.1        # arrow rain: first arrow / seconds between arrows (10 arrows, last at 1.4 s of 1.64)
+STORM_T0, STORM_DT = 0.6, 0.075    # fire storm: 12 fireballs, last at 1.43 s of 1.64
+VOLLEY_T0, VOLLEY_DT = 0.3, 0.2    # bolt volley: 6 bolts, last at 1.3 s of 1.8
+
+for _c, _rows in (('mage', ('attack_axe', 'attack_bow', 'attack_crossbow')), ('ranger', ('attack_axe', 'attack_crossbow')),
+                  ('crossbowman', ('attack_axe', 'attack_bow'))):
+    for _r in _rows: ANIM_SPEED[_c].setdefault(_r, ANIM_SPEED['knight'][_r])

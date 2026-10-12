@@ -309,22 +309,55 @@ def block_spark(i):
 # ---- 11) stone spikes: rock spikes bursting out of the ground in front of the caster (secondary of the mage) ----
 STONE = (C(214, 218, 226), C(160, 166, 182), C(112, 118, 136), C(70, 74, 92))
 
+DIRT = (C(132, 104, 76), C(98, 74, 54), C(64, 48, 40))
+# the spikes: (x of the base, relative height, half width of the base, lean of the tip, shade shift) - uneven on purpose
+SPIKES = ((20, .50, 3, -1), (27, .78, 4, -1), (35, 1.00, 5, 0), (44, .72, 4, 1), (51, .92, 4, 2), (58, .46, 3, 1))
+
 def stone_spikes(i):
     im = Image.new('RGBA', (F, F), (0, 0, 0, 0))
-    hs = [3, 10, 17, 17, 11, 4][i]; al = [1, 1, 1, 1, .8, .5][i]
-    for k, x in enumerate((24, 36, 48, 58)):
-        h = hs - (k % 2) * 4
-        if h < 2: continue
-        for y in range(h):
-            w = max(1, int((h - y) * .45) + 1)
-            for dx in range(-w, w + 1):
-                col = STONE[0] if dx < -w // 2 else (STONE[1] if dx <= w // 2 else STONE[2])
-                put(im, x + dx, 58 - y, col, al)
-        put(im, x, 58 - h, STONE[3], al)
+    rise = [.22, .7, 1.0, 1.0, .62, .25][i]; al = [1, 1, 1, 1, .85, .55][i]
+    ground = 58
     rnd = random.Random(8)
-    for k in range(8):                                                   # dust and chips
+    for k, (bx, rel, hw, lean) in enumerate(SPIKES):
+        h = int(round(25 * rel * rise))
+        if h < 2: continue
+        for y in range(h):                                              # drawn from the ground up
+            f = y / float(h)                                            # 0 at the base, 1 at the tip
+            half = max(0.4, hw * (1 - f) ** 0.85)
+            cx = bx + lean * f * f * 3
+            x0, x1 = int(round(cx - half)), int(round(cx + half))
+            for x in range(x0, x1 + 1):
+                u = (x - x0) / float(max(1, x1 - x0))
+                if x == x0 or x == x1 or y == h - 1: col = STONE[3]       # outline
+                elif u < .34: col = STONE[0]                              # lit side
+                elif u < .72: col = STONE[1]
+                else: col = STONE[2]                                      # shaded side
+                if (x + y * 3 + k) % 7 == 0 and x0 < x < x1 and 0 < y < h - 2: col = STONE[(x + k) % 3 + 1 - (1 if u < .5 else 0)]   # grain
+                if (x == x0 + 1 and y % 5 == 3 and half > 2): col = STONE[2]                 # a crack on the lit face
+                put(im, x, ground - y, col, al)
+        if h > 5:                                                       # a chipped notch on one edge
+            ny = ground - h // 2 - k % 2
+            put(im, bx + (hw // 2 + 1), ny, (0, 0, 0, 0))
+    # the ground around the bases: churned dirt, a lip of broken earth, cracks running over the floor
+    for k, (bx, rel, hw, lean) in enumerate(SPIKES):
+        if rise < .25: break
+        for dx in range(-hw - 2, hw + 3):
+            d = abs(dx)
+            if (dx * 5 + k * 3) % 4 == 0 and d > hw: continue            # ragged edge of the broken earth
+            put(im, bx + dx, ground, DIRT[0] if (dx + k) % 3 else DIRT[1], al)
+            if d <= hw and (dx + k) % 2 == 0: put(im, bx + dx, ground + 1, DIRT[2], al)
+            if d <= hw - 1 and (dx + k) % 3 == 0: put(im, bx + dx, ground - 1, DIRT[1], al)
+        for c in range(1, 4 + k % 3):                                  # a crack on the floor, going sideways
+            put(im, bx + (hw + 2 + c) * (1 if k % 2 else -1), ground + 1 + (c // 2), DIRT[2], al)
+    for k in range(10):                                                 # flying chips and dust
         if i == 0: break
-        put(im, 20 + rnd.randint(0, 44) + i, 58 - rnd.randint(0, 4 + 3 * i), STONE[1], .8 if i < 4 else .4)
+        sx = 18 + rnd.randint(0, 44); v = rnd.uniform(3, 9) * (i / 3.0); dxs = rnd.uniform(-1, 1) * i * 1.4
+        cy = ground - 4 - v + 0.9 * i * i * .7
+        put(im, sx + dxs, cy, STONE[k % 3], al)
+        if k % 2 == 0: put(im, sx + dxs + 1, cy, STONE[3], al)
+    for k in range(7):                                                  # dust cloud, fading
+        if i == 0: break
+        put(im, 16 + rnd.randint(0, 48), ground - rnd.randint(0, 3 + 2 * i), DIRT[0], .75 if i < 4 else .35)
     return im
 
 # ---- 12) fire burst: the explosion of a fireball (ground level, centred on the hip column) ----

@@ -161,14 +161,14 @@ buy(5); assert sc.run['weapon']['id'] == 'xbow' and sc.run['gold'] == 300 - 25 -
 sc.menu.index = 6; key(g, fp.K_RETURN)
 assert isinstance(g.scene, S.PlayScene) and g.world.potions == C.POTION_MAX_STOCK and g.world.hero.armor == C.ARMOR_MAX and g.world.bombs == 5
 assert g.world.hero.weapon['id'] == 'xbow' and g.world.gold == 85
-# not enough gold: the stage starts without the shop; other classes do not see weapons; the endless mode has no shop
+# not enough gold: the stage starts without the shop; other classes see the weapons too; the endless mode has no shop
 g.run_start = dict(gold=5, potions=0, weapon=None, armor=0, bombs=0); g.restart_stage()
 assert isinstance(g.scene, S.PlayScene) and g.world.gold == 5
 g.hero_class = 'mage'; g.run_start = dict(gold=100, potions=0, weapon=None, armor=0, bombs=0); g.restart_stage()
-assert [it[1] for it in g.scene.menu.items] == ['potion', 'armor', 'bomb', 'continue']
+assert [it[1] for it in g.scene.menu.items] == ['potion', 'armor', 'bomb', 'axe', 'bow', 'xbow', 'continue']   # every class sees the weapons
 g = main.Game('endless'); step(g, 2); g.run_start = dict(gold=500, potions=0, weapon=None, armor=0, bombs=0); g.restart_stage()
 assert isinstance(g.scene, S.PlayScene) and g.world.gold == 0
-print('9 ok: shop (prices, caps, knight-only weapons, free of charge below the cheapest price, restart goes through it)')
+print('9 ok: shop (prices, caps, weapons for every class, free of charge below the cheapest price, restart goes through it)')
 
 # 10) the main loop itself: Game.run() runs frames and stops when `running` goes False
 g = main.Game('endless'); n = [0]
