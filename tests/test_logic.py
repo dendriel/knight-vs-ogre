@@ -471,4 +471,38 @@ assert w.hero.hp == 10 and w.hero.armor == 0; w.hero.invuln = 0; w._hit(w.ogre, 
 assert w.hero.state == 'dead'
 print('29 ok: armor absorbs first, remainder to life, hurt still plays, refill pickup')
 
+# 30) T12: combo meter + special: fills with damage dealt / taken, hold >= 0.25 s with a full bar charges, release fires
+w = fresh(0); assert w.combo == 0 and 'combo' in w.features
+w.ogre.invuln = 0; w._hit(w.hero, w.ogre); assert abs(w.combo - 10 * C.COMBO_GAIN_DEALT) < 1e-9
+w.hero.invuln = 0; w._hit(w.ogre, w.hero); assert abs(w.combo - (10 * C.COMBO_GAIN_DEALT + 10 * C.COMBO_GAIN_TAKEN)) < 1e-9
+w.combo = 999; w.apply_damage(w.hero, w.ogre, 1); assert w.combo == C.COMBO_BAR_MAX            # capped
+# a quick click with a full bar is a normal stroke (a little late), a hold is the special
+w = fresh(0); w.combo = C.COMBO_BAR_MAX; w.ogre.x = 5000.0
+run(w, 0.1, Inputs(attack=True)); assert w.hero.state not in ('attack', 'charge')               # waiting to see what it is
+w.update(DT, Inputs(attack=False)); assert w.hero.state == 'attack' and w.hero.attack_id == 'sword'
+assert w.combo == C.COMBO_BAR_MAX                                                               # not spent
+w = fresh(0); w.combo = C.COMBO_BAR_MAX; w.ogre.x = 5000.0
+run(w, C.SPECIAL_HOLD_MIN + 0.1, Inputs(attack=True)); assert w.hero.state == 'charge' and w.hero.anim == 'attack_special'
+assert w.hero.frame_index(T) == 0 and any(v['name'] == 'charge' for v in w.vfx) and ('charge', 'knight') in w.events
+x0 = w.hero.x; run(w, 0.3, Inputs(attack=True, right=True)); assert 0 < w.hero.x - x0 < 0.3 * C.HERO_SPEED * 0.5   # slowed
+w.update(DT, Inputs(attack=False))
+assert w.hero.state == 'attack' and w.hero.attack_id == 'special' and w.combo == 0 and ('special', 'knight') in w.events
+assert w.hero.invuln > 0                                                                         # invulnerable while spinning
+# the spin hits everything around him, twice (15 + 15), from both sides, ignoring the target's invulnerability
+w = fresh(0); w.combo = C.COMBO_BAR_MAX
+l, r = Fighter('ogre', -40, +1), Fighter('ogre', 40, -1); far = Fighter('ogre', 300, -1)
+w.enemies = [l, r, far]
+for e in w.enemies: e.ai_cooldown = 99
+r.invuln = 5.0; r.set_state('hurt')                                                              # invulnerable on purpose
+run(w, C.SPECIAL_HOLD_MIN + 0.1, Inputs(attack=True)); w.update(DT, Inputs(attack=False))
+run(w, 0.6, Inputs())
+assert l.hp <= 0 and r.hp <= 0 and far.hp == 30, (l.hp, r.hp, far.hp)
+assert w.combo == 0 or w.combo < 1, w.combo          # the special's own damage did not refill the bar
+# the bar dies with the hero (D2) and the special is not available in hurt / dead
+w = fresh(0); w.combo = 80; w.hero.hp = 1; w.hero.invuln = 0; w._hit(w.ogre, w.hero); assert w.combo == 0
+w = fresh(0); w.combo = C.COMBO_BAR_MAX; w.hero.invuln = 0; w._hit(w.ogre, w.hero)
+assert w.hero.state == 'hurt'; w.combo = C.COMBO_BAR_MAX
+run(w, 0.3, Inputs(attack=True)); assert w.hero.state == 'hurt'
+print('30 ok: combo meter fills, hold-to-charge, release fires a 2-hit spin, dies with the hero')
+
 print('ALL LOGIC TESTS PASSED')

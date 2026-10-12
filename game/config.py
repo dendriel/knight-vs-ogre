@@ -30,6 +30,7 @@ ATTACK_ANIM_SPEED = 1.5            # ogre axe swing AND its slash effect (they m
 KNIGHT_ATTACK_ANIM_SPEED = 1.7     # knight sword stroke 1 AND its slash effect (they must stay in sync); slower than the chained ones
 KNIGHT_COMBO2_ANIM_SPEED = 2.4     # combo stroke 2 (rising cut) AND sword_slash_2
 KNIGHT_COMBO3_ANIM_SPEED = 2.6     # combo stroke 3 (overhead chop) AND sword_slash_3
+SPECIAL_ANIM_SPEED = 1.5           # spin animation AND its ring effect (they must stay in sync)
 AXE_ANIM_SPEED = 1.26              # picked-up axe: 1.35x slower than stroke 1 (KNIGHT_ATTACK_ANIM_SPEED / 1.35)
 COMBO_WINDOW_START = 3             # a new click chains the next stroke from this frame of the current one...
 COMBO_BUFFER = 0.15                # ...until this many seconds after it ended
@@ -38,12 +39,13 @@ COMBO_KNOCKBACK = (14.0, 14.0, 24.0)
 WALK_ANIM_SPEED = 1.2              # ogre walk cycle; keep it proportional to OGRE_SPEED so the feet don't slide
 RUN_ANIM_SPEED = 1.65              # the hero's movement uses the 'run' cycle (~72 px/s per 1.0x), proportional to HERO_SPEED
 ANIM_SPEED = {
-    'knight': {'attack_sword': KNIGHT_ATTACK_ANIM_SPEED, 'attack_sword_2': KNIGHT_COMBO2_ANIM_SPEED,
+    'knight': {'attack_special': SPECIAL_ANIM_SPEED, 'attack_sword': KNIGHT_ATTACK_ANIM_SPEED, 'attack_sword_2': KNIGHT_COMBO2_ANIM_SPEED,
                'attack_sword_3': KNIGHT_COMBO3_ANIM_SPEED, 'attack_axe': AXE_ANIM_SPEED,
                'run': RUN_ANIM_SPEED, 'jump_up': 1.6},
     'ogre': {'attack': ATTACK_ANIM_SPEED, 'walk': WALK_ANIM_SPEED},
     'vfx': {'sword_slash': KNIGHT_ATTACK_ANIM_SPEED, 'sword_slash_2': KNIGHT_COMBO2_ANIM_SPEED,
-            'sword_slash_3': KNIGHT_COMBO3_ANIM_SPEED, 'axe_slash': ATTACK_ANIM_SPEED},
+            'sword_slash_3': KNIGHT_COMBO3_ANIM_SPEED, 'axe_slash': ATTACK_ANIM_SPEED,
+            'spin_slash': SPECIAL_ANIM_SPEED},
 }
 HURT_INVULN_EXTRA = 0.6            # extra invulnerable seconds after the hurt animation (prevents stun-lock)
 OGRE_HURT_INVULN = True            # True: the ogre cannot be hit again during hurt + OGRE_HURT_INVULN_EXTRA
@@ -91,7 +93,14 @@ LOB_RADIUS = 12.0                  # landing zone half-width (px), plus the targ
 
 # ---- HUD (positions of the fixed parts; the slots below the life bar stack automatically) --------
 HUD = dict(name=(10, 6), hp_bar=(10, 20), hp_num=(156, 18))
-COMBO_BAR_MAX = 100                # points of damage (dealt + taken, weighted) that fill the combo meter (T12)
+COMBO_BAR_MAX = 100                # points (damage dealt / taken, weighted below) that fill the combo meter (T12)
+COMBO_GAIN_DEALT = 1.5             # meter points per point of damage the hero deals
+COMBO_GAIN_TAKEN = 1.0             # meter points per point of damage the hero takes
+SPECIAL_HOLD_MIN = 0.25            # seconds the attack button must be held (with a full meter) to charge the special
+SPECIAL_DAMAGE = 15                # per hit; the spin hits twice (30 = one whole ogre)
+SPECIAL_RADIUS = 56                # px each side of the hero
+SPECIAL_KNOCKBACK = 26.0
+CHARGE_MOVE_FACTOR = 0.35          # walking speed multiplier while charging
 POTION_MAX_STOCK = 10              # potions the hero can carry (T10)
 
 # ---- ogre AI ------------------------------------------------------------------------------
@@ -126,6 +135,7 @@ CONTROLS = [
     ('Setas / A D', 'Andar'),
     ('Espaço', 'Pular'),
     ('Mouse esquerdo', 'Atacar; clicar de novo = combo (3 golpes)'),
+    ('Segurar mouse esq.', 'Barra cheia: carrega; soltar = giro especial'),
     ('1', 'Beber poção'),
     ('M', 'Liga / desliga o som'),
     ('F11', 'Tela cheia'),

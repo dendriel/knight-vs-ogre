@@ -138,12 +138,24 @@ def atk_sword_3(i):
                 plume=[(-7, -1), (-8, 0), (-9, -2), (-9, 1), (-11, 3), (-8, 0)][i],
                 flap=[0, -1, -1, -3, -4, -1][i], shift=[0, 0, 1, -2, -4, -2][i])
 
+def atk_special(i):
+    # especial giratorio: frame 0 = carga (agachado, espada recolhida; o jogo congela nele enquanto segura), 1-5 = giro:
+    # a lamina varre para a frente e para tras com o corpo torcido; o aro de luz (vfx spin_slash) completa os 360 graus
+    return dict(weapon='sword', hx=[-2, -1, 2, -2, 2, 0][i], footN=(CX + 9, GY), footF=(CX - 7, GY),
+                sink=[3, 2, 1.5, 1.5, 1.5, 2][i], lean=[-12, -4, 10, -10, 12, 4][i],
+                handN=[(-4, 4), (-2, 0), (11, -1), (-11, -1), (11, -1), (6, 0)][i],
+                wang=[250, 270, 92, 268, 92, 130][i],
+                handF=[(-6, 6), (-3, 2), (6, 1), (-8, 1), (6, 1), (0, 8)][i],
+                plume=[(-8, 1), (-9, 0), (-6, -1), (-10, 1), (-6, -1), (-8, 0)][i],
+                flap=[-1, -2, -4, 2, -4, -1][i], shift=[1, 0, -2, 2, -2, 0][i])
+
 ANIMS = [('idle', idle, 6), ('walk', walk, 10), ('run', lambda i: walk(i, True), 12),
          ('attack_sword', atk_sword, 12), ('attack_axe', atk_axe, 10),
          ('attack_bow', atk_bow, 10), ('attack_crossbow', atk_xbow, 10),
          ('hurt', hurt, 10), ('death', death, 8),
          ('jump_up', jump_up, 12), ('jump_fall', jump_fall, 10),
-         ('attack_sword_2', atk_sword_2, 12), ('attack_sword_3', atk_sword_3, 12)]
+         ('attack_sword_2', atk_sword_2, 12), ('attack_sword_3', atk_sword_3, 12),
+         ('attack_special', atk_special, 12)]
 NOLOOP = ('attack', 'hurt', 'death')
 
 def carry(pose, weapon):

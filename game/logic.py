@@ -33,6 +33,9 @@ ATTACKS = {
     'axe': dict(anim='attack_axe', damage=C.AXE_DAMAGE, reach=C.AXE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                 slash=None, move_factor=C.AXE_MOVE_FACTOR, knockback=C.AXE_KNOCKBACK, guard_break=True, cooldown=0.0,
                 wear=C.AXE_WEAR, next=None),
+    'special': dict(anim='attack_special', damage=C.SPECIAL_DAMAGE, reach=(-C.SPECIAL_RADIUS, C.SPECIAL_RADIUS),
+                    active=(2, 3, 4, 5), slash_frame=1, slash='spin_slash', move_factor=0.0, knockback=C.SPECIAL_KNOCKBACK,
+                    guard_break=True, cooldown=0.0, wear=0.0, next=None, rehit=4, ignore_invuln=True, ring=True),
     'ogre_axe': dict(anim='attack', damage=C.DAMAGE, reach=C.OGRE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                      slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
                      wear=0.0, next=None),
@@ -75,15 +78,18 @@ class Fighter:
         self.air_t = 0.0; self.air_phase = None                 # time in the current rising / falling phase
         self.hit_done = False; self.slash_done = False
         self.kb_dir = 0; self.kb_t = 0.0; self.kb_speed = C.KNOCKBACK / C.KNOCKBACK_TIME
+        self.charge_t = 0.0; self.charge_fx = 0.0                # holding the button with a full meter (T12)
         self.armor = 0; self.armor_max = C.ARMOR_MAX if self.defn['hero'] else 0; self.weapon = None   # equipment (T13, T15); weapon = dict(id, durability)
         self.attack_id = self.defn['primary']                   # which ATTACKS entry the 'attack' state plays
         self.hit_set = []                                       # targets already hit by the current swing
+        self.rehit_done = False
         self.combo_next = None; self.chain = None               # queued next stroke / (time, id) just after a stroke ended
         self.ai_wait = None; self.ai_cooldown = 0.6             # enemy AI state (per fighter, so many enemies can coexist)
         self.respawn_t = None                                   # enemies: countdown (after death) until the body is buried
 
     def set_state(self, s):
         self.state = s; self.t = 0.0; self.hit_done = False; self.slash_done = False; self.hit_set = []; self.combo_next = None
+        self.rehit_done = False; self.charge_t = 0.0
 
     @property
     def is_hero(self): return self.defn['hero']
@@ -96,6 +102,7 @@ class Fighter:
         if self.is_hero and self.airborne and self.state in ('idle', 'walk'):
             return 'jump_up' if self.vy > 0 else 'jump_fall'      # falling off a ledge without jumping plays jump_fall too
         if self.state == 'attack': return ATTACKS[self.attack_id]['anim']
+        if self.state == 'charge': return 'attack_special'              # frame 0 of the spin: crouched, blade pulled back
         return self.defn['anim'][self.state]
 
     @property
@@ -115,6 +122,7 @@ class Fighter:
         a = self.anim; tm = timing[self.sheet]
         if a == 'jump_up': return min(int(self.air_t * tm[a]), 5)
         if a == 'jump_fall': return int(self.air_t * tm[a]) % 6
+        if self.state == 'charge': return 0
         n = int(self.t * tm[a])
         return n % 6 if self.state in LOOPING else min(n, 5)
 
@@ -157,7 +165,7 @@ class World:
         self.timing = timing; self.rng = random.Random(seed)
         self.hero = Fighter('knight', 0.0, +1)
         self.enemies = [Fighter('ogre', C.START_OGRE_OFFSET, -1)]
-        self.features = {'potions', 'weapon', 'armor'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
+        self.features = {'potions', 'weapon', 'armor', 'combo'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
         self.potions = 0; self.combo = 0                   # inventory / combo meter (T10, T12)
         self.spawn_target = 1                              # endless mode keeps this many enemies in the world (T02)
         self._jump_held = False; self._box_cache = {}
@@ -265,11 +273,29 @@ class World:
     def _hero_control(self, dt, inp):
         h = self.hero
         jump_edge = inp.jump and not self._jump_held; self._jump_held = inp.jump     # one jump per key press
-        if h.state not in ('idle', 'walk', 'attack'): return                          # hurt / dead: no control
+        if h.state not in ('idle', 'walk', 'attack', 'charge'): return                # hurt / dead: no control
         dx = (1 if inp.right else 0) - (1 if inp.left else 0)
         if jump_edge and h.grounded:
             h.vy = 2 * C.JUMP_HEIGHT / C.JUMP_RISE_TIME; h.grounded = False; h.air_phase = None
             self.events.append(('jump', 'knight'))
+        full = self.combo >= C.COMBO_BAR_MAX
+        if h.state == 'charge':                                                       # holding with a full bar
+            h.charge_fx -= dt
+            if h.charge_fx <= 0: h.charge_fx = 0.4; self.add_vfx('charge', h.x, h.facing < 0, y=h.y)
+            if not inp.attack:                                                        # released: fire the special
+                self.combo = 0; self.start_attack(h, 'special'); h.invuln = max(h.invuln, h.duration(self.timing))
+                self.events.append(('special', 'knight')); return
+            h.x += dx * h.defn['speed'] * C.CHARGE_MOVE_FACTOR * dt
+            return
+        if h.state in ('idle', 'walk') and inp.attack and full and 'combo' in self.features:
+            h.charge_t += dt                                                          # the swing waits to see if it is a hold
+            if h.charge_t >= C.SPECIAL_HOLD_MIN:
+                h.set_state('charge'); h.charge_fx = 0.0; self.events.append(('charge', 'knight')); return
+            if dx: h.facing = dx; h.x += dx * h.defn['speed'] * dt
+            return
+        if h.charge_t > 0 and h.state in ('idle', 'walk'):                            # released early: it was a plain click
+            h.charge_t = 0.0
+            if not inp.attack: self.start_attack(h, h.primary)
         if h.state == 'attack' and inp.attack_pressed:                                # a click inside the window queues the next stroke
             nxt = ATTACKS[h.attack_id].get('next')
             if nxt and h.frame_index(self.timing) >= C.COMBO_WINDOW_START: h.combo_next = nxt
@@ -327,8 +353,10 @@ class World:
                 atk.slash_done = True
                 if at['slash']: self.add_vfx(at['slash'], atk.x, atk.facing < 0, y=atk.y)   # (None: the sprite has its own trail)
                 self.events.append(('swing', atk.kind))
+            if at.get('rehit') and idx >= at['rehit'] and not atk.rehit_done:
+                atk.rehit_done = True; atk.hit_set = []                    # multi-hit moves (the spin) hit again here
             if tgt in atk.hit_set or idx not in at['active']: continue         # one hit per target per swing
-            if tgt.state == 'dead' or tgt.invuln > 0: continue
+            if tgt.state == 'dead' or (tgt.invuln > 0 and not at.get('ignore_invuln')): continue
             if abs(atk.y - tgt.y) > C.VERTICAL_REACH: continue          # too high / low for the swing to connect
             lo, hi = at['reach']
             a0, a1 = (atk.x + lo, atk.x + hi) if atk.facing > 0 else (atk.x - hi, atk.x - lo)
@@ -347,6 +375,9 @@ class World:
         total = absorbed + amount
         if tgt is self.hero: self.stats['damage_taken'] += total
         else: self.stats['damage_dealt'] += total
+        if 'combo' in self.features and not (atk is self.hero and atk.attack_id == 'special' and atk.state == 'attack'):
+            gain = total * (C.COMBO_GAIN_TAKEN if tgt is self.hero else C.COMBO_GAIN_DEALT)
+            self.combo = min(C.COMBO_BAR_MAX, self.combo + gain)           # the special itself does not refill the bar
         return total
 
     def _hit(self, atk, tgt, at=None, src_x=None):
@@ -367,7 +398,7 @@ class World:
             if tgt is not self.hero: self.stats['kills'] += 1
             if not tgt.is_hero: self._drop_loot(tgt.x); tgt.respawn_t = C.RESPAWN_DELAY
             self.add_vfx('spirit', tgt.x, tgt.x > sx, delay=C.SPIRIT_DELAY, y=tgt.y)
-            if tgt is self.hero: self.hero_deaths += 1; self.hero_timer = C.RESPAWN_DELAY
+            if tgt is self.hero: self.hero_deaths += 1; self.hero_timer = C.RESPAWN_DELAY; self.combo = 0   # D2: dies with the hero
             else: self.ogre_deaths += 1
         else:
             self.events.append(('hurt', tgt.kind))

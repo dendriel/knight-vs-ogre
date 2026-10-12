@@ -701,6 +701,60 @@
         "w": 64,
         "h": 64
       }
+    },
+    {
+      "filename": "attack_special_0",
+      "frame": {
+        "x": 0,
+        "y": 832,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_special_1",
+      "frame": {
+        "x": 64,
+        "y": 832,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_special_2",
+      "frame": {
+        "x": 128,
+        "y": 832,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_special_3",
+      "frame": {
+        "x": 192,
+        "y": 832,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_special_4",
+      "frame": {
+        "x": 256,
+        "y": 832,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_special_5",
+      "frame": {
+        "x": 320,
+        "y": 832,
+        "w": 64,
+        "h": 64
+      }
     }
   ],
   "animations": {
@@ -856,6 +910,18 @@
         "attack_sword_3_3",
         "attack_sword_3_4",
         "attack_sword_3_5"
+      ],
+      "fps": 12,
+      "loop": false
+    },
+    "attack_special": {
+      "frames": [
+        "attack_special_0",
+        "attack_special_1",
+        "attack_special_2",
+        "attack_special_3",
+        "attack_special_4",
+        "attack_special_5"
       ],
       "fps": 12,
       "loop": false

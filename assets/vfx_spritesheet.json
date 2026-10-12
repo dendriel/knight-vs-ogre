@@ -431,6 +431,114 @@
         "w": 64,
         "h": 64
       }
+    },
+    {
+      "filename": "spin_slash_0",
+      "frame": {
+        "x": 0,
+        "y": 512,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "spin_slash_1",
+      "frame": {
+        "x": 64,
+        "y": 512,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "spin_slash_2",
+      "frame": {
+        "x": 128,
+        "y": 512,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "spin_slash_3",
+      "frame": {
+        "x": 192,
+        "y": 512,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "spin_slash_4",
+      "frame": {
+        "x": 256,
+        "y": 512,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "spin_slash_5",
+      "frame": {
+        "x": 320,
+        "y": 512,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "charge_0",
+      "frame": {
+        "x": 0,
+        "y": 576,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "charge_1",
+      "frame": {
+        "x": 64,
+        "y": 576,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "charge_2",
+      "frame": {
+        "x": 128,
+        "y": 576,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "charge_3",
+      "frame": {
+        "x": 192,
+        "y": 576,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "charge_4",
+      "frame": {
+        "x": 256,
+        "y": 576,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "charge_5",
+      "frame": {
+        "x": 320,
+        "y": 576,
+        "w": 64,
+        "h": 64
+      }
     }
   ],
   "animations": {
@@ -529,6 +637,30 @@
       ],
       "fps": 12,
       "loop": false
+    },
+    "spin_slash": {
+      "frames": [
+        "spin_slash_0",
+        "spin_slash_1",
+        "spin_slash_2",
+        "spin_slash_3",
+        "spin_slash_4",
+        "spin_slash_5"
+      ],
+      "fps": 12,
+      "loop": false
+    },
+    "charge": {
+      "frames": [
+        "charge_0",
+        "charge_1",
+        "charge_2",
+        "charge_3",
+        "charge_4",
+        "charge_5"
+      ],
+      "fps": 10,
+      "loop": false
     }
   },
   "meta": {
@@ -537,6 +669,6 @@
       64,
       64
     ],
-    "note": "sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life (any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i. Same anchor as the character frames."
+    "note": "sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life (any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held. Same anchor as the character frames."
   }
 }

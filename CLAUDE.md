@@ -84,10 +84,10 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 
 | sheet | linhas (na ordem) |
 |---|---|
-| `knight_spritesheet` | idle(6fps), walk(10), run(12), attack_sword(12, golpe LATERAL), attack_axe(10), attack_bow(10), attack_crossbow(10), hurt(10), death(8), jump_up(12), jump_fall(10), attack_sword_2(12, combo: corte ascendente), attack_sword_3(12, combo: golpe final de cima para baixo) |
+| `knight_spritesheet` | idle(6fps), walk(10), run(12), attack_sword(12, golpe LATERAL), attack_axe(10), attack_bow(10), attack_crossbow(10), hurt(10), death(8), jump_up(12), jump_fall(10), attack_sword_2(12, combo: corte ascendente), attack_sword_3(12, combo: golpe final de cima para baixo), attack_special(12, giro: frame 0 = carga, congelado enquanto segura) |
 | `ogre_spritesheet` | idle(6), walk(10), attack(10, machado), hurt(10), death(8) |
 | `knight_axe_spritesheet` | **mesmas linhas e nomes do `knight_spritesheet`**, mas o herói empunha o machado (arquivo gerado por `knight_gen.py write_sheet(out, 'axe')`); o jogo usa a linha `attack_axe` |
-| `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6), heal(10), coin_glint(12), sword_slash_2(12), sword_slash_3(12) |
+| `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6), heal(10), coin_glint(12), sword_slash_2(12), sword_slash_3(12), spin_slash(12, aro do especial), charge(10, brasas enquanto segura) |
 
 - **Âncora**: coluna do quadril = 30 no frame normal, **33 quando espelhado** (63−30); linha do chão = 58 dentro do frame
   (no jogo `GROUND_Y = 217`). Posicione sempre por essa coluna, senão o sprite "pula" ao virar.

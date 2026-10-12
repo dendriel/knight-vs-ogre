@@ -256,9 +256,44 @@ def sword_slash_3(i):      # overhead chop: from above the head down to the fron
     return _slash(i, ((14, 6), (47, 8), (59, 42)),
                   [(0.0, 0.5, 5, 1), (0.0, 1.0, 8, 1), (0.25, 1.0, 7, 1), (0.55, 1.0, 5, .8), (0.8, 1.0, 3, .45), None], 50)
 
+# ---- 8) spin slash (knight special): a flat ring of light whirling around the hero at chest height ----
+def spin_slash(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0))
+    cx, cy = 30, 36
+    rx = [12, 22, 28, 30, 28, 22][i]; ry = max(3, int(rx * .32)); al = [1, 1, 1, .9, .55, .3][i]
+    for k in range(180):
+        a = k * math.tau / 180 + i * 1.3
+        near = math.sin(a) > 0                               # the half in front of the body is brighter and thicker
+        col = SWORD[0] if near else SWORD[2]
+        x, y = cx + math.cos(a) * rx, cy + math.sin(a) * ry
+        # a gap rotating with the frame makes the whirl read as motion
+        if (k // 22 + i) % 4 == 0: continue
+        put(im, x, y, col, al)
+        if near and rx > 14: put(im, x, y + 1, SWORD[1], al)
+        if near and rx > 20: put(im, x, y - 1, SWORD[1], al * .8)
+    sparks(im, (cx, cy), rx, 0, math.tau, 0, 1, [4, 6, 8, 8, 6, 4][i], SPARK_S, 70 + i, al, spread=(-2, 3))
+    return im
+
+# ---- 9) charge: warm light gathering around the hero while the special is held (re-spawned while holding) ----
+def charge(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0)); cx = 30
+    rr = [16, 13, 10, 8, 10, 13][i]; al = [.5, .7, .9, 1, .9, .7][i]          # ground ring contracting then pulsing
+    for k in range(40):
+        a = k * math.tau / 40
+        put(im, cx + math.cos(a) * rr, 57 + math.sin(a) * rr * .28, GC_LIGHT if k % 2 else GC_GOLD, al)
+    rnd = random.Random(23)
+    for k in range(12):                                                         # embers rising along the body
+        ox = rnd.uniform(-11, 11); y0 = rnd.uniform(40, 58); sp = rnd.uniform(3, 6)
+        y = y0 - sp * i
+        if 6 <= y <= 58:
+            put(im, cx + ox, y, GC_WHITE if k % 3 == 0 else GC_GOLD, 1.0)
+            if k % 2: put(im, cx + ox, y + 1, GC_DARK, .8)
+    return im
+
 EFFECTS = [('sword_slash', sword_slash, 12), ('axe_slash', axe_slash, 10), ('blood_splash', blood, 12), ('spirit', spirit, 6),
            ('heal', heal, 10), ('coin_glint', coin_glint, 12),
-           ('sword_slash_2', sword_slash_2, 12), ('sword_slash_3', sword_slash_3, 12)]
+           ('sword_slash_2', sword_slash_2, 12), ('sword_slash_3', sword_slash_3, 12),
+           ('spin_slash', spin_slash, 12), ('charge', charge, 10)]
 
 if __name__ == '__main__':
     out = sys.argv[1] if len(sys.argv) > 1 else './out'; os.makedirs(out, exist_ok=True)
@@ -266,7 +301,7 @@ if __name__ == '__main__':
     atlas = {'frames': [], 'animations': {}, 'meta': {'image': 'vfx_spritesheet.png', 'frame_size': [64, 64], 'note':
              'sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; '
              'blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life '
-             '(any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i. Same anchor as the character frames.'}}
+             '(any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held. Same anchor as the character frames.'}}
     for r, (name, fn, fps) in enumerate(EFFECTS):
         for i in range(6):
             sheet.alpha_composite(fn(i), (i * F, r * F))
