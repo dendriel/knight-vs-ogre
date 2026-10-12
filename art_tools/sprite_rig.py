@@ -12,6 +12,12 @@ BLADE = C(214, 224, 238); BLADE_HL = C(252, 253, 255); BLADE_SH = C(150, 164, 18
 WOOD = C(134, 86, 48); WOOD_D = C(92, 58, 34)
 TRAIL1 = C(240, 246, 255); TRAIL2 = C(140, 196, 255)
 
+# body proportions (read at call time: art_tools/human_styles.py overrides them to draw other human builds)
+LEG1, LEG2 = 8, 9            # thigh / shin length
+TORSO_L = 12                # hip -> shoulder
+ARM_L = 6.5                 # upper arm and forearm
+HEAD_UP = 6                 # head centre above the shoulder
+
 def rd(p): return (int(round(p[0])), int(round(p[1])))
 
 def outline(im):
@@ -58,7 +64,7 @@ def ik(a, b, l1, l2, prefer):
     return k, (bx, by)
 
 def leg(H, A, pal, boot, pref='x'):
-    K, A = ik(H, A, 8, 9, pref)
+    K, A = ik(H, A, LEG1, LEG2, pref)
     lift = GY - A[1]; t = -int(round(lift * 0.35))
     def f(d):
         limb(d, [H, K, A], 4, pal)
@@ -68,7 +74,7 @@ def leg(H, A, pal, boot, pref='x'):
     return layer(f)
 
 def arm(S, target, pal, boot, pref='y'):
-    E, Hd = ik(S, target, 6.5, 6.5, pref)
+    E, Hd = ik(S, target, ARM_L, ARM_L, pref)
     def f(d):
         limb(d, [S, E], 4, pal); limb(d, [E, Hd], 3, pal)
         x, y = rd(Hd); d.ellipse([x - 1, y - 1, x + 1, y + 1], fill=boot)
@@ -221,14 +227,14 @@ def render(p):
     if p['weapon'] in ('bow', 'xbow'): return render_ranged(p)
     hxw = CX + p.get('hx', 0); hy = 0
     for fx, fy in (p['footN'], p['footF']):
-        hy = max(hy, fy - math.sqrt(max(16.8 ** 2 - (fx - hxw) ** 2, 0)))
+        hy = max(hy, fy - math.sqrt(max((LEG1 + LEG2 - 0.2) ** 2 - (fx - hxw) ** 2, 0)))
     H = (hxw, hy + p.get('sink', 0))
-    lean = math.radians(p.get('lean', 0)); L = 12 - p.get('tdy', 0)
+    lean = math.radians(p.get('lean', 0)); L = TORSO_L - p.get('tdy', 0)
     S = (H[0] + L * math.sin(lean), H[1] - L * math.cos(lean))
     if p.get('rot_head'):
         up = (math.sin(lean), -math.cos(lean)); nn = (math.cos(lean), math.sin(lean))
-        cH = (S[0] + up[0] * 6 + nn[0] * 1.5, S[1] + up[1] * 6 + nn[1] * 1.5)
-    else: cH = (S[0] + 1.5, S[1] - 6)
+        cH = (S[0] + up[0] * HEAD_UP + nn[0] * 1.5, S[1] + up[1] * HEAD_UP + nn[1] * 1.5)
+    else: cH = (S[0] + 1.5, S[1] - HEAD_UP)
     ho = p.get('headoff', (0, 0)); cH = (cH[0] + ho[0], cH[1] + ho[1])
     img = Image.new('RGBA', (F, F), (0, 0, 0, 0))
     hN = (S[0] + p['handN'][0], S[1] + p['handN'][1])
@@ -313,11 +319,11 @@ def xbow(R, a, loaded):
 def render_ranged(p):
     hxw = CX + p.get('hx', 0); hy = 0
     for fx, fy in (p['footN'], p['footF']):
-        hy = max(hy, fy - math.sqrt(max(16.8 ** 2 - (fx - hxw) ** 2, 0)))
+        hy = max(hy, fy - math.sqrt(max((LEG1 + LEG2 - 0.2) ** 2 - (fx - hxw) ** 2, 0)))
     H = (hxw, hy + p.get('sink', 0))
-    lean = math.radians(p.get('lean', 0)); L = 12 - p.get('tdy', 0)
+    lean = math.radians(p.get('lean', 0)); L = TORSO_L - p.get('tdy', 0)
     S = (H[0] + L * math.sin(lean), H[1] - L * math.cos(lean))
-    cH = (S[0] + 1.5, S[1] - 6)
+    cH = (S[0] + 1.5, S[1] - HEAD_UP)
     img = Image.new('RGBA', (F, F), (0, 0, 0, 0))
     plume, hd = head(cH, p.get('plume', (-7, -1)))
     legF = leg(H, p['footF'], PF, LEATH_D); legN = leg(H, p['footN'], PN, LEATH); tors = torso(H, S, p.get('flap', 0))
