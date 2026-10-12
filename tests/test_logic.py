@@ -254,4 +254,29 @@ w = fresh(0); w.ogre.hp = 10; w._hit(w.hero, w.ogre); assert w.stats['kills'] ==
 w.pickups = [Pickup('coins', 0, 4)]; run(w, 0.05, Inputs()); assert w.stats['gold_gained'] == 4
 print('22 ok: apply_damage funnel + stats')
 
+# 23) T02: several enemies at once, deterministic, own AI state, loot per dead enemy, swing cleaves everyone in reach
+def three(seed=1):
+    w = World(T, seed=seed); w.cam_off = 0; w.hero.x = 0.0
+    w.enemies = [Fighter('ogre', 100 + 25 * i, -1) for i in range(3)]; w.spawn_target = 3
+    for e in w.enemies: e.ai_cooldown = 0.5
+    return w
+w1, w2 = three(), three()
+for _ in range(int(20 / DT)): w1.update(DT, Inputs()); w2.update(DT, Inputs())
+assert [(e.x, e.hp, e.state) for e in w1.enemies] == [(e.x, e.hp, e.state) for e in w2.enemies]
+assert w1.hero.hp == w2.hero.hp and (w1.hero.hp < 100 or w1.hero_deaths > 0)
+w = three(); assert len(w.fighters()) == 4
+for e in w.enemies: e.x = 10.0
+w.hero.x = 0.0; w.hero.facing = 1; w.hero.invuln = 99
+for e in w.enemies: e.ai_cooldown = 99
+w.hero.set_state('attack'); run(w, 0.5, Inputs(attack=True))
+assert all(e.hp < 30 for e in w.enemies), [e.hp for e in w.enemies]       # all three were hit by one swing
+C_old = C.POTION_DROP_CHANCE; C.POTION_DROP_CHANCE = 1.0
+w = three()
+for e in w.enemies: e.hp = 10; e.invuln = 0; w._hit(w.hero, e)
+assert w.ogre_deaths == 3 and sum(1 for p in w.pickups if p.kind == 'potion') == 3
+C.POTION_DROP_CHANCE = C_old
+run(w, C.RESPAWN_DELAY + 0.1, Inputs())
+assert len(w.corpses) >= 3 and len(w.enemies) == 3 and all(e.state != 'dead' for e in w.enemies)   # quota refilled
+print('23 ok: 3 ogres at once, deterministic, cleave, loot per kill, quota refilled')
+
 print('ALL LOGIC TESTS PASSED')

@@ -42,9 +42,15 @@ class Fighter:
         self.air_t = 0.0; self.air_phase = None                 # time in the current rising / falling phase
         self.hit_done = False; self.slash_done = False
         self.kb_dir = 0; self.kb_t = 0.0
+        self.hit_set = []                                       # targets already hit by the current swing
+        self.ai_wait = None; self.ai_cooldown = 0.6             # enemy AI state (per fighter, so many enemies can coexist)
+        self.respawn_t = None                                   # enemies: countdown (after death) until the body is buried
 
     def set_state(self, s):
-        self.state = s; self.t = 0.0; self.hit_done = False; self.slash_done = False
+        self.state = s; self.t = 0.0; self.hit_done = False; self.slash_done = False; self.hit_set = []
+
+    @property
+    def is_hero(self): return self.defn['hero']
 
     @property
     def airborne(self): return not self.grounded
@@ -81,22 +87,45 @@ class World:
     def __init__(self, timing, seed=1):
         self.timing = timing; self.rng = random.Random(seed)
         self.hero = Fighter('knight', 0.0, +1)
-        self.ogre = Fighter('ogre', C.START_OGRE_OFFSET, -1)
+        self.enemies = [Fighter('ogre', C.START_OGRE_OFFSET, -1)]
+        self.spawn_target = 1                              # endless mode keeps this many enemies in the world (T02)
         self._jump_held = False; self._box_cache = {}
         self.corpses = []; self.vfx = []
         self.hero_deaths = 0; self.ogre_deaths = 0
         self.pickups = []; self.gold = 0                   # gold belongs to the player, so it survives hero deaths
         self.loot_rng = random.Random(seed + 1000)         # separate stream: drops never disturb the AI's random sequence
-        self.hero_timer = None; self.ogre_timer = None
+        self.hero_timer = None
         self.cam_off = C.SCREEN_W / 2 - C.START_HERO_SCREEN_X     # hero starts on the left, camera glides to center
         self.shake = 0.0; self.time = 0.0
         self.events = []                                           # (name, kind) for the audio layer; main.py drains it
         self.stats = dict(kills=0, damage_dealt=0, damage_taken=0, gold_gained=0)
-        self.ai_wait = None; self.ai_cooldown = 0.6
 
     # ------------------------------------------------------------------ helpers
     def cam_x(self): return self.hero.x - C.SCREEN_W / 2 + self.cam_off
-    def fighters(self): return (self.hero, self.ogre)
+    def fighters(self): return (self.hero, *self.enemies)
+
+    @property
+    def ogre(self):
+        """Compatibility: the first living enemy (or the last body still lying around, or None)."""
+        for e in self.enemies:
+            if e.state != 'dead': return e
+        return self.enemies[-1] if self.enemies else None
+
+    @ogre.setter
+    def ogre(self, f):
+        if self.enemies: self.enemies[0] = f
+        else: self.enemies.append(f)
+
+    @property
+    def ai_wait(self): return self.ogre.ai_wait
+    @ai_wait.setter
+    def ai_wait(self, v):
+        for e in self.enemies: e.ai_wait = v
+    @property
+    def ai_cooldown(self): return self.ogre.ai_cooldown
+    @ai_cooldown.setter
+    def ai_cooldown(self, v):
+        for e in self.enemies: e.ai_cooldown = v
 
     def add_vfx(self, name, x, flip, delay=0.0, y=0.0):
         self.vfx.append({'name': name, 'x': x, 'flip': flip, 't': -delay, 'y': y})
@@ -117,7 +146,7 @@ class World:
         return max([0.0] + [t for t in self.box_tops(x) if t <= y + 1e-6])
 
     def _physics(self, f, dt):
-        if f.kind != 'knight': return                     # the ogre always walks on the ground
+        if not f.is_hero: return                          # enemies always walk on the ground
         if f.grounded and self.support_height(f.x, f.y) < f.y - 1e-6:
             f.grounded = False; f.vy = 0.0                # walked off a ledge: starts falling
         if f.grounded:
@@ -146,7 +175,7 @@ class World:
         for f in self.corpses: f.t += dt
         self.shake = max(0.0, self.shake - dt)
         self._hero_control(dt, inp)
-        self._ogre_ai(dt)
+        for e in self.enemies: self._enemy_ai(e, dt)
         self._knockback(dt)
         for f in self.fighters(): self._physics(f, dt)
         self._attacks()
@@ -176,8 +205,8 @@ class World:
         elif h.state != 'idle':
             h.set_state('idle')
 
-    def _ogre_ai(self, dt):
-        o, h = self.ogre, self.hero
+    def _enemy_ai(self, o, dt):
+        h = self.hero
         if o.state == 'attack' and h.state != 'dead' and abs(h.x - o.x) > 2 and o.frame_index(self.timing) < C.ACTIVE_FRAMES[0]:
             o.facing = 1 if h.x > o.x else -1               # wind-up: keep tracking a hero who walks through him
         if not o.can_act(): return
@@ -187,19 +216,19 @@ class World:
         if abs(h.x - o.x) > 2: o.facing = 1 if h.x > o.x else -1        # no flip-flop when the hero is right on top of him
         dist = abs(h.x - o.x)
         reachable = abs(h.y - o.y) <= C.VERTICAL_REACH
-        if self.ai_cooldown > 0: self.ai_cooldown -= dt
+        if o.ai_cooldown > 0: o.ai_cooldown -= dt
         if dist > C.OGRE_ATTACK_DIST:                      # approach
-            o.x += o.facing * C.OGRE_SPEED * dt
+            o.x += o.facing * o.defn['speed'] * dt
             if o.state != 'walk': o.set_state('walk')
-            if dist > C.OGRE_ATTACK_DIST + C.OGRE_PATIENCE_DIST: self.ai_wait = None   # hero ran away: forget the plan
+            if dist > C.OGRE_ATTACK_DIST + C.OGRE_PATIENCE_DIST: o.ai_wait = None   # hero ran away: forget the plan
             return
         if o.state != 'idle': o.set_state('idle')
-        if not reachable: self.ai_wait = None; return      # hero too high: the ogre just waits below him
-        if self.ai_cooldown <= 0:                          # in range: pause first, then swing
-            if self.ai_wait is None: self.ai_wait = self.rng.uniform(*C.OGRE_WAIT_BEFORE_ATTACK)
-            self.ai_wait -= dt
-            if self.ai_wait <= 0:
-                self.ai_wait = None; o.set_state('attack')
+        if not reachable: o.ai_wait = None; return         # hero too high: the enemy just waits below him
+        if o.ai_cooldown <= 0:                             # in range: pause first, then swing
+            if o.ai_wait is None: o.ai_wait = self.rng.uniform(*C.OGRE_WAIT_BEFORE_ATTACK)
+            o.ai_wait -= dt
+            if o.ai_wait <= 0:
+                o.ai_wait = None; o.set_state('attack')
 
     def _knockback(self, dt):
         for f in self.fighters():
@@ -208,19 +237,20 @@ class World:
 
     def _attacks(self):
         hits = []
-        for atk, tgt in ((self.hero, self.ogre), (self.ogre, self.hero)):
+        pairs = [(self.hero, e) for e in self.enemies] + [(e, self.hero) for e in self.enemies]
+        for atk, tgt in pairs:
             if atk.state != 'attack': continue
             idx = atk.frame_index(self.timing)
             if idx >= 3 and not atk.slash_done:
                 atk.slash_done = True; self.add_vfx(SLASH[atk.kind], atk.x, atk.facing < 0, y=atk.y)
                 self.events.append(('swing', atk.kind))
-            if atk.hit_done or idx not in C.ACTIVE_FRAMES: continue
+            if tgt in atk.hit_set or idx not in C.ACTIVE_FRAMES: continue     # one hit per target per swing
             if tgt.state == 'dead' or tgt.invuln > 0: continue
             if abs(atk.y - tgt.y) > C.VERTICAL_REACH: continue          # too high / low for the swing to connect
             lo, hi = REACH[atk.kind]
             a0, a1 = (atk.x + lo, atk.x + hi) if atk.facing > 0 else (atk.x - hi, atk.x - lo)
             if a0 <= tgt.x + tgt.hw and a1 >= tgt.x - tgt.hw:
-                atk.hit_done = True; hits.append((atk, tgt))
+                atk.hit_done = True; atk.hit_set.append(tgt); hits.append((atk, tgt))
         for atk, tgt in hits: self._hit(atk, tgt)          # applied together, so trades are possible
 
     def apply_damage(self, atk, tgt, amount):
@@ -243,16 +273,16 @@ class World:
             tgt.set_state('dead'); tgt.invuln = 999.0
             self.events.append(('death', tgt.kind))
             if tgt is not self.hero: self.stats['kills'] += 1
-            if tgt is self.ogre: self._drop_loot(tgt.x)
+            if not tgt.is_hero: self._drop_loot(tgt.x); tgt.respawn_t = C.RESPAWN_DELAY
             self.add_vfx('spirit', tgt.x, tgt.x > atk.x, delay=C.SPIRIT_DELAY, y=tgt.y)
             if tgt is self.hero: self.hero_deaths += 1; self.hero_timer = C.RESPAWN_DELAY
-            else: self.ogre_deaths += 1; self.ogre_timer = C.RESPAWN_DELAY
+            else: self.ogre_deaths += 1
         else:
             self.events.append(('hurt', tgt.kind))
             tgt.set_state('hurt')
             if tgt is self.hero: tgt.invuln = tgt.duration(self.timing) + C.HURT_INVULN_EXTRA
             elif C.OGRE_HURT_INVULN: tgt.invuln = tgt.duration(self.timing) + C.OGRE_HURT_INVULN_EXTRA
-            if tgt is self.ogre: self.ai_wait = None
+            if not tgt.is_hero: tgt.ai_wait = None
 
     def heal(self, f, amount):
         """Restores life (capped at max_hp) with the heal effect and sound. Any healing item should go through here."""
@@ -290,9 +320,9 @@ class World:
             if f.state in ('attack', 'hurt') and f.t >= f.duration(self.timing):
                 was_attack = f.state == 'attack'
                 f.set_state('idle')
-                if f is self.ogre:
-                    if was_attack: self.ai_cooldown = self.rng.uniform(*C.OGRE_COOLDOWN)
-                    else: self.ai_cooldown = 0.0; self.ai_wait = self.rng.uniform(*C.OGRE_RETALIATE_WAIT)
+                if not f.is_hero:
+                    if was_attack: f.ai_cooldown = self.rng.uniform(*C.OGRE_COOLDOWN)
+                    else: f.ai_cooldown = 0.0; f.ai_wait = self.rng.uniform(*C.OGRE_RETALIATE_WAIT)
 
     def _respawns(self, dt):
         if self.hero_timer is not None:
@@ -303,13 +333,13 @@ class World:
                 self.hero = Fighter('knight', nx, +1, invuln=C.SPAWN_INVULN)
                 self.cam_off = old_cam - (nx - C.SCREEN_W / 2)      # camera keeps its place, then glides
                 self.events.append(('spawn', 'knight'))
-        if self.ogre_timer is not None:
-            self.ogre_timer -= dt
-            if self.ogre_timer <= 0:
-                self.ogre_timer = None; self.bury(self.ogre)
-                self.ogre = Fighter('ogre', self.cam_x() + C.SCREEN_W + C.OGRE_SPAWN_MARGIN, -1)
-                self.ai_wait = None; self.ai_cooldown = 0.6
-                self.events.append(('spawn', 'ogre'))
+        for e in list(self.enemies):                       # bury the dead after RESPAWN_DELAY
+            if e.respawn_t is not None:
+                e.respawn_t -= dt
+                if e.respawn_t <= 0: self.bury(e); self.enemies.remove(e)
+        while len(self.enemies) < self.spawn_target:       # endless mode: keep the quota filled, entering from the right
+            e = Fighter('ogre', self.cam_x() + C.SCREEN_W + C.OGRE_SPAWN_MARGIN, -1)
+            e.ai_cooldown = 0.6; self.enemies.append(e); self.events.append(('spawn', 'ogre'))
 
 
 def _stairs(x, direction):

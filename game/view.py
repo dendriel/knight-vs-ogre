@@ -94,7 +94,7 @@ class View:
         for f in world.corpses:
             if -80 < f.x - cx < C.SCREEN_W + 80:
                 self.blit_char(surf, f.kind, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)))
-        for f in sorted(world.fighters(), key=lambda q: q.kind != 'ogre'):
+        for f in sorted(world.fighters(), key=lambda q: q is not world.hero):
             self.blit_char(surf, f.kind, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)))
         # layer order: scenery -> boxes -> bodies -> fighters -> pickups (in front of the characters) -> effects -> HUD
         for p in world.pickups:                                     # items bob a little once they have landed
