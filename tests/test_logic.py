@@ -642,4 +642,33 @@ w = fresh(0); a = Fighter('archer', 40, -1); w.enemies = [a]; a.ai_cooldown = 5
 x0 = a.x; run(w, 0.6, Inputs()); assert a.x > x0 + 15
 print('36 ok: archer keeps distance, lobbed arrow lands on the hero spot and can be dodged')
 
+# 37) T24: shield bearer blocks frontal blows (sword strokes, arrows), is open from behind and to the axe / special / bow-less
+def shield_world(hero_x):
+    w = fresh(0); s = Fighter('shieldman', 40, -1); s.ai_cooldown = 99; w.enemies = [s]; w.hero.x = hero_x; w.hero.facing = 1
+    return w, s
+w, s = shield_world(0.0)
+assert s.max_hp == 30 and s.sheet == 'shieldman' and s.anim == 'guard' and 'guard' in T['shieldman']
+w.update(DT, Inputs(attack=True, attack_pressed=True)); run(w, 0.5, Inputs())
+assert s.hp == 30 and ('block', 'shieldman') in w.events and any(v['name'] == 'block_spark' for v in w.vfx), s.hp
+assert s.state in ('idle', 'walk')                                                       # a block does not stagger it
+# arrows are stopped by the shield too
+w, s = shield_world(0.0); s.x = 150.0
+w.shoot(w.hero, 'straight', 'arrow', damage=10); run(w, 1.0, Inputs()); assert s.hp == 30
+# from behind: the hero is on the other side of its facing -> a normal hit
+w, s = shield_world(80.0); w.hero.facing = -1; s.facing = -1; s.x = 40.0            # shieldman faces left, hero stands to its right
+w.hero.invuln = 0; w._hit(w.hero, s); assert s.hp == 20
+# axe and special ignore the guard
+w, s = shield_world(0.0); w.hero.weapon = dict(id='axe', durability=100.0)
+w.update(DT, Inputs(attack=True, attack_pressed=True)); run(w, 0.5, Inputs()); assert s.hp == 10, s.hp
+w, s = shield_world(0.0); w.combo = C.COMBO_BAR_MAX
+run(w, C.SPECIAL_HOLD_MIN + 0.1, Inputs(attack=True)); w.update(DT, Inputs(attack=False)); run(w, 0.6, Inputs())
+assert s.hp <= 0, s.hp
+# turning takes SHIELD_TURN_DELAY: if the hero goes round it, it keeps facing the old side for that long
+w, s = shield_world(0.0); s.ai_cooldown = 0.0; run(w, 0.1, Inputs()); assert s.facing == -1
+w.hero.x = 200.0; w.hero.y = 0.0
+t = 0.0
+while s.facing == -1 and t < 2.0: w.update(DT, Inputs()); t += DT
+assert 0.35 <= t <= 0.7, t
+print('37 ok: shield blocks frontal sword/arrows, axe/special/rear hits connect, 0.5 s to turn')
+
 print('ALL LOGIC TESTS PASSED')

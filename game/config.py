@@ -12,6 +12,12 @@ ANCHOR_X_FLIP = 33
 HERO_MAX_HP = 100
 OGRE_MAX_HP = 30                   # 3 hits
 MAX_HP = HERO_MAX_HP               # (kept for old code/tests)
+SHIELDMAN_MAX_HP = 30              # as sturdy as an ogre, but only open from behind / to heavy blows
+SHIELDMAN_SPEED = 46.0
+SHIELDMAN_WAIT = (0.5, 0.9)
+SHIELDMAN_COOLDOWN = (1.0, 1.6)
+SHIELD_TURN_DELAY = 0.5            # seconds it takes to turn the shield towards a hero who went round it
+BLOCK_KNOCKBACK = 8.0              # px the shield pushes the attacker's blow back (the defender slides)
 ARCHER_MAX_HP = 15                 # fragile
 ARCHER_SPEED = 48.0
 ARCHER_KEEP_DIST = 170             # it tries to stay about this far from the hero
@@ -57,6 +63,7 @@ COMBO_DAMAGE = (10, 10, 15)        # damage of strokes 1, 2, 3
 COMBO_KNOCKBACK = (14.0, 14.0, 24.0)
 WALK_ANIM_SPEED = 1.2              # ogre walk cycle; keep it proportional to OGRE_SPEED so the feet don't slide
 RUN_ANIM_SPEED = 1.65              # the hero's movement uses the 'run' cycle (~72 px/s per 1.0x), proportional to HERO_SPEED
+SHIELD_WALK_ANIM_SPEED = 1.1
 ARCHER_WALK_ANIM_SPEED = 1.2
 ARCHER_ATTACK_ANIM_SPEED = 1.1        # draw and release (row fps 10): the arrow leaves on frame 4
 SPEAR_WALK_ANIM_SPEED = 1.25         # spearman walk cycle, proportional to SPEARMAN_SPEED (52)
@@ -72,6 +79,7 @@ ANIM_SPEED = {
     'soldier': {'attack': SOLDIER_ATTACK_ANIM_SPEED, 'walk': SOLDIER_WALK_ANIM_SPEED},
     'spearman': {'attack': SPEAR_ATTACK_ANIM_SPEED, 'walk': SPEAR_WALK_ANIM_SPEED},
     'archer': {'attack': ARCHER_ATTACK_ANIM_SPEED, 'walk': ARCHER_WALK_ANIM_SPEED},
+    'shieldman': {'attack': SOLDIER_ATTACK_ANIM_SPEED, 'walk': SHIELD_WALK_ANIM_SPEED},
     'vfx': {'sword_slash': KNIGHT_ATTACK_ANIM_SPEED, 'sword_slash_2': KNIGHT_COMBO2_ANIM_SPEED,
             'sword_slash_3': KNIGHT_COMBO3_ANIM_SPEED, 'axe_slash': ATTACK_ANIM_SPEED,
             'spin_slash': SPECIAL_ANIM_SPEED},

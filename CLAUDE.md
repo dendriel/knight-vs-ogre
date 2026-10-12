@@ -91,7 +91,8 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 | `soldier_spritesheet` | idle(6), walk(10), attack(12, golpe lateral da espada, frames 3-4), hurt(10), death(8) — contrato do ogro; gerado por `enemy_gen.py` (cavaleiro com paleta inimiga) |
 | `spearman_spritesheet` | contrato do ogro (idle, walk, attack(12, estocada, frames 3-4), hurt, death); lança carregada inclinada (`hold='spear'`); `enemy_gen.py` |
 | `archer_spritesheet` | contrato do ogro; `attack` = poses do arco (a flecha sai no frame 4, projétil `lob`); arco carregado nas demais linhas |
-| `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6), heal(10), coin_glint(12), sword_slash_2(12), sword_slash_3(12), spin_slash(12, aro do especial), charge(10, brasas enquanto segura) |
+| `shieldman_spritesheet` | contrato do ogro + linha `guard`(6, escudo erguido; é o estado parado do jogo) **no final**; escudo na mão livre |
+| `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6), heal(10), coin_glint(12), sword_slash_2(12), sword_slash_3(12), spin_slash(12, aro do especial), charge(10, brasas enquanto segura), block_spark(14, na frente do escudo) |
 
 - **Âncora**: coluna do quadril = 30 no frame normal, **33 quando espelhado** (63−30); linha do chão = 58 dentro do frame
   (no jogo `GROUND_Y = 217`). Posicione sempre por essa coluna, senão o sprite "pula" ao virar.

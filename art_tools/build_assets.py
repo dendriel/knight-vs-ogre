@@ -14,7 +14,8 @@ ASSETS = os.path.join(HERE, '..', 'assets')
 SHEETS = ['knight_spritesheet.png', 'knight_spritesheet.json', 'knight_axe_spritesheet.png', 'knight_axe_spritesheet.json',
           'knight_bow_spritesheet.png', 'knight_bow_spritesheet.json', 'knight_xbow_spritesheet.png',
           'knight_xbow_spritesheet.json', 'soldier_spritesheet.png', 'soldier_spritesheet.json', 'spearman_spritesheet.png',
-          'spearman_spritesheet.json', 'archer_spritesheet.png', 'archer_spritesheet.json', 'ogre_spritesheet.png', 'ogre_spritesheet.json',
+          'spearman_spritesheet.json', 'archer_spritesheet.png', 'archer_spritesheet.json', 'shieldman_spritesheet.png',
+          'shieldman_spritesheet.json', 'ogre_spritesheet.png', 'ogre_spritesheet.json',
           'vfx_spritesheet.png', 'vfx_spritesheet.json']
 SCENERY = ['tree.png', 'medieval_house.png', 'well.png', 'street_tile.png', 'box.png',
            'potion.png', 'coin_bag.png', 'coin.png',

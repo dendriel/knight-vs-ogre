@@ -156,6 +156,19 @@ def spear(h, a):
     return layer(f)
 
 
+def shield(c):
+    """Heater shield held in front of the body, centred on the free hand (T24): steel rim, coloured face, gold boss."""
+    x, y = rd(c)
+    def f(d):
+        d.polygon([(x - 4, y - 8), (x + 4, y - 8), (x + 5, y + 2), (x, y + 8), (x - 5, y + 2)], fill=PN['hl'])
+        d.polygon([(x - 3, y - 7), (x + 3, y - 7), (x + 4, y + 1), (x, y + 6), (x - 4, y + 1)], fill=RED)
+        d.polygon([(x - 3, y - 7), (x, y - 7), (x, y + 6), (x - 4, y + 1)], fill=RED_D)
+        d.line([(x - 4, y - 8), (x + 4, y - 8)], fill=PN['hl'])
+        d.rectangle([x - 1, y - 3, x + 1, y - 1], fill=GOLD)
+        d.line([(x, y - 6), (x, y + 4)], fill=GOLD)
+    return layer(f)
+
+
 def trail(h, a0, a1, r):
     def f(d):
         for rr, col in ((r, TRAIL1), (r - 3, TRAIL2)):
@@ -221,6 +234,8 @@ def render(p):
     if p.get('wback'):
         for l in reversed(held(kind, p['wpos'], p['wang'])): order.insert(0, l)
     if p.get('trail'): order.append(trail(hand, *p['trail']))
+    if p.get('shield'):                                      # the free hand's shield goes over the torso, under the weapon arm
+        order.insert(order.index(armN), shield((hF[0] + 4, hF[1] + 1)))
     wp = p.get('wpos') or hand
     if not p.get('wback'): order.extend(held(kind, wp, p['wang']))
     for l in order: img.alpha_composite(l)

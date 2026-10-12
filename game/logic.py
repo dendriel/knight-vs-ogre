@@ -23,6 +23,11 @@ FIGHTER_DEFS = {
     'knight': dict(hero=True, max_hp=C.HERO_MAX_HP, speed=C.HERO_SPEED, half_width=8, sheet='knight', ai=None,
                    anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, primary='sword',
                    slash='sword_slash', reach=C.KNIGHT_REACH, label='HERÓI'),
+    'shieldman': dict(hero=False, max_hp=C.SHIELDMAN_MAX_HP, speed=C.SHIELDMAN_SPEED, half_width=9, sheet='shieldman',
+                      ai='guard', guard=True, turn_delay=C.SHIELD_TURN_DELAY,
+                      anim={'idle': 'guard', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='shield_sword',
+                      slash='sword_slash', reach=C.KNIGHT_REACH, label='ESCUDEIRO',
+                      ai_params=dict(wait=C.SHIELDMAN_WAIT, cooldown=C.SHIELDMAN_COOLDOWN)),
     'archer': dict(hero=False, max_hp=C.ARCHER_MAX_HP, speed=C.ARCHER_SPEED, half_width=8, sheet='archer', ai='ranged_lob',
                    anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='archer_shot',
                    slash=None, reach=(0, 0), label='ARQUEIRO',
@@ -84,6 +89,9 @@ ATTACKS = {
     'archer_shot': dict(anim='attack', damage=C.DAMAGE, reach=(0, 0), active=(), slash_frame=4, slash=None,
                         move_factor=0.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0, wear=0.0, next=None,
                         shoot=dict(kind='lob', sprite='arrow', flight=C.LOB_FLIGHT, apex=C.LOB_APEX, radius=C.LOB_RADIUS)),
+    'shield_sword': dict(anim='attack', damage=C.DAMAGE, reach=C.KNIGHT_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
+                         slash='sword_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
+                         wear=0.0, next=None),
     'ogre_axe': dict(anim='attack', damage=C.DAMAGE, reach=C.OGRE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                      slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
                      wear=0.0, next=None),
@@ -120,7 +128,7 @@ class Fighter:
     def __init__(self, kind, x, facing, hp=None, invuln=0.0, elite=None):
         self.defn = FIGHTER_DEFS[kind]; self.max_hp = self.defn['max_hp']
         self.ai_p = dict(AI_DEFAULT, **self.defn.get('ai_params', {}))
-        self.elite = elite; self.mods = ELITE_MODS.get(elite, {}); self.token = False
+        self.elite = elite; self.mods = ELITE_MODS.get(elite, {}); self.token = False; self.turn_t = 0.0
         if self.mods:                                           # elites: more / less life, shorter pauses
             self.max_hp = max(1, int(round(self.max_hp * self.mods['hp'])))
             self.ai_p['wait'] = tuple(v * self.mods['wait'] for v in self.ai_p['wait'])
@@ -421,16 +429,26 @@ class World:
 
     def _ai_spear(self, o, dt): self._ai_melee(o, dt)       # same plan, other numbers (attack_dist / retreat_dist)
 
+    def _face(self, o, d, dt):
+        """Turns an enemy towards `d`. Shield bearers take `turn_delay` seconds to bring the shield round (T24)."""
+        delay = o.defn.get('turn_delay', 0.0)
+        if o.facing == d: o.turn_t = 0.0; return
+        if delay <= 0: o.facing = d; return
+        o.turn_t += dt
+        if o.turn_t >= delay: o.facing = d; o.turn_t = 0.0
+
+    def _ai_guard(self, o, dt): self._ai_melee(o, dt)          # shield bearer: melee plan, the guard is in _hit()
+
     def _ai_prelude(self, o, dt):
         """Shared first steps of every behaviour. Returns the hero when the enemy is free to decide something."""
         h = self.hero
         if o.state == 'attack' and h.state != 'dead' and abs(h.x - o.x) > 2 and o.frame_index(self.timing) < C.ACTIVE_FRAMES[0]:
-            o.facing = 1 if h.x > o.x else -1               # wind-up: keep tracking a hero who walks through him
+            self._face(o, 1 if h.x > o.x else -1, dt)       # wind-up: keep tracking a hero who walks through him
         if not o.can_act(): return None
         if h.state == 'dead':
             if o.state != 'idle': o.set_state('idle')
             return None
-        if abs(h.x - o.x) > 2: o.facing = 1 if h.x > o.x else -1        # no flip-flop when the hero is right on top of him
+        if abs(h.x - o.x) > 2: self._face(o, 1 if h.x > o.x else -1, dt)   # no flip-flop when the hero is right on top of him
         if o.ai_cooldown > 0: o.ai_cooldown -= dt
         return h
 
@@ -513,6 +531,12 @@ class World:
         """A connected blow. `at` = ATTACKS-like dict (damage, knockback); `src_x` = where it came from (a projectile
         or an area hit instead of the attacker's own position)."""
         at = at or ATTACKS[atk.attack_id]; sx = atk.x if src_x is None else src_x
+        if (tgt.defn.get('guard') and tgt.state in ('idle', 'walk') and not at.get('guard_break')
+                and (sx - tgt.x) * tgt.facing > 0):         # shield up and the blow comes from the front (T24)
+            self.add_vfx('block_spark', tgt.x, tgt.facing < 0, y=tgt.y)
+            self.events.append(('block', tgt.kind)); self.shake = C.SHAKE_TIME * 0.5
+            tgt.kb_dir = 1 if tgt.x >= sx else -1; tgt.kb_t = C.KNOCKBACK_TIME; tgt.kb_speed = C.BLOCK_KNOCKBACK / C.KNOCKBACK_TIME
+            return False
         self.apply_damage(atk, tgt, int(round(at['damage'] * atk.mods.get('damage', 1.0))))
         self.add_vfx('blood_splash', tgt.x, tgt.x > sx, y=tgt.y)
         self.shake = C.SHAKE_TIME

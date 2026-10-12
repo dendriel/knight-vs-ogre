@@ -539,6 +539,60 @@
         "w": 64,
         "h": 64
       }
+    },
+    {
+      "filename": "block_spark_0",
+      "frame": {
+        "x": 0,
+        "y": 640,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "block_spark_1",
+      "frame": {
+        "x": 64,
+        "y": 640,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "block_spark_2",
+      "frame": {
+        "x": 128,
+        "y": 640,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "block_spark_3",
+      "frame": {
+        "x": 192,
+        "y": 640,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "block_spark_4",
+      "frame": {
+        "x": 256,
+        "y": 640,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "block_spark_5",
+      "frame": {
+        "x": 320,
+        "y": 640,
+        "w": 64,
+        "h": 64
+      }
     }
   ],
   "animations": {
@@ -661,6 +715,18 @@
       ],
       "fps": 10,
       "loop": false
+    },
+    "block_spark": {
+      "frames": [
+        "block_spark_0",
+        "block_spark_1",
+        "block_spark_2",
+        "block_spark_3",
+        "block_spark_4",
+        "block_spark_5"
+      ],
+      "fps": 14,
+      "loop": false
     }
   },
   "meta": {
@@ -669,6 +735,6 @@
       64,
       64
     ],
-    "note": "sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life (any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held. Same anchor as the character frames."
+    "note": "sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life (any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held; block_spark: on the front of a shielded defender. Same anchor as the character frames."
   }
 }

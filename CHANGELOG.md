@@ -19,6 +19,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T22: novo inimigo **soldado** (cavaleiro com armadura violeta): `SOLDIER_MAX_HP` 20 (2 golpes), `SOLDIER_SPEED` 62 (ogro 50), espera `SOLDIER_WAIT` 0,25–0,5 s e descanso `SOLDIER_COOLDOWN` 0,7–1,1 s, golpe de espada de 10. HUD mostra o nome do inimigo mais próximo (`label`) e a variante elite.
 - T21: novo inimigo **lanceiro** (armadura de couro, tabardo verde): `SPEARMAN_MAX_HP` 25, `SPEARMAN_SPEED` 52, alcance `SPEARMAN_REACH` (18, 62) — acerta a ~55 px onde o ogro não alcança, mas tem **zona morta** de 18 px (herói colado não é atingido); para a `SPEARMAN_ATTACK_DIST` 56, espera 0,4–0,7 s e descansa 1,0–1,5 s; se o herói chega a menos de `SPEARMAN_RETREAT_DIST` 24 durante o descanso ele recua.
 - T23: novo inimigo **arqueiro** (couro bege, tabardo laranja): `ARCHER_MAX_HP` 15, fica a ~`ARCHER_KEEP_DIST` 170 px do herói (recua se chegar a menos de `ARCHER_TOO_CLOSE` 110, avança se longe), mira 0,45–0,8 s e solta a flecha no frame 4 em **parábola** (`LOB_FLIGHT` 0,95 s, `LOB_APEX` 70) para onde o herói estava: um marcador vermelho/laranja no chão mostra onde cai (raio `LOB_RADIUS` 12) e dá tempo de desviar. Não usa ficha de ataque.
+- T24: novo inimigo **escudeiro** (armadura azul): `SHIELDMAN_MAX_HP` 30. **Bloqueia golpes e flechas de frente** (sem dano, faísca `block_spark`, recua `BLOCK_KNOCKBACK` 8 px, não fica atordoado); só toma dano pelas costas, enquanto ataca/atordoado, ou de golpes com `guard_break` (machado e giro especial). Vira o escudo com atraso `SHIELD_TURN_DELAY` 0,5 s, então dá para passar por trás (os personagens se atravessam).
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -35,6 +36,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T22: `soldier_spritesheet` gerado por `art_tools/enemy_gen.py` (rig do cavaleiro com paleta inimiga via override temporário das cores do `sprite_rig`; sem tocar na saída do cavaleiro).
 - T21: camada `spear` no `sprite_rig.py` (lança de duas mãos, ponta de aço e borla vermelha; `held()` e a mão livre agarram a haste), pose `atk_spear` e `spearman_spritesheet`.
 - T23: `archer_spritesheet` (poses de arco como linha de ataque, arco carregado nas outras) gerado por `enemy_gen.py`.
+- T24: camada `shield` no `sprite_rig.py` (`shield=True` na pose), `shieldman_spritesheet` com linha `guard` e efeito `block_spark`.
 
 ### Contrato de arte
 - T11: `knight_spritesheet` ganha as linhas 11 (`attack_sword_2`) e 12 (`attack_sword_3`), frames de golpe 3–4; `vfx_spritesheet` ganha as linhas 6 (`sword_slash_2`) e 7 (`sword_slash_3`). Linhas anteriores inalteradas pixel a pixel.
@@ -43,6 +45,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T14: sheets `knight_bow` e `knight_xbow` com as **mesmas linhas e nomes** do `knight_spritesheet`; `sprite_rig.render` ganha `hold=` ('sword' | 'axe' | 'bow' | 'xbow') para carregar outra arma com uma pose de corpo a corpo (`held()`).
 - T22: `soldier_spritesheet` = idle(6), walk(10), attack(12), hurt(10), death(8) (contrato do ogro); golpe nos frames 3–4 reaproveita `sword_slash`.
 - T21: `spearman_spritesheet` = idle(6), walk(10), attack(12), hurt(10), death(8); `render` aceita `weapon='spear'` / `hold='spear'`.
+- T24: `shieldman_spritesheet` = idle(6, não usado), walk(10), attack(12), hurt(10), death(8) + `guard`(6) no final (o jogo mostra `guard` como estado parado); `vfx_spritesheet` ganha a linha 10 (`block_spark`).
 
 ### Áudio
 - T10: pegar poção reaproveita o SFX `coin_pickup`; beber usa o `heal` existente (evento `potion`).
@@ -70,6 +73,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T22: `FIGHTER_DEFS['soldier']`, `ATTACKS['soldier_sword']`, `World.focus_enemy()`; `enemy_gen.py` é o gerador de todas as sheets de inimigos (T21/T23/T24/T25). Teste 34.
 - T21: IA `spear` (`_ai_spear`) com `retreat_dist` em `AI_DEFAULT`; `ATTACKS['spearman_thrust']`. Teste 35.
 - T23: IA `ranged_lob` (`_ai_ranged_lob`), `ATTACKS['archer_shot']` com `shoot` do tipo `lob`. Teste 36.
+- T24: `FIGHTER_DEFS[x].guard/turn_delay`, `World._face()` (virada com atraso), bloqueio dentro de `_hit` (evento `block`), IA `guard`. Teste 37.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

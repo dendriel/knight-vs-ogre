@@ -52,7 +52,7 @@ def write_sheet(out, name, rows, render, pal_module=SR, pal=None, post=None, ext
                 sheet.alpha_composite(img, (i * F, r * F))
                 atlas['frames'].append({'filename': f'{an}_{i}', 'frame': {'x': i * F, 'y': r * F, 'w': F, 'h': F}})
             atlas['animations'][an] = {'frames': [f'{an}_{i}' for i in range(6)], 'fps': fps,
-                                       'loop': not an.startswith(('attack', 'hurt', 'death', 'guard'))}
+                                       'loop': not an.startswith(('attack', 'hurt', 'death'))}
     sheet.save(f'{out}/{name}_spritesheet.png')
     json.dump(atlas, open(f'{out}/{name}_spritesheet.json', 'w'), indent=2)
     print(name, 'ok', sheet.size)
@@ -80,12 +80,34 @@ ARCHER = dict(
     GOLD=C(226, 188, 84), LEATH=C(108, 72, 44), LEATH_D=C(68, 46, 28))
 
 
+SHIELDMAN = dict(
+    PN=dict(shade=C(60, 76, 108), base=C(122, 146, 190), hl=C(200, 218, 244)),   # bright blue steel
+    PF=dict(shade=C(34, 44, 70), base=C(76, 92, 128), hl=C(110, 128, 164)),
+    RED=C(40, 84, 176), RED_D=C(22, 52, 118),                                    # blue tabard / shield face
+    GOLD=C(238, 198, 84), LEATH=C(112, 76, 46), LEATH_D=C(70, 48, 30))
+
+
+def shield_rows():
+    """soldier rows with the shield in the free hand, plus an appended `guard` row (shield raised, blade low)."""
+    def sh(fn, hand=None):
+        def g(i):
+            p = dict(fn(i), shield=True)
+            if hand: p['handF'] = hand
+            return p
+        return g
+    rows = [('idle', sh(KG.idle, (7, 3)), 6), ('walk', sh(KG.walk, (7, 3)), 10), ('attack', sh(KG.atk_sword), 12),
+            ('hurt', sh(KG.hurt), 10), ('death', sh(KG.death), 8), ('guard', sh(KG.idle, (9, 0)), 6)]
+    return rows
+
+
 def build(out):
     # T22 soldier: the knight with an enemy palette; stroke 1 of the sword is its attack (frames 3-4 hit)
     write_sheet(out, 'soldier', human_rows(KG.atk_sword), SR.render, pal=SOLDIER)
     # T21 spearman: same rig, green palette, two-handed spear (carried tilted; thrust is the attack row)
     write_sheet(out, 'spearman', human_rows(KG.atk_spear, hold='spear'), SR.render, pal=SPEARMAN)
     # T23 archer: bow carried in the melee rows, the bow-draw poses as the attack row (arrow leaves on frame 4)
+    # T24 shield knight: shield in the free hand + a guard row appended at the end
+    write_sheet(out, 'shieldman', shield_rows(), SR.render, pal=SHIELDMAN)
     write_sheet(out, 'archer', human_rows(KG.atk_bow, hold='bow'), SR.render, pal=ARCHER)
 
 

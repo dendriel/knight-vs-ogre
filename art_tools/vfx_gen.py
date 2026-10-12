@@ -290,10 +290,26 @@ def charge(i):
             if k % 2: put(im, cx + ox, y + 1, GC_DARK, .8)
     return im
 
+# ---- 10) block spark: a flash on the front of a shield when it stops a blow (anchor of the defender, faces right) ----
+def block_spark(i):
+    im = Image.new('RGBA', (F, F), (0, 0, 0, 0)); cx, cy = 45, 36
+    arm = [3, 7, 8, 6, 3, 0][i]
+    for d in range(1, arm + 1):
+        col = GC_WHITE if d <= 2 else (GC_LIGHT if d <= 5 else GC_GOLD)
+        for dx, dy in ((d, 0), (-d, 0), (0, d), (0, -d), (d - 1, d - 1), (-(d - 1), d - 1), (d - 1, -(d - 1)), (-(d - 1), -(d - 1))):
+            put(im, cx + dx, cy + dy, col, 1.0 if i < 4 else .5)
+    if arm: put(im, cx, cy, GC_WHITE)
+    rnd = random.Random(41)
+    for k in range(8):
+        a = rnd.uniform(-math.pi * 0.8, math.pi * 0.8); v = rnd.uniform(3, 7)
+        if i == 0: continue
+        put(im, cx + math.cos(a) * v * i * .6, cy + math.sin(a) * v * i * .6 + .5 * i * i * .2, GC_LIGHT if k % 2 else GC_GOLD, 1 if i < 4 else .5)
+    return im
+
 EFFECTS = [('sword_slash', sword_slash, 12), ('axe_slash', axe_slash, 10), ('blood_splash', blood, 12), ('spirit', spirit, 6),
            ('heal', heal, 10), ('coin_glint', coin_glint, 12),
            ('sword_slash_2', sword_slash_2, 12), ('sword_slash_3', sword_slash_3, 12),
-           ('spin_slash', spin_slash, 12), ('charge', charge, 10)]
+           ('spin_slash', spin_slash, 12), ('charge', charge, 10), ('block_spark', block_spark, 14)]
 
 if __name__ == '__main__':
     out = sys.argv[1] if len(sys.argv) > 1 else './out'; os.makedirs(out, exist_ok=True)
@@ -301,7 +317,7 @@ if __name__ == '__main__':
     atlas = {'frames': [], 'animations': {}, 'meta': {'image': 'vfx_spritesheet.png', 'frame_size': [64, 64], 'note':
              'sword_slash: play together with knight attack_sword frame 3+i; axe_slash: with ogre attack frame 3+i; '
              'blood_splash: on the victim (flip with it); spirit: on a body lying on the ground; heal: on whoever recovers life '
-             '(any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held. Same anchor as the character frames.'}}
+             '(any healing item); coin_glint: on the hero when he picks up gold; sword_slash_2/3: combo strokes, with knight attack_sword_2/3 frame 3+i; spin_slash: with knight attack_special (centered on the hip); charge: while the special is held; block_spark: on the front of a shielded defender. Same anchor as the character frames.'}}
     for r, (name, fn, fps) in enumerate(EFFECTS):
         for i in range(6):
             sheet.alpha_composite(fn(i), (i * F, r * F))
