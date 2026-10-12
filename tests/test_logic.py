@@ -583,4 +583,20 @@ assert vet.mods['tint'] and bru.mods['tint'] != vet.mods['tint']
 w = World(T); x = w.spawn_enemy('ogre', 300, elite='veteran'); assert x in w.enemies and x.elite == 'veteran'
 print('33 ok: attack tokens cap the crowd, elites are faster / sturdier / harder')
 
+# 34) T22: soldier: 20 hp, faster than the ogre, shorter wait, hits for 10 with the sword stroke, own sheet
+w = fresh(0); s = Fighter('soldier', 200, -1); w.enemies = [s]
+assert s.max_hp == 20 and s.speed > FIGHTER_DEFS['ogre']['speed'] and s.sheet == 'soldier' and s.ai_p['wait'] == C.SOLDIER_WAIT
+assert 'soldier' in T and T['soldier']['attack'] == T['knight']['attack_sword'], 'same stroke speed as the hero stroke 1'
+s.ai_cooldown = 0; w.hero.invuln = 0; w.hero.x = 0.0
+for _ in range(int(10 / DT)):
+    w.hero.invuln = 0 if w.hero.hp == 100 else w.hero.invuln
+    w.update(DT, Inputs())
+    if w.hero.hp < 100: break
+assert w.hero.hp == 90 and s.state in ('attack', 'idle')                      # one stroke = 10
+w2 = fresh(0); s2 = Fighter('soldier', 30, -1); w2.enemies = [s2]; s2.ai_cooldown = 99
+w2.ogre.invuln = 0; w2._hit(w2.hero, s2); w2.ogre.invuln = 0 if False else 0
+s2.invuln = 0; w2._hit(w2.hero, s2); assert s2.state == 'dead' and w2.stats['kills'] == 1       # 2 hits kill it
+assert w2.focus_enemy() is s2 and FIGHTER_DEFS['soldier']['label'] == 'SOLDADO'
+print('34 ok: soldier (20 hp, 62 px/s, sword stroke, own sheet)')
+
 print('ALL LOGIC TESTS PASSED')

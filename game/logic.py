@@ -21,10 +21,14 @@ ELITE_MODS = {
 FIGHTER_DEFS = {
     'knight': dict(hero=True, max_hp=C.HERO_MAX_HP, speed=C.HERO_SPEED, half_width=8, sheet='knight', ai=None,
                    anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, primary='sword',
-                   slash='sword_slash', reach=C.KNIGHT_REACH),
+                   slash='sword_slash', reach=C.KNIGHT_REACH, label='HERÓI'),
+    'soldier': dict(hero=False, max_hp=C.SOLDIER_MAX_HP, speed=C.SOLDIER_SPEED, half_width=8, sheet='soldier', ai='melee',
+                    anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='soldier_sword',
+                    slash='sword_slash', reach=C.KNIGHT_REACH, label='SOLDADO',
+                    ai_params=dict(wait=C.SOLDIER_WAIT, cooldown=C.SOLDIER_COOLDOWN)),
     'ogre': dict(hero=False, max_hp=C.OGRE_MAX_HP, speed=C.OGRE_SPEED, half_width=10, sheet='ogre', ai='melee',
                  anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='ogre_axe',
-                 slash='axe_slash', reach=C.OGRE_REACH),
+                 slash='axe_slash', reach=C.OGRE_REACH, label='OGRO'),
 }
 
 # Every attack is data (T03). Adding one = one entry here + one row in a sprite sheet.
@@ -60,6 +64,9 @@ ATTACKS = {
     'special': dict(anim='attack_special', damage=C.SPECIAL_DAMAGE, reach=(-C.SPECIAL_RADIUS, C.SPECIAL_RADIUS),
                     active=(2, 3, 4, 5), slash_frame=1, slash='spin_slash', move_factor=0.0, knockback=C.SPECIAL_KNOCKBACK,
                     guard_break=True, cooldown=0.0, wear=0.0, next=None, rehit=4, ignore_invuln=True, ring=True),
+    'soldier_sword': dict(anim='attack', damage=C.DAMAGE, reach=C.KNIGHT_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
+                          slash='sword_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
+                          wear=0.0, next=None),
     'ogre_axe': dict(anim='attack', damage=C.DAMAGE, reach=C.OGRE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                      slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
                      wear=0.0, next=None),
@@ -355,6 +362,12 @@ class World:
         e = Fighter(kind, x, facing, elite=elite); e.ai_cooldown = 0.6
         self.enemies.append(e); self.events.append(('spawn', kind))
         return e
+
+    def focus_enemy(self):
+        """The living enemy shown in the HUD: the nearest to the hero (None when nobody is alive)."""
+        alive = [e for e in self.enemies if e.state != 'dead']
+        if not alive: return self.ogre
+        return min(alive, key=lambda e: (abs(e.x - self.hero.x), id(e)))
 
     def free_tokens(self):
         """Attack tokens left: only `max_attackers` enemies may prepare / throw a blow at once (T26)."""

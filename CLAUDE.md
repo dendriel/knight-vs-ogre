@@ -88,6 +88,7 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 | `ogre_spritesheet` | idle(6), walk(10), attack(10, machado), hurt(10), death(8) |
 | `knight_axe_spritesheet` | **mesmas linhas e nomes do `knight_spritesheet`**, mas o herói empunha o machado (arquivo gerado por `knight_gen.py write_sheet(out, 'axe')`); o jogo usa a linha `attack_axe` |
 | `knight_bow_spritesheet`, `knight_xbow_spritesheet` | idem: **mesmas linhas e nomes** do `knight_spritesheet`, o herói carregando arco / besta nas poses de corpo a corpo (`render` aceita `hold='bow'/'xbow'`); o jogo usa `attack_bow` / `attack_crossbow` (flecha/virote nasce no frame 4) |
+| `soldier_spritesheet` | idle(6), walk(10), attack(12, golpe lateral da espada, frames 3-4), hurt(10), death(8) — contrato do ogro; gerado por `enemy_gen.py` (cavaleiro com paleta inimiga) |
 | `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6), heal(10), coin_glint(12), sword_slash_2(12), sword_slash_3(12), spin_slash(12, aro do especial), charge(10, brasas enquanto segura) |
 
 - **Âncora**: coluna do quadril = 30 no frame normal, **33 quando espelhado** (63−30); linha do chão = 58 dentro do frame

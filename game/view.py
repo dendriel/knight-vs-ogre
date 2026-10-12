@@ -202,9 +202,10 @@ class View:
             x += 58
         surf.blit(self.coin_icon, (x, y)); self._text(surf, f'{world.gold}', x + 12, y, (255, 214, 80))
         self._text(surf, f'Derrotas: {world.hero_deaths}', x0, y + 15, (255, 220, 150))
-        o = world.ogre                                           # enemy panel (the nearest / current enemy)
+        o = world.focus_enemy()                                  # enemy panel (the nearest living enemy)
         if o is not None:
-            self._text(surf, 'OGRO', C.SCREEN_W - 10, 6, (255, 220, 200), self.font_big, 'right')
+            label = o.defn['label'] + (' ' + o.elite.upper() if o.elite else '')
+            self._text(surf, label, C.SCREEN_W - 10, 6, (255, 220, 200), self.font_big, 'right')
             self._bar(surf, C.SCREEN_W - 10, 20, o.hp, o.max_hp, (222, 80, 60), 'right')
             self._text(surf, f'{o.hp}', C.SCREEN_W - 156, 18, font=self.font_big, align='right')
         self._text(surf, f'Derrotas: {world.ogre_deaths}', C.SCREEN_W - 10, 38, (255, 220, 150), align='right')

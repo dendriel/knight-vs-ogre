@@ -12,6 +12,10 @@ ANCHOR_X_FLIP = 33
 HERO_MAX_HP = 100
 OGRE_MAX_HP = 30                   # 3 hits
 MAX_HP = HERO_MAX_HP               # (kept for old code/tests)
+SOLDIER_MAX_HP = 20                # 2 sword strokes
+SOLDIER_SPEED = 62.0               # faster than the ogre (50)
+SOLDIER_WAIT = (0.25, 0.5)         # shorter window than the ogre's: it is the quick enemy
+SOLDIER_COOLDOWN = (0.7, 1.1)
 DAMAGE = 10                        # damage of every hit (both sides)
 HERO_SPEED = 120.0                 # pixels per second (was 84)
 OGRE_SPEED = 50.0
@@ -40,12 +44,15 @@ COMBO_DAMAGE = (10, 10, 15)        # damage of strokes 1, 2, 3
 COMBO_KNOCKBACK = (14.0, 14.0, 24.0)
 WALK_ANIM_SPEED = 1.2              # ogre walk cycle; keep it proportional to OGRE_SPEED so the feet don't slide
 RUN_ANIM_SPEED = 1.65              # the hero's movement uses the 'run' cycle (~72 px/s per 1.0x), proportional to HERO_SPEED
+SOLDIER_WALK_ANIM_SPEED = 1.55      # soldier walk cycle, proportional to SOLDIER_SPEED (62)
+SOLDIER_ATTACK_ANIM_SPEED = KNIGHT_ATTACK_ANIM_SPEED   # same sword stroke as the hero's stroke 1 AND its slash effect
 ANIM_SPEED = {
     'knight': {'attack_special': SPECIAL_ANIM_SPEED, 'attack_sword': KNIGHT_ATTACK_ANIM_SPEED, 'attack_sword_2': KNIGHT_COMBO2_ANIM_SPEED,
                'attack_sword_3': KNIGHT_COMBO3_ANIM_SPEED, 'attack_axe': AXE_ANIM_SPEED,
                'attack_bow': BOW_ANIM_SPEED, 'attack_crossbow': XBOW_ANIM_SPEED,
                'run': RUN_ANIM_SPEED, 'jump_up': 1.6},
     'ogre': {'attack': ATTACK_ANIM_SPEED, 'walk': WALK_ANIM_SPEED},
+    'soldier': {'attack': SOLDIER_ATTACK_ANIM_SPEED, 'walk': SOLDIER_WALK_ANIM_SPEED},
     'vfx': {'sword_slash': KNIGHT_ATTACK_ANIM_SPEED, 'sword_slash_2': KNIGHT_COMBO2_ANIM_SPEED,
             'sword_slash_3': KNIGHT_COMBO3_ANIM_SPEED, 'axe_slash': ATTACK_ANIM_SPEED,
             'spin_slash': SPECIAL_ANIM_SPEED},
