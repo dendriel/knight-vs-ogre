@@ -14,7 +14,8 @@ class View:
     def __init__(self, assets_dir, timing):
         self.timing = timing; self.assets = assets_dir
         self.frames = {}           # (sheet, anim, flipped) -> [6 surfaces]
-        for sheet in ('knight', 'ogre', 'vfx'): self._load_sheet(sheet)
+        for fn in sorted(os.listdir(assets_dir)):                  # every *_spritesheet.png (characters, weapons, vfx)
+            if fn.endswith('_spritesheet.png'): self._load_sheet(fn[:-len('_spritesheet.png')])
         load = lambda n: pygame.image.load(os.path.join(assets_dir, n + '.png')).convert_alpha()
         self.props = {n: load(n) for n in ('medieval_house', 'tree', 'well')}
         self.box = load('box')
@@ -103,7 +104,7 @@ class View:
         # layer order: scenery -> boxes -> bodies -> fighters -> pickups (in front of the characters) -> effects -> HUD
         for p in world.pickups:                                     # items bob a little once they have landed
             if -40 < p.x - cx < C.SCREEN_W + 40:
-                img = self.pickup_img[p.kind]; bob = int(round(1.4 * math.sin(p.t * 4))) if p.y <= 0 else 0
+                img = self.icons[p.item] if p.kind == 'weapon' else self.pickup_img[p.kind]; bob = int(round(1.4 * math.sin(p.t * 4))) if p.y <= 0 else 0
                 surf.blit(img, (int(round(p.x)) - cx - img.get_width() // 2,
                                 C.GROUND_Y - (img.get_height() - 2) - int(round(p.y)) - bob + oy))
         self._projectiles(surf, world, cx, oy)

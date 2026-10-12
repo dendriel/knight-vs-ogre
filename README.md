@@ -21,6 +21,7 @@ Para gerar um `.exe`: `build_exe.bat` (resultado em `dist\KnightVsOgre.exe`).
 - Ao ser atingido o personagem toca "hurt" e nao pode andar nem atacar. Depois o heroi fica um instante invulneravel (o ogro nao).
 - O golpe so acerta nos frames de impacto da animacao (o rastro da arma mostra onde).
 - Itens: cada ogro derrotado tem 30% de chance de derrubar uma pocao vermelha e 50% de derrubar uma bolsa de 5 a 10 moedas de ouro. So o heroi pega (basta chegar perto). A pocao vai para o inventario (ate 10; com 10 ela fica no chao) e a tecla 1 bebe uma (+30 de vida, so se estiver ferido). O ouro e as pocoes aparecem no HUD, nao zeram quando o heroi morre.
+- Machado: 15% dos ogros derrubam o proprio machado; ao pegar, o heroi passa a atacar com ele no lugar da espada (dano 20, alcance +8, golpe 1,35x mais lento, anda a 80% da velocidade; ignora defesa). Cada golpe gasta 3% de durabilidade (barra no HUD); em 0% ele quebra e o heroi volta a espada. O heroi que morre perde a arma.
 - Ogro morreu: o corpo fica no chao e outro ogro entra pela direita. Heroi morreu: outro heroi nasce na esquerda.
 - Contadores de derrotas de cada lado ficam abaixo das barras de vida.
 - O cenario e infinito (casas, arvores e pocos sao gerados por "fatias" conforme a camera anda).
@@ -49,7 +50,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 ### Cavaleiro
 - [x] T10 pocoes no inventario (ate 10, tecla 1; **substitui** o "consumir ao pegar")
 - [x] T11 combo de 3 golpes (sistema unico, serve a todas as classes) **(arte)**
-- [ ] T13 machado como pickup, com durabilidade e efeito proprio (mais dano/alcance, golpe mais lento) **(arte)**
+- [x] T13 machado como pickup, com durabilidade e efeito proprio (mais dano/alcance, golpe mais lento) **(arte)**
 - [ ] T15 armadura (o dano desconta dela antes da vida)
 - [ ] T12 barra de combo e ataque especial (segurar com a barra cheia, soltar para disparar) **(arte)**
 - [ ] T14 arco e besta como pickups (projetil, durabilidade) **(arte)**

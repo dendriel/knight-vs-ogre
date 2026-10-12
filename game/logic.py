@@ -16,6 +16,10 @@ FIGHTER_DEFS = {
 #   anim: sheet row | damage | reach: (from, to) in front of the hip | active: frames that can hit | slash_frame: frame
 #   where the trail effect is born | slash: vfx row | move_factor: walking speed multiplier while swinging |
 #   knockback: pixels the victim is pushed | guard_break: ignores shields (T24) | cooldown: seconds before reuse
+WEAPONS = {                                  # pickup weapons the hero can hold (T13): attack id + sprite sheet
+    'axe': dict(attack='axe', sheet='knight_axe'),
+}
+
 ATTACKS = {
     'sword': dict(anim='attack_sword', damage=C.COMBO_DAMAGE[0], reach=C.KNIGHT_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                   slash='sword_slash', move_factor=C.ATTACK_MOVE_FACTOR, knockback=C.COMBO_KNOCKBACK[0], guard_break=False,
@@ -26,6 +30,9 @@ ATTACKS = {
     'sword_3': dict(anim='attack_sword_3', damage=C.COMBO_DAMAGE[2], reach=(C.KNIGHT_REACH[0], C.KNIGHT_REACH[1] + 6),
                     active=C.ACTIVE_FRAMES, slash_frame=3, slash='sword_slash_3', move_factor=C.ATTACK_MOVE_FACTOR,
                     knockback=C.COMBO_KNOCKBACK[2], guard_break=False, cooldown=0.0, wear=0.0, next=None),
+    'axe': dict(anim='attack_axe', damage=C.AXE_DAMAGE, reach=C.AXE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
+                slash=None, move_factor=C.AXE_MOVE_FACTOR, knockback=C.AXE_KNOCKBACK, guard_break=True, cooldown=0.0,
+                wear=C.AXE_WEAR, next=None),
     'ogre_axe': dict(anim='attack', damage=C.DAMAGE, reach=C.OGRE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                      slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
                      wear=0.0, next=None),
@@ -43,7 +50,7 @@ def load_timing(assets_dir):
         if not fn.endswith('_spritesheet.json'): continue
         k = fn[:-len('_spritesheet.json')]
         with open(os.path.join(assets_dir, fn)) as f:
-            mult = C.ANIM_SPEED.get(k, {})
+            mult = C.ANIM_SPEED.get(k) or C.ANIM_SPEED.get(k.split('_')[0], {})      # 'knight_axe' shares the knight's speeds
             t[k] = {n: a['fps'] * mult.get(n, 1.0) for n, a in json.load(f)['animations'].items()}
     return t
 
@@ -92,7 +99,14 @@ class Fighter:
         return self.defn['anim'][self.state]
 
     @property
-    def sheet(self): return self.defn['sheet']
+    def sheet(self):
+        if self.weapon: return WEAPONS[self.weapon['id']]['sheet']        # the hero draws with the weapon in hand
+        return self.defn['sheet']
+
+    @property
+    def primary(self):
+        """attack id of the primary attack: the held weapon's, or the class's own"""
+        return WEAPONS[self.weapon['id']]['attack'] if self.weapon else self.defn['primary']
 
     @property
     def hw(self): return self.defn['half_width']
@@ -110,9 +124,9 @@ class Fighter:
 
 
 class Pickup:
-    """An item lying in the world. kind: 'potion' | 'coins'. y = height above the ground; it pops up and falls."""
-    def __init__(self, kind, x, amount=0):
-        self.kind, self.x, self.amount = kind, float(x), amount
+    """An item lying in the world. kind: 'potion' | 'coins' | 'weapon' (item = weapon id, amount = durability). y = height above the ground; it pops up and falls."""
+    def __init__(self, kind, x, amount=0, item=None):
+        self.kind, self.x, self.amount, self.item = kind, float(x), amount, item
         self.y = 14.0; self.vy = 90.0; self.t = 0.0
 
 
@@ -143,7 +157,7 @@ class World:
         self.timing = timing; self.rng = random.Random(seed)
         self.hero = Fighter('knight', 0.0, +1)
         self.enemies = [Fighter('ogre', C.START_OGRE_OFFSET, -1)]
-        self.features = {'potions'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
+        self.features = {'potions', 'weapon'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
         self.potions = 0; self.combo = 0                   # inventory / combo meter (T10, T12)
         self.spawn_target = 1                              # endless mode keeps this many enemies in the world (T02)
         self._jump_held = False; self._box_cache = {}
@@ -263,7 +277,7 @@ class World:
             if h.state != 'attack':
                 if inp.attack_pressed and h.chain and self.time - h.chain[0] <= C.COMBO_BUFFER:
                     self.start_attack(h, h.chain[1])                                 # clicked just after the stroke ended
-                else: self.start_attack(h, h.defn['primary'])
+                else: self.start_attack(h, h.primary)
             h.x += dx * h.defn['speed'] * ATTACKS[h.attack_id]['move_factor'] * dt
             return
         if dx:
@@ -310,7 +324,8 @@ class World:
             idx = atk.frame_index(self.timing)
             at = ATTACKS[atk.attack_id]
             if idx >= at['slash_frame'] and not atk.slash_done:
-                atk.slash_done = True; self.add_vfx(at['slash'], atk.x, atk.facing < 0, y=atk.y)
+                atk.slash_done = True
+                if at['slash']: self.add_vfx(at['slash'], atk.x, atk.facing < 0, y=atk.y)   # (None: the sprite has its own trail)
                 self.events.append(('swing', atk.kind))
             if tgt in atk.hit_set or idx not in at['active']: continue         # one hit per target per swing
             if tgt.state == 'dead' or tgt.invuln > 0: continue
@@ -423,6 +438,11 @@ class World:
 
     def start_attack(self, f, attack_id):
         f.attack_id = attack_id; f.set_state('attack'); f.chain = None
+        wear = ATTACKS[attack_id].get('wear', 0.0)
+        if wear and f.weapon:                                  # every swing wears the held weapon down
+            f.weapon['durability'] -= wear
+            if f.weapon['durability'] <= 0:
+                f.weapon = None; self.events.append(('break', f.kind)); self.shake = C.SHAKE_TIME
 
     def heal(self, f, amount):
         """Restores life (capped at max_hp) with the heal effect and sound. Any healing item should go through here."""
@@ -434,6 +454,7 @@ class World:
         r = self.loot_rng; items = []
         if r.random() < C.POTION_DROP_CHANCE: items.append(Pickup('potion', 0, C.POTION_HEAL))
         if r.random() < C.COIN_BAG_DROP_CHANCE: items.append(Pickup('coins', 0, r.randint(*C.COIN_BAG_COINS)))
+        if r.random() < C.AXE_DROP_CHANCE: items.append(Pickup('weapon', 0, C.WEAPON_DURABILITY, 'axe'))
         for i, p in enumerate(items):
             p.x = x + (i - (len(items) - 1) / 2) * 16        # side by side when both drop
             self.pickups.append(p)
@@ -449,6 +470,8 @@ class World:
             if (h.state != 'dead' and abs(h.x - p.x) <= C.PICKUP_RADIUS and abs(h.y - p.y) <= C.PICKUP_REACH_Y
                     and not (p.kind == 'potion' and self.potions >= C.POTION_MAX_STOCK)):   # full pouch: stays on the floor
                 if p.kind == 'potion': self.potions += 1                  # stored; drinking is a key press (T10)
+                elif p.kind == 'weapon':                                 # replaces whatever the hero holds (T13)
+                    h.weapon = dict(id=p.item, durability=p.amount); self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)
                 else:
                     self.gold += p.amount; self.stats['gold_gained'] += p.amount; self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)
                 self.events.append(('pickup', p.kind)); continue

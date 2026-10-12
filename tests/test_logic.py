@@ -191,7 +191,7 @@ def kill_ogre(w):
     assert w.ogre.state == 'dead'
 
 # 18) drop chances: forced 100% / 0%, and the rates are close to the configured ones over many ogres
-old = (C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE)
+old = (C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE); old_axe = C.AXE_DROP_CHANCE; C.AXE_DROP_CHANCE = 0.0
 C.POTION_DROP_CHANCE = 1.0; C.COIN_BAG_DROP_CHANCE = 1.0
 w = fresh(0); w.ogre.x = 200.0; kill_ogre(w)
 kinds = sorted(p.kind for p in w.pickups); assert kinds == ['coins', 'potion'], kinds
@@ -199,7 +199,7 @@ bag = [p for p in w.pickups if p.kind == 'coins'][0]; assert 5 <= bag.amount <= 
 assert [p for p in w.pickups if p.kind == 'potion'][0].amount == 30
 C.POTION_DROP_CHANCE = 0.0; C.COIN_BAG_DROP_CHANCE = 0.0
 w = fresh(0); w.ogre.x = 200.0; kill_ogre(w); assert w.pickups == []
-C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE = old
+C.POTION_DROP_CHANCE, C.COIN_BAG_DROP_CHANCE = old; C.AXE_DROP_CHANCE = old_axe
 w = fresh(0); n_pot = n_bag = 0; amounts = set()
 for _ in range(2000):
     w.pickups.clear(); w._drop_loot(0.0)
@@ -272,11 +272,11 @@ w.hero.x = 0.0; w.hero.facing = 1; w.hero.invuln = 99
 for e in w.enemies: e.ai_cooldown = 99
 w.hero.set_state('attack'); run(w, 0.5, Inputs(attack=True))
 assert all(e.hp < 30 for e in w.enemies), [e.hp for e in w.enemies]       # all three were hit by one swing
-C_old = C.POTION_DROP_CHANCE; C.POTION_DROP_CHANCE = 1.0
+C_old = C.POTION_DROP_CHANCE; C.POTION_DROP_CHANCE = 1.0; AXE_old = C.AXE_DROP_CHANCE; C.AXE_DROP_CHANCE = 0.0
 w = three()
 for e in w.enemies: e.hp = 10; e.invuln = 0; w._hit(w.hero, e)
 assert w.ogre_deaths == 3 and sum(1 for p in w.pickups if p.kind == 'potion') == 3
-C.POTION_DROP_CHANCE = C_old
+C.POTION_DROP_CHANCE = C_old; C.AXE_DROP_CHANCE = AXE_old
 run(w, C.RESPAWN_DELAY + 0.1, Inputs())
 assert len(w.corpses) >= 3 and len(w.enemies) == 3 and all(e.state != 'dead' for e in w.enemies)   # quota refilled
 print('23 ok: 3 ogres at once, deterministic, cleave, loot per kill, quota refilled')
@@ -414,5 +414,38 @@ for aid in ('sword', 'sword_2', 'sword_3'):
     w.ogre.invuln = 0; w.hero.attack_id = aid; w._hit(w.hero, w.ogre)
 assert w.ogre.state == 'dead'
 print('27 ok: combo chains in the window, 3 strokes max, buffer 0.15 s, hurt cancels, hold repeats stroke 1')
+
+# 28) T13: axe pickup: dropped by ogres, replaces the sword stroke, hits harder / further / slower, wears down and breaks
+from game.logic import WEAPONS
+old_axe = C.AXE_DROP_CHANCE; C.AXE_DROP_CHANCE = 1.0
+w = fresh(0); w.ogre.x = 200.0; kill_ogre(w)
+ax = [p for p in w.pickups if p.kind == 'weapon']; assert len(ax) == 1 and ax[0].item == 'axe' and ax[0].amount == 100
+C.AXE_DROP_CHANCE = 0.0
+w = fresh(0); w.ogre.x = 200.0; kill_ogre(w); assert not any(p.kind == 'weapon' for p in w.pickups)
+C.AXE_DROP_CHANCE = old_axe
+# picking up equips it (and uses the axe sprite sheet + attack)
+w = fresh(0); w.pickups = [Pickup('weapon', 0, 100.0, 'axe')]; run(w, 0.1, Inputs())
+assert w.hero.weapon == dict(id='axe', durability=100.0) and w.hero.sheet == 'knight_axe' and w.hero.primary == 'axe'
+assert w.pickups == [] and ('pickup', 'weapon') in w.events
+assert 'knight_axe' in T and T['knight_axe']['attack_axe'] < T['knight']['attack_sword'], 'axe swing is slower'
+# damage 20 per hit (ogre 30 hp -> 2 hits), reach 8 px longer than the sword, wears AXE_WEAR per swing
+w = fresh(0); w.hero.weapon = dict(id='axe', durability=100.0); w.ogre.x = 55.0; w.ogre.ai_cooldown = 99; w.ogre.set_state('hurt')      # (a 'hurt' ogre stands still)
+w.update(DT, Inputs(attack=True, attack_pressed=True)); assert w.hero.attack_id == 'axe' and w.hero.anim == 'attack_axe'
+assert w.hero.weapon['durability'] == 100 - C.AXE_WEAR
+run(w, 0.5, Inputs()); assert w.ogre.hp == 10, w.ogre.hp                      # 55 px away: only the axe reaches (sword: 40 + the ogre's half width)
+assert C.AXE_REACH[1] > C.KNIGHT_REACH[1]
+w2 = fresh(0); w2.ogre.x = 55.0; w2.ogre.ai_cooldown = 99; w2.ogre.set_state('hurt'); run(w2, 0.5, Inputs(attack=True)); assert w2.ogre.hp == 30
+# every swing wears it; at 0 it breaks and the hero is back to the sword (class weapon is indestructible)
+w = fresh(0); w.ogre.x = 5000.0; w.hero.weapon = dict(id='axe', durability=C.AXE_WEAR * 2 + 0.5)
+w.start_attack(w.hero, 'axe'); assert w.hero.weapon['durability'] == C.AXE_WEAR + 0.5
+w.start_attack(w.hero, 'axe'); assert w.hero.weapon['durability'] < C.AXE_WEAR
+w.start_attack(w.hero, 'axe'); assert w.hero.weapon is None and ('break', 'knight') in w.events
+assert w.hero.primary == 'sword' and w.hero.sheet == 'knight'
+w.hero.set_state('idle'); w.update(DT, Inputs(attack=True, attack_pressed=True)); assert w.hero.attack_id == 'sword'
+for _ in range(40): w.start_attack(w.hero, 'sword')                           # the sword never wears
+# the weapon is part of this hero: a new hero (after a death in endless mode) starts with the sword
+w = fresh(0); w.hero.weapon = dict(id='axe', durability=50.0); w.hero.hp = 1; w.hero.invuln = 0; w._hit(w.ogre, w.hero)
+run(w, 3.0, Inputs()); assert w.hero.state != 'dead' and w.hero.weapon is None
+print('28 ok: axe pickup (drop, equip, 20 dmg / +8 reach / slower, wear 3%/swing, breaks to the sword)')
 
 print('ALL LOGIC TESTS PASSED')

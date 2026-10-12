@@ -1,0 +1,872 @@
+{
+  "frames": [
+    {
+      "filename": "idle_0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "idle_1",
+      "frame": {
+        "x": 64,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "idle_2",
+      "frame": {
+        "x": 128,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "idle_3",
+      "frame": {
+        "x": 192,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "idle_4",
+      "frame": {
+        "x": 256,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "idle_5",
+      "frame": {
+        "x": 320,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "walk_0",
+      "frame": {
+        "x": 0,
+        "y": 64,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "walk_1",
+      "frame": {
+        "x": 64,
+        "y": 64,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "walk_2",
+      "frame": {
+        "x": 128,
+        "y": 64,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "walk_3",
+      "frame": {
+        "x": 192,
+        "y": 64,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "walk_4",
+      "frame": {
+        "x": 256,
+        "y": 64,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "walk_5",
+      "frame": {
+        "x": 320,
+        "y": 64,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "run_0",
+      "frame": {
+        "x": 0,
+        "y": 128,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "run_1",
+      "frame": {
+        "x": 64,
+        "y": 128,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "run_2",
+      "frame": {
+        "x": 128,
+        "y": 128,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "run_3",
+      "frame": {
+        "x": 192,
+        "y": 128,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "run_4",
+      "frame": {
+        "x": 256,
+        "y": 128,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "run_5",
+      "frame": {
+        "x": 320,
+        "y": 128,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_0",
+      "frame": {
+        "x": 0,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_1",
+      "frame": {
+        "x": 64,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_2",
+      "frame": {
+        "x": 128,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3",
+      "frame": {
+        "x": 192,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_4",
+      "frame": {
+        "x": 256,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_5",
+      "frame": {
+        "x": 320,
+        "y": 192,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_axe_0",
+      "frame": {
+        "x": 0,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_axe_1",
+      "frame": {
+        "x": 64,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_axe_2",
+      "frame": {
+        "x": 128,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_axe_3",
+      "frame": {
+        "x": 192,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_axe_4",
+      "frame": {
+        "x": 256,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_axe_5",
+      "frame": {
+        "x": 320,
+        "y": 256,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_bow_0",
+      "frame": {
+        "x": 0,
+        "y": 320,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_bow_1",
+      "frame": {
+        "x": 64,
+        "y": 320,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_bow_2",
+      "frame": {
+        "x": 128,
+        "y": 320,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_bow_3",
+      "frame": {
+        "x": 192,
+        "y": 320,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_bow_4",
+      "frame": {
+        "x": 256,
+        "y": 320,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_bow_5",
+      "frame": {
+        "x": 320,
+        "y": 320,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_crossbow_0",
+      "frame": {
+        "x": 0,
+        "y": 384,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_crossbow_1",
+      "frame": {
+        "x": 64,
+        "y": 384,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_crossbow_2",
+      "frame": {
+        "x": 128,
+        "y": 384,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_crossbow_3",
+      "frame": {
+        "x": 192,
+        "y": 384,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_crossbow_4",
+      "frame": {
+        "x": 256,
+        "y": 384,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_crossbow_5",
+      "frame": {
+        "x": 320,
+        "y": 384,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "hurt_0",
+      "frame": {
+        "x": 0,
+        "y": 448,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "hurt_1",
+      "frame": {
+        "x": 64,
+        "y": 448,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "hurt_2",
+      "frame": {
+        "x": 128,
+        "y": 448,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "hurt_3",
+      "frame": {
+        "x": 192,
+        "y": 448,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "hurt_4",
+      "frame": {
+        "x": 256,
+        "y": 448,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "hurt_5",
+      "frame": {
+        "x": 320,
+        "y": 448,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "death_0",
+      "frame": {
+        "x": 0,
+        "y": 512,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "death_1",
+      "frame": {
+        "x": 64,
+        "y": 512,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "death_2",
+      "frame": {
+        "x": 128,
+        "y": 512,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "death_3",
+      "frame": {
+        "x": 192,
+        "y": 512,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "death_4",
+      "frame": {
+        "x": 256,
+        "y": 512,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "death_5",
+      "frame": {
+        "x": 320,
+        "y": 512,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "jump_up_0",
+      "frame": {
+        "x": 0,
+        "y": 576,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "jump_up_1",
+      "frame": {
+        "x": 64,
+        "y": 576,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "jump_up_2",
+      "frame": {
+        "x": 128,
+        "y": 576,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "jump_up_3",
+      "frame": {
+        "x": 192,
+        "y": 576,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "jump_up_4",
+      "frame": {
+        "x": 256,
+        "y": 576,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "jump_up_5",
+      "frame": {
+        "x": 320,
+        "y": 576,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "jump_fall_0",
+      "frame": {
+        "x": 0,
+        "y": 640,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "jump_fall_1",
+      "frame": {
+        "x": 64,
+        "y": 640,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "jump_fall_2",
+      "frame": {
+        "x": 128,
+        "y": 640,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "jump_fall_3",
+      "frame": {
+        "x": 192,
+        "y": 640,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "jump_fall_4",
+      "frame": {
+        "x": 256,
+        "y": 640,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "jump_fall_5",
+      "frame": {
+        "x": 320,
+        "y": 640,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_2_0",
+      "frame": {
+        "x": 0,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_2_1",
+      "frame": {
+        "x": 64,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_2_2",
+      "frame": {
+        "x": 128,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_2_3",
+      "frame": {
+        "x": 192,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_2_4",
+      "frame": {
+        "x": 256,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_2_5",
+      "frame": {
+        "x": 320,
+        "y": 704,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3_0",
+      "frame": {
+        "x": 0,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3_1",
+      "frame": {
+        "x": 64,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3_2",
+      "frame": {
+        "x": 128,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3_3",
+      "frame": {
+        "x": 192,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3_4",
+      "frame": {
+        "x": 256,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "attack_sword_3_5",
+      "frame": {
+        "x": 320,
+        "y": 768,
+        "w": 64,
+        "h": 64
+      }
+    }
+  ],
+  "animations": {
+    "idle": {
+      "frames": [
+        "idle_0",
+        "idle_1",
+        "idle_2",
+        "idle_3",
+        "idle_4",
+        "idle_5"
+      ],
+      "fps": 6,
+      "loop": true
+    },
+    "walk": {
+      "frames": [
+        "walk_0",
+        "walk_1",
+        "walk_2",
+        "walk_3",
+        "walk_4",
+        "walk_5"
+      ],
+      "fps": 10,
+      "loop": true
+    },
+    "run": {
+      "frames": [
+        "run_0",
+        "run_1",
+        "run_2",
+        "run_3",
+        "run_4",
+        "run_5"
+      ],
+      "fps": 12,
+      "loop": true
+    },
+    "attack_sword": {
+      "frames": [
+        "attack_sword_0",
+        "attack_sword_1",
+        "attack_sword_2",
+        "attack_sword_3",
+        "attack_sword_4",
+        "attack_sword_5"
+      ],
+      "fps": 12,
+      "loop": false
+    },
+    "attack_axe": {
+      "frames": [
+        "attack_axe_0",
+        "attack_axe_1",
+        "attack_axe_2",
+        "attack_axe_3",
+        "attack_axe_4",
+        "attack_axe_5"
+      ],
+      "fps": 10,
+      "loop": false
+    },
+    "attack_bow": {
+      "frames": [
+        "attack_bow_0",
+        "attack_bow_1",
+        "attack_bow_2",
+        "attack_bow_3",
+        "attack_bow_4",
+        "attack_bow_5"
+      ],
+      "fps": 10,
+      "loop": false
+    },
+    "attack_crossbow": {
+      "frames": [
+        "attack_crossbow_0",
+        "attack_crossbow_1",
+        "attack_crossbow_2",
+        "attack_crossbow_3",
+        "attack_crossbow_4",
+        "attack_crossbow_5"
+      ],
+      "fps": 10,
+      "loop": false
+    },
+    "hurt": {
+      "frames": [
+        "hurt_0",
+        "hurt_1",
+        "hurt_2",
+        "hurt_3",
+        "hurt_4",
+        "hurt_5"
+      ],
+      "fps": 10,
+      "loop": false
+    },
+    "death": {
+      "frames": [
+        "death_0",
+        "death_1",
+        "death_2",
+        "death_3",
+        "death_4",
+        "death_5"
+      ],
+      "fps": 8,
+      "loop": false
+    },
+    "jump_up": {
+      "frames": [
+        "jump_up_0",
+        "jump_up_1",
+        "jump_up_2",
+        "jump_up_3",
+        "jump_up_4",
+        "jump_up_5"
+      ],
+      "fps": 12,
+      "loop": true
+    },
+    "jump_fall": {
+      "frames": [
+        "jump_fall_0",
+        "jump_fall_1",
+        "jump_fall_2",
+        "jump_fall_3",
+        "jump_fall_4",
+        "jump_fall_5"
+      ],
+      "fps": 10,
+      "loop": true
+    },
+    "attack_sword_2": {
+      "frames": [
+        "attack_sword_2_0",
+        "attack_sword_2_1",
+        "attack_sword_2_2",
+        "attack_sword_2_3",
+        "attack_sword_2_4",
+        "attack_sword_2_5"
+      ],
+      "fps": 12,
+      "loop": false
+    },
+    "attack_sword_3": {
+      "frames": [
+        "attack_sword_3_0",
+        "attack_sword_3_1",
+        "attack_sword_3_2",
+        "attack_sword_3_3",
+        "attack_sword_3_4",
+        "attack_sword_3_5"
+      ],
+      "fps": 12,
+      "loop": false
+    }
+  },
+  "meta": {
+    "image": "knight_axe_spritesheet.png",
+    "frame_size": [
+      64,
+      64
+    ],
+    "facing": "right"
+  }
+}

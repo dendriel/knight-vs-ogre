@@ -180,7 +180,7 @@ def render(p):
     img = Image.new('RGBA', (F, F), (0, 0, 0, 0))
     hN = (S[0] + p['handN'][0], S[1] + p['handN'][1])
     armN, hand = arm(S, hN, PN, LEATH_D)
-    if p['weapon'] == 'axe':
+    if p['weapon'] == 'axe' and not p.get('wback'):                  # lying body (death): the free hand stays where it was
         v = vec(p['wang']); hF = (hand[0] - v[0] * 4, hand[1] - v[1] * 4)
     else:
         hF = (S[0] + p['handF'][0], S[1] + p['handF'][1])

@@ -146,15 +146,30 @@ ANIMS = [('idle', idle, 6), ('walk', walk, 10), ('run', lambda i: walk(i, True),
          ('attack_sword_2', atk_sword_2, 12), ('attack_sword_3', atk_sword_3, 12)]
 NOLOOP = ('attack', 'hurt', 'death')
 
+def carry(pose, weapon):
+    """Same pose, holding another weapon (T13). Melee poses just swap the sword for the axe; ranged rows keep theirs."""
+    if weapon == 'axe' and pose['weapon'] == 'sword':
+        pose = dict(pose, weapon='axe')
+        if pose.get('wpos'): pose['wpos'] = (pose['wpos'][0], pose['wpos'][1] - 3)     # the axe head is bigger: keep it in the frame
+    return pose
+
+
+def write_sheet(out, weapon=None):
+    """weapon=None -> knight_spritesheet; weapon='axe' -> knight_axe_spritesheet (every row, hero holding that weapon)."""
+    name = 'knight' + (f'_{weapon}' if weapon else '')
+    sheet = Image.new('RGBA', (F * 6, F * len(ANIMS)), (0, 0, 0, 0))
+    atlas = {'frames': [], 'animations': {}, 'meta': {'image': f'{name}_spritesheet.png', 'frame_size': [64, 64], 'facing': 'right'}}
+    for r, (an, fn, fps) in enumerate(ANIMS):
+        for i in range(6):
+            sheet.alpha_composite(render(carry(fn(i), weapon)), (i * F, r * F))
+            atlas['frames'].append({'filename': f'{an}_{i}', 'frame': {'x': i * F, 'y': r * F, 'w': F, 'h': F}})
+        atlas['animations'][an] = {'frames': [f'{an}_{i}' for i in range(6)], 'fps': fps, 'loop': not an.startswith(NOLOOP)}
+    sheet.save(f'{out}/{name}_spritesheet.png')
+    json.dump(atlas, open(f'{out}/{name}_spritesheet.json', 'w'), indent=2)
+    print(name, 'ok', sheet.size)
+
+
 if __name__ == '__main__':
     out = sys.argv[1] if len(sys.argv) > 1 else './out'; os.makedirs(out, exist_ok=True)
-    sheet = Image.new('RGBA', (F * 6, F * len(ANIMS)), (0, 0, 0, 0))
-    atlas = {'frames': [], 'animations': {}, 'meta': {'image': 'knight_spritesheet.png', 'frame_size': [64, 64], 'facing': 'right'}}
-    for r, (name, fn, fps) in enumerate(ANIMS):
-        for i in range(6):
-            sheet.alpha_composite(render(fn(i)), (i * F, r * F))
-            atlas['frames'].append({'filename': f'{name}_{i}', 'frame': {'x': i * F, 'y': r * F, 'w': F, 'h': F}})
-        atlas['animations'][name] = {'frames': [f'{name}_{i}' for i in range(6)], 'fps': fps, 'loop': not name.startswith(NOLOOP)}
-    sheet.save(f'{out}/knight_spritesheet.png')
-    json.dump(atlas, open(f'{out}/knight_spritesheet.json', 'w'), indent=2)
-    print('knight ok', sheet.size)
+    write_sheet(out)
+    write_sheet(out, 'axe')

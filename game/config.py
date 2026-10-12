@@ -30,6 +30,7 @@ ATTACK_ANIM_SPEED = 1.5            # ogre axe swing AND its slash effect (they m
 KNIGHT_ATTACK_ANIM_SPEED = 1.7     # knight sword stroke 1 AND its slash effect (they must stay in sync); slower than the chained ones
 KNIGHT_COMBO2_ANIM_SPEED = 2.4     # combo stroke 2 (rising cut) AND sword_slash_2
 KNIGHT_COMBO3_ANIM_SPEED = 2.6     # combo stroke 3 (overhead chop) AND sword_slash_3
+AXE_ANIM_SPEED = 1.26              # picked-up axe: 1.35x slower than stroke 1 (KNIGHT_ATTACK_ANIM_SPEED / 1.35)
 COMBO_WINDOW_START = 3             # a new click chains the next stroke from this frame of the current one...
 COMBO_BUFFER = 0.15                # ...until this many seconds after it ended
 COMBO_DAMAGE = (10, 10, 15)        # damage of strokes 1, 2, 3
@@ -38,7 +39,7 @@ WALK_ANIM_SPEED = 1.2              # ogre walk cycle; keep it proportional to OG
 RUN_ANIM_SPEED = 1.65              # the hero's movement uses the 'run' cycle (~72 px/s per 1.0x), proportional to HERO_SPEED
 ANIM_SPEED = {
     'knight': {'attack_sword': KNIGHT_ATTACK_ANIM_SPEED, 'attack_sword_2': KNIGHT_COMBO2_ANIM_SPEED,
-               'attack_sword_3': KNIGHT_COMBO3_ANIM_SPEED, 'attack_axe': KNIGHT_ATTACK_ANIM_SPEED,
+               'attack_sword_3': KNIGHT_COMBO3_ANIM_SPEED, 'attack_axe': AXE_ANIM_SPEED,
                'run': RUN_ANIM_SPEED, 'jump_up': 1.6},
     'ogre': {'attack': ATTACK_ANIM_SPEED, 'walk': WALK_ANIM_SPEED},
     'vfx': {'sword_slash': KNIGHT_ATTACK_ANIM_SPEED, 'sword_slash_2': KNIGHT_COMBO2_ANIM_SPEED,
@@ -65,6 +66,15 @@ COIN_BAG_COINS = (5, 10)           # coins in a bag (inclusive range)
 PICKUP_RADIUS = 14                 # horizontal distance (px) at which the hero picks an item up
 PICKUP_REACH_Y = 24                # vertical tolerance (px) between the hero's feet and the item
 PICKUP_MAX = 30                    # items kept in the world (oldest vanish)
+
+# ---- weapons picked up from the floor (T13) -------------------------------------------------
+AXE_DROP_CHANCE = 0.15             # chance that a dying ogre drops its axe (separate roll)
+AXE_DAMAGE = 20                    # the hero's axe hits twice as hard as the sword stroke...
+AXE_REACH = (-12, 48)              # ...reaches 8 px further...
+AXE_KNOCKBACK = 24.0
+AXE_MOVE_FACTOR = 0.8              # walking speed multiplier while the heavy swing plays
+AXE_WEAR = 3.0                     # durability (percent) lost per swing; at 0 the weapon breaks
+WEAPON_DURABILITY = 100.0
 
 # ---- projectiles / areas ------------------------------------------------------------------
 PROJ_CHEST = 28                    # height (px above the shooter's feet) at which a shot leaves the hand
