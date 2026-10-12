@@ -84,7 +84,7 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 
 | sheet | linhas (na ordem) |
 |---|---|
-| `knight_spritesheet` | idle(6fps), walk(10), run(12), attack_sword(12, golpe LATERAL), attack_axe(10), attack_bow(10), attack_crossbow(10), hurt(10), death(8), jump_up(12), jump_fall(10), attack_sword_2(12, combo: corte ascendente), attack_sword_3(12, combo: golpe final de cima para baixo), attack_special(12, giro: frame 0 = carga, congelado enquanto segura) |
+| `knight_spritesheet` | idle(6fps), walk(10), run(12), attack_sword(12, golpe LATERAL), attack_axe(10), attack_bow(10), attack_crossbow(10), hurt(10), death(8), jump_up(12), jump_fall(10), attack_sword_2(12, combo: corte ascendente), attack_sword_3(12, combo: golpe final de cima para baixo), attack_special(12, giro: frame 0 = carga, congelado enquanto segura), throw(12, arremesso de faca; a faca sai no frame 3) |
 | `ogre_spritesheet` | idle(6), walk(10), attack(10, machado), hurt(10), death(8) |
 | `knight_axe_spritesheet` | **mesmas linhas e nomes do `knight_spritesheet`**, mas o herói empunha o machado (arquivo gerado por `knight_gen.py write_sheet(out, 'axe')`); o jogo usa a linha `attack_axe` |
 | `knight_bow_spritesheet`, `knight_xbow_spritesheet` | idem: **mesmas linhas e nomes** do `knight_spritesheet`, o herói carregando arco / besta nas poses de corpo a corpo (`render` aceita `hold='bow'/'xbow'`); o jogo usa `attack_bow` / `attack_crossbow` (flecha/virote nasce no frame 4) |

@@ -755,6 +755,60 @@
         "w": 64,
         "h": 64
       }
+    },
+    {
+      "filename": "throw_0",
+      "frame": {
+        "x": 0,
+        "y": 896,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "throw_1",
+      "frame": {
+        "x": 64,
+        "y": 896,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "throw_2",
+      "frame": {
+        "x": 128,
+        "y": 896,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "throw_3",
+      "frame": {
+        "x": 192,
+        "y": 896,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "throw_4",
+      "frame": {
+        "x": 256,
+        "y": 896,
+        "w": 64,
+        "h": 64
+      }
+    },
+    {
+      "filename": "throw_5",
+      "frame": {
+        "x": 320,
+        "y": 896,
+        "w": 64,
+        "h": 64
+      }
     }
   ],
   "animations": {
@@ -925,6 +979,18 @@
       ],
       "fps": 12,
       "loop": false
+    },
+    "throw": {
+      "frames": [
+        "throw_0",
+        "throw_1",
+        "throw_2",
+        "throw_3",
+        "throw_4",
+        "throw_5"
+      ],
+      "fps": 12,
+      "loop": true
     }
   },
   "meta": {

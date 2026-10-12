@@ -12,6 +12,7 @@ Para gerar um `.exe`: `build_exe.bat` (resultado em `dist\KnightVsOgre.exe`).
 ## Controles
 - Setas esquerda/direita ou A / D: andar
 - Espaco: pular
+- Botao direito do mouse: ataque secundario (cavaleiro: arremessa uma faca; infinita, so tem recarga de 1 s)
 - 1: beber uma pocao do inventario
 - Botao esquerdo do mouse: atacar com a espada (golpe lateral); da para andar enquanto ataca. Clicar de novo durante o golpe (a partir do impacto) encadeia o combo de 3 golpes (corte, corte ascendente, golpe final mais forte); segurar o botao so repete o primeiro golpe
 - M: liga/desliga o som | F11: tela cheia

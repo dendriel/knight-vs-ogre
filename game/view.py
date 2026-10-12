@@ -4,6 +4,12 @@ import pygame
 from . import config as C
 from .logic import slot_props, slot_boxes
 from .stages import THEMES
+from .logic import ATTACKS
+
+SECONDARY_ICON = {'knife': 'knife', 'short_sword': 'sword', 'small_axe': 'axe', 'spikes': 'staff'}
+
+
+def ATTACK_COOLDOWN(attack_id): return ATTACKS[attack_id]['cooldown']
 
 SKY = (122, 178, 224)
 DIRT = (70, 54, 46)
@@ -279,6 +285,12 @@ class View:
                 self._small_bar(surf, x + 15, y + 3, 30, 4, d, (230, 200, 90) if d > .25 else (230, 80, 70))
             else:
                 self._text(surf, 'inf', x + 15, y, (200, 210, 230))
+            x += 58
+        sec = h.defn.get('secondary')
+        if 'secondary' in feats and sec:                         # secondary attack icon + recharge bar
+            rem = max(0.0, h.cd.get(sec, 0.0) - world.time); cdn = max(1e-6, ATTACK_COOLDOWN(sec))
+            surf.blit(self.icons[SECONDARY_ICON.get(sec, 'knife')], (x, y - 1))
+            self._small_bar(surf, x + 15, y + 3, 30, 4, 1.0 - min(1.0, rem / cdn), (120, 200, 255) if rem <= 0 else (150, 150, 170))
             x += 58
         if 'potions' in feats:
             surf.blit(self.pickup_img['potion'], (x, y - 3))

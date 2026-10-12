@@ -22,7 +22,7 @@ ELITE_MODS = {
 # One entry per kind of fighter: everything that differs between a knight and an ogre lives here (T01).
 FIGHTER_DEFS = {
     'knight': dict(hero=True, max_hp=C.HERO_MAX_HP, speed=C.HERO_SPEED, half_width=8, sheet='knight', ai=None,
-                   voice='knight', jump=1.0, special='special', secondary=None,
+                   voice='knight', jump=1.0, special='special', secondary='knife',
                    anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, primary='sword',
                    slash='sword_slash', reach=C.KNIGHT_REACH, label='HERÓI'),
     'ogre_captain': dict(hero=False, boss=True, max_hp=C.CAPTAIN_MAX_HP, speed=C.CAPTAIN_SPEED, half_width=18,
@@ -120,6 +120,9 @@ ATTACKS = {
                  move_factor=C.XBOW_MOVE_FACTOR, knockback=C.KNOCKBACK * 1.5, guard_break=False, cooldown=C.XBOW_RELOAD,
                  wear=C.XBOW_WEAR, next=None,
                  shoot=dict(kind='straight', sprite='bolt', speed=C.XBOW_SPEED, max_range=C.XBOW_RANGE)),
+    'knife': dict(anim='throw', damage=C.KNIFE_DAMAGE, reach=(0, 0), active=(), slash_frame=3, slash=None,
+                  move_factor=C.KNIFE_MOVE_FACTOR, knockback=C.KNOCKBACK, guard_break=False, cooldown=C.KNIFE_COOLDOWN, wear=0.0,
+                  next=None, shoot=dict(kind='straight', sprite='knife', speed=C.KNIFE_SPEED, max_range=C.KNIFE_RANGE)),
     'special': dict(anim='attack_special', damage=C.SPECIAL_DAMAGE, reach=(-C.SPECIAL_RADIUS, C.SPECIAL_RADIUS),
                     active=(2, 3, 4, 5), slash_frame=1, slash='spin_slash', move_factor=0.0, knockback=C.SPECIAL_KNOCKBACK,
                     guard_break=True, cooldown=0.0, wear=0.0, next=None, rehit=4, ignore_invuln=True, ring=True),
@@ -303,7 +306,7 @@ class World:
         self.timing = timing; self.rng = random.Random(seed)
         self.hero = Fighter(hero_class, 0.0, +1)
         self.enemies = [Fighter('ogre', C.START_OGRE_OFFSET, -1)]
-        self.features = {'potions', 'weapon', 'armor', 'combo'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
+        self.features = {'potions', 'weapon', 'armor', 'combo', 'secondary'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
         self.potions = 0; self.combo = 0                   # inventory / combo meter (T10, T12)
         self.max_attackers = C.MAX_ATTACKERS               # tokens (T26)
         self.stage = stage; self.next_enc = 0              # None = the endless mode; else a finite stage (T30)
@@ -458,6 +461,11 @@ class World:
         if h.charge_t > 0 and h.state in ('idle', 'walk'):                            # released early: it was a plain click
             h.charge_t = 0.0
             if not inp.attack: self.start_attack(h, h.primary)
+        sec = h.defn.get('secondary')
+        if (inp.secondary_pressed and sec and h.state in ('idle', 'walk') and self.time >= h.cd.get(sec, 0.0)):
+            self.start_attack(h, sec)                                                # right button: secondary attack (T41)
+            h.x += dx * h.defn['speed'] * ATTACKS[sec]['move_factor'] * dt
+            return
         if h.state == 'attack' and inp.attack_pressed:                                # a click inside the window queues the next stroke
             nxt = ATTACKS[h.attack_id].get('next')
             if nxt and h.frame_index(self.timing) >= C.COMBO_WINDOW_START: h.combo_next = nxt

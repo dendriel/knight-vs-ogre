@@ -131,7 +131,7 @@ SPEAR_ATTACK_ANIM_SPEED = 1.3        # slow, telegraphed thrust (row fps 12)
 SOLDIER_WALK_ANIM_SPEED = 1.55      # soldier walk cycle, proportional to SOLDIER_SPEED (62)
 SOLDIER_ATTACK_ANIM_SPEED = KNIGHT_ATTACK_ANIM_SPEED   # same sword stroke as the hero's stroke 1 AND its slash effect
 ANIM_SPEED = {
-    'knight': {'attack_special': SPECIAL_ANIM_SPEED, 'attack_sword': KNIGHT_ATTACK_ANIM_SPEED, 'attack_sword_2': KNIGHT_COMBO2_ANIM_SPEED,
+    'knight': {'throw': 1.5, 'attack_special': SPECIAL_ANIM_SPEED, 'attack_sword': KNIGHT_ATTACK_ANIM_SPEED, 'attack_sword_2': KNIGHT_COMBO2_ANIM_SPEED,
                'attack_sword_3': KNIGHT_COMBO3_ANIM_SPEED, 'attack_axe': AXE_ANIM_SPEED,
                'attack_bow': BOW_ANIM_SPEED, 'attack_crossbow': XBOW_ANIM_SPEED,
                'run': RUN_ANIM_SPEED, 'jump_up': 1.6},
@@ -199,6 +199,13 @@ XBOW_RANGE = 380.0
 XBOW_WEAR = 4.0
 XBOW_RELOAD = 0.8                  # seconds before the next shot can start
 XBOW_MOVE_FACTOR = 0.4
+
+# ---- secondary attack of the knight: a thrown knife (T41) --------------------------------------
+KNIFE_DAMAGE = 8
+KNIFE_SPEED = 340.0
+KNIFE_RANGE = 300.0
+KNIFE_COOLDOWN = 1.0               # infinite uses, limited only by the recharge (D3)
+KNIFE_MOVE_FACTOR = 0.7
 
 # ---- armor (T15) --------------------------------------------------------------------------
 ARMOR_MAX = 50                     # armor points; damage is taken from them before the life bar
@@ -296,6 +303,7 @@ CONTROLS = [
     ('Mouse esquerdo', 'Atacar; clicar de novo = combo (3 golpes)'),
     ('Segurar mouse esq.', 'Barra cheia: carrega; soltar = giro especial'),
     ('1', 'Beber poção'),
+    ('Mouse direito', 'Ataque secundario (faca)'),
     ('M', 'Liga / desliga o som'),
     ('F11', 'Tela cheia'),
     ('Esc', 'Menu'),

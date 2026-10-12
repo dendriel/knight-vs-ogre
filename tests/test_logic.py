@@ -886,4 +886,30 @@ assert CLASSES[0] == 'knight' and all(FIGHTER_DEFS[c]['hero'] for c in CLASSES)
 del FIGHTER_DEFS['tank']
 print('44 ok: classes are data (life, speed, jump height) and survive respawn')
 
+# 45) T41: secondary attack (right button): the knight throws a knife, infinite, limited only by the recharge
+assert 'throw' in T['knight'] and 'throw' in T['knight_axe'] and FIGHTER_DEFS['knight']['secondary'] == 'knife'
+w = fresh(0); w.ogre.x = 140.0; w.ogre.set_state('hurt'); w.ogre.ai_cooldown = 99; w.ogre.invuln = 0
+w.update(DT, Inputs(secondary=True, secondary_pressed=True))
+assert w.hero.state == 'attack' and w.hero.attack_id == 'knife' and w.hero.anim == 'throw'
+born = None
+for _ in range(60):
+    w.update(DT, Inputs())
+    if w.projectiles and born is None: born = (w.hero.frame_index(T), w.projectiles[0].sprite, w.projectiles[0].damage)
+assert born == (3, 'knife', C.KNIFE_DAMAGE), born
+run(w, 1.0, Inputs()); assert w.ogre.hp == 30 - C.KNIFE_DAMAGE or w.ogre.hp == 22
+# recharge: a second press during the cooldown does nothing, after it a new knife flies (infinite, D3)
+w = fresh(0); throws = 0
+for n in range(int(6 / DT)):
+    before = len(w.projectiles) + sum(1 for _ in ()) ; st0 = w.hero.state
+    w.update(DT, Inputs(secondary=True, secondary_pressed=(n % 6 == 0)))
+    if w.hero.state == 'attack' and st0 != 'attack': throws += 1
+assert 5 <= throws <= 6, throws                                                          # ~1 per second for 6 s
+# works with low life, not while hurt / dead; keeps working with a picked-up weapon in hand
+w = fresh(0); w.hero.hp = 3; w.update(DT, Inputs(secondary=True, secondary_pressed=True)); assert w.hero.attack_id == 'knife'
+w = fresh(0); w.hero.invuln = 0; w._hit(w.ogre, w.hero); w.update(DT, Inputs(secondary=True, secondary_pressed=True))
+assert w.hero.state == 'hurt'
+w = fresh(0); w.hero.weapon = dict(id='bow', durability=100.0); w.update(DT, Inputs(secondary=True, secondary_pressed=True))
+assert w.hero.attack_id == 'knife' and w.hero.sheet == 'knight_bow' and w.hero.weapon['durability'] == 100.0   # the knife costs nothing
+print('45 ok: secondary attack (knife on the right button, recharge only, frame 3, low life ok)')
+
 print('ALL LOGIC TESTS PASSED')

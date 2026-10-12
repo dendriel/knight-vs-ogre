@@ -159,13 +159,22 @@ def atk_spear(i):
                 plume=[(-7, -1), (-8, 1), (-9, 1), (-9, 0), (-10, 2), (-8, 0)][i],
                 flap=[0, -1, -2, -2, -3, -1][i], shift=[-2, 1, 2, -5, -7, -3][i])
 
+def atk_throw(i):
+    # arremesso de faca com a mao livre (a espada fica na mao da frente); a faca sai no frame 3
+    return dict(weapon='sword', hx=[0, -2, -3, 1, 2, 0][i], footN=(CX + 6, GY), footF=(CX - 5, GY),
+                sink=[1, 1.5, 2, 2, 1.5, 1][i], lean=[0, -6, -10, 8, 10, 3][i],
+                handN=(6, 8), wang=165,
+                handF=[(2, 6), (-4, 0), (-7, -5), (9, -4), (12, -2), (5, 4)][i],
+                plume=[(-7, -1), (-8, 0), (-9, 0), (-9, 0), (-10, 1), (-8, 0)][i],
+                flap=[0, -1, -2, -2, -3, -1][i], shift=[0, 1, 2, -1, -2, 0][i])
+
 ANIMS = [('idle', idle, 6), ('walk', walk, 10), ('run', lambda i: walk(i, True), 12),
          ('attack_sword', atk_sword, 12), ('attack_axe', atk_axe, 10),
          ('attack_bow', atk_bow, 10), ('attack_crossbow', atk_xbow, 10),
          ('hurt', hurt, 10), ('death', death, 8),
          ('jump_up', jump_up, 12), ('jump_fall', jump_fall, 10),
          ('attack_sword_2', atk_sword_2, 12), ('attack_sword_3', atk_sword_3, 12),
-         ('attack_special', atk_special, 12)]
+         ('attack_special', atk_special, 12), ('throw', atk_throw, 12)]
 NOLOOP = ('attack', 'hurt', 'death')
 
 def carry(pose, weapon):

@@ -30,6 +30,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T32: **chefe e arena** no fim de cada fase: depois do último encontro, ao entrar na última tela do percurso (a `ARENA_ENTER_MARGIN` 30 px) a tela trava (a câmera desliza até ela; paredes à esquerda e à direita) e o chefe entra pela direita; a barra de vida dele aparece embaixo. Ao morrer ele solta 2 poções + bolsa de `BOSS_LOOT_COINS` 30–50 ouro, a tela é liberada, aparece a seta >>> e a fase só termina quando o herói chega ao fim. Fase 1: **Ogro-Capitão** (`CAPTAIN_MAX_HP` 90, golpe largo de 15 que ignora guarda; chama 2 soldados com metade da vida). Fase 2: **Rei Minotauro** (120 de vida, investida mais rápida e frequente, chama goblins e kobold). Fase 3: **Cavaleiro Negro** (110 de vida, combo próprio de 3 golpes, guarda com escudo, chama 2 arqueiros). Comprimentos das fases: 3600 / 4000 / 4400 px.
 - T34: **tema Floresta inglesa** na fase 2: céu verde-acinzentado, linha de árvores no horizonte, névoa em parallax, chão de musgo escuro; carvalhos densos, samambaias, tronco caído, cogumelos, muro de pedra e arbustos com frutas.
 - T35: **tema Cidade** na fase 3: céu quente, silhueta de telhados e torres ao fundo, muralha com torres e ameias no parallax, rua de pedra; casas, barracas de feira, barris empilhados, postes de lampião e poço.
+- T41: **ataque secundário** no botão direito do mouse: o cavaleiro arremessa uma **faca** em linha reta (`KNIFE_DAMAGE` 8, `KNIFE_SPEED` 340, `KNIFE_RANGE` 300), infinita e limitada só pela recarga `KNIFE_COOLDOWN` 1,0 s (D3; funciona com qualquer vida e com arma pickup na mão); o HUD mostra o ícone com a barra de recarga.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -52,6 +53,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T32: `ogre_captain`, `minotaur_lord` e `black_knight` (quadros 96x96, escala 1,5 / 1,45 / 1,3 do rig; elmo com espinhos, chifres grandes, armadura negra com escudo).
 - T34: novos props `oak`, `fern`, `log`, `mushrooms`, `stone_wall`, `bush` e tile `forest_tile` (`theme_gen.py`); parallax `treeline` e `fog` desenhados pelo `view.py`.
 - T35: novos props `market_stall`, `barrels`, `lamppost` (`theme_gen.py`); parallax `skyline` e `wall` no `view.py`.
+- T41: nova animação `throw` do cavaleiro (arremesso com a mão livre; a faca sai no frame 3) em todos os sheets do cavaleiro.
 
 ### Contrato de arte
 - T11: `knight_spritesheet` ganha as linhas 11 (`attack_sword_2`) e 12 (`attack_sword_3`), frames de golpe 3–4; `vfx_spritesheet` ganha as linhas 6 (`sword_slash_2`) e 7 (`sword_slash_3`). Linhas anteriores inalteradas pixel a pixel.
@@ -63,6 +65,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T24: `shieldman_spritesheet` = idle(6, não usado), walk(10), attack(12), hurt(10), death(8) + `guard`(6) no final (o jogo mostra `guard` como estado parado); `vfx_spritesheet` ganha a linha 10 (`block_spark`).
 - T25: quatro sheets novas no contrato do ogro (idle, walk, attack, hurt, death).
 - T32: sheets de chefe com **quadros de 96x96**; o json traz `meta.frame_size`, `anchor_x` (48) e `ground_row` (90) e a View desenha por essas âncoras (os de 64x64 seguem 30 / 58). O cavaleiro negro tem `attack_2`, `attack_3` e `guard` no final.
+- T41: `knight_spritesheet` (e `knight_axe/bow/xbow`) ganham a linha 14 `throw`.
 
 ### Áudio
 - T10: pegar poção reaproveita o SFX `coin_pickup`; beber usa o `heal` existente (evento `potion`).
@@ -99,6 +102,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T33: `THEMES` (cores, parallax, chão, tabelas de props por paridade de fatia) e `PROP_PLACE` em `stages.py`; `slot_props(slot, seed, theme)` e a View montam tudo a partir do tema (o tema `village` reproduz o sorteio original); `World.theme_id`. Decoração de parallax `castle`.
 - T32: `World.arena/boss/boss_dead`, `_start_arena()`, `_summon()`, IA `boss` (`boss_id`: captain / minotaur_lord / black_knight), `defn['charge']` sobrescreve os parâmetros da investida, `chain_chance` encadeia golpes de inimigos, `_drop_loot(boss=True)`; câmera de fase = base (seguir ou arena) + `cam_off` que desliza. Teste 43.
 - T40: classes como dados: `CLASSES` + entradas `FIGHTER_DEFS` com `hero=True` (vida, velocidade, `jump` = multiplicador de altura, `special`, `secondary`, `label`, `voice` para o áudio); `World(hero_class=...)`; o respawn mantém a classe; eventos usam `Fighter.voice`. O cavaleiro é a entrada 0 (comportamento idêntico). Teste 44.
+- T41: `FIGHTER_DEFS[x].secondary` + `ATTACKS['knife']` (`shoot`, `cooldown`), `Inputs.secondary_pressed`; teste 45.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).
