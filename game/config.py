@@ -90,6 +90,7 @@ SOLDIER_COOLDOWN = (0.7, 1.1)
 DAMAGE = 10                        # damage of every hit (both sides)
 HERO_SPEED = 120.0                 # pixels per second (was 84)
 OGRE_SPEED = 50.0
+RANGER_SPEED = 135.0               # the ranger is quicker than the knight (120); see the classes block below
 ATTACK_MOVE_FACTOR = 1.0           # hero speed multiplier while the attack animation plays (he can move and swing)
 
 # ---- jump / boxes -------------------------------------------------------------------------
@@ -131,6 +132,10 @@ SPEAR_ATTACK_ANIM_SPEED = 1.3        # slow, telegraphed thrust (row fps 12)
 SOLDIER_WALK_ANIM_SPEED = 1.55      # soldier walk cycle, proportional to SOLDIER_SPEED (62)
 SOLDIER_ATTACK_ANIM_SPEED = KNIGHT_ATTACK_ANIM_SPEED   # same sword stroke as the hero's stroke 1 AND its slash effect
 ANIM_SPEED = {
+    'ranger': {'attack_bow': 1.1, 'attack_bow_2': 1.7, 'attack_bow_3': 1.3, 'attack_short': 2.0, 'attack_special': 1.1,
+               'run': RUN_ANIM_SPEED * RANGER_SPEED / HERO_SPEED, 'jump_up': 1.6},
+    'ranger': {'attack_bow': 1.1, 'attack_bow_2': 1.7, 'attack_bow_3': 1.3, 'attack_short': 2.0, 'attack_special': 1.1,
+               'run': RUN_ANIM_SPEED * RANGER_SPEED / HERO_SPEED, 'jump_up': 1.6},
     'knight': {'throw': 1.5, 'attack_special': SPECIAL_ANIM_SPEED, 'attack_sword': KNIGHT_ATTACK_ANIM_SPEED, 'attack_sword_2': KNIGHT_COMBO2_ANIM_SPEED,
                'attack_sword_3': KNIGHT_COMBO3_ANIM_SPEED, 'attack_axe': AXE_ANIM_SPEED,
                'attack_bow': BOW_ANIM_SPEED, 'attack_crossbow': XBOW_ANIM_SPEED,
@@ -206,6 +211,37 @@ KNIFE_SPEED = 340.0
 KNIFE_RANGE = 300.0
 KNIFE_COOLDOWN = 1.0               # infinite uses, limited only by the recharge (D3)
 KNIFE_MOVE_FACTOR = 0.7
+
+# ---- classes (T42-T44) --------------------------------------------------------------------
+RANGER_MAX_HP = 80                 # fragile and quick
+RANGER_JUMP = 1.1
+RANGER_ARROW_DAMAGE = (8, 8, 14)   # the 3rd arrow of the chain is the strong, piercing one
+RANGER_ARROW_SPEED = (300.0, 320.0, 360.0)
+RANGER_ARROW_RANGE = 300.0
+RANGER_SHORT_DAMAGE = 10           # secondary: a short sword slash
+RANGER_SHORT_REACH = (-10, 32)
+RANGER_SHORT_COOLDOWN = 0.45
+RAIN_DAMAGE = 8                    # special: arrows falling over an area in front of the ranger
+RAIN_COUNT = 10
+RAIN_SPAN = (60, 230)              # px in front of the ranger covered by the rain
+RAIN_FALL_TIME = 0.55
+RAIN_RADIUS = 16
+
+# ---- classes (T42-T44) --------------------------------------------------------------------
+RANGER_MAX_HP = 80                 # fragile and quick
+RANGER_SPEED = 135.0
+RANGER_JUMP = 1.1
+RANGER_ARROW_DAMAGE = (8, 8, 14)   # the 3rd arrow of the chain is the strong, piercing one
+RANGER_ARROW_SPEED = (300.0, 320.0, 360.0)
+RANGER_ARROW_RANGE = 300.0
+RANGER_SHORT_DAMAGE = 10           # secondary: a short sword slash
+RANGER_SHORT_REACH = (-10, 32)
+RANGER_SHORT_COOLDOWN = 0.45
+RAIN_DAMAGE = 8                    # special: arrows falling over an area in front of the ranger
+RAIN_COUNT = 10
+RAIN_SPAN = (60, 230)              # px in front of the ranger covered by the rain
+RAIN_FALL_TIME = 0.55
+RAIN_RADIUS = 16
 
 # ---- armor (T15) --------------------------------------------------------------------------
 ARMOR_MAX = 50                     # armor points; damage is taken from them before the life bar

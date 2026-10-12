@@ -14,7 +14,7 @@ def base_dir():
 
 
 class Game:
-    def __init__(self, start='title'):
+    def __init__(self, start='title', hero_class='knight'):
         if sys.platform == 'win32':                       # avoid Windows blurring/rescaling the window on hi-dpi screens
             try:
                 import ctypes; ctypes.windll.user32.SetProcessDPIAware()
@@ -30,7 +30,7 @@ class Game:
         self.audio = Audio(os.path.join(assets, 'sfx'), os.path.join(assets, 'music'))
         self.screen = pygame.Surface((C.SCREEN_W, C.SCREEN_H))     # internal low-res canvas
         self.clock = pygame.time.Clock(); self.running = True; self.t = 0.0
-        self.stage_id = 'endless'
+        self.stage_id = 'endless'; self.hero_class = hero_class                 # chosen class (T45 sets it from the menu)
         self.run = dict(gold=0, potions=0, weapon=None, armor=0)     # what travels between stages (D6)
         self.run_start = dict(self.run)                              # snapshot at the start of the stage (D9)
         self.scenes = [PlayScene()]                                 # scene stack: the last one is on top
@@ -57,7 +57,7 @@ class Game:
         if stage is None: run = dict(gold=0, potions=0, weapon=None, armor=0)     # endless: nothing carries over
         elif run is None: run = self.run
         self.run_start = {k: (dict(v) if isinstance(v, dict) else v) for k, v in run.items()}
-        self.world = World(self.timing, stage=stage)
+        self.world = World(self.timing, stage=stage, hero_class=self.hero_class)
         self.world.apply_run(self.run_start)
         self.scenes = [PlayScene()]; self.t = 0.0; self._lock = True
 
@@ -152,4 +152,5 @@ if __name__ == '__main__':
     elif '--stage' in sys.argv:
         n = sys.argv[sys.argv.index('--stage') + 1]
         start = n if n in STAGES else 'stage' + n
-    Game(start).run()
+    cls = sys.argv[sys.argv.index('--class') + 1] if '--class' in sys.argv else 'knight'
+    Game(start, cls).run()

@@ -223,7 +223,7 @@ class View:
                 col = (230, 80, 70) if int(world.time * 8) % 2 else (255, 190, 90)
                 surf.fill(col, (mx - r, gy - 1, 2 * r, 1)); surf.fill(col, (mx - r, gy + 1, 2 * r, 1))
                 u = min(1.0, p.t / p.flight)
-                name = p.sprite if p.sprite != 'arrow' else ('arrow_u90' if u < .25 else 'arrow_u45' if u < .45 else
+                name = p.sprite if p.sprite != 'arrow' else ('arrow_d90' if p.fall else 'arrow_u90' if u < .25 else 'arrow_u45' if u < .45 else
                                                               'arrow' if u < .55 else 'arrow_d45' if u < .75 else 'arrow_d90')
                 img = self.proj[(name, p.facing < 0)]
                 surf.blit(img, (sx - img.get_width() // 2, gy - int(p.height) - img.get_height() // 2))
@@ -279,7 +279,7 @@ class View:
         x = x0                                                   # equipment row: weapon - potions - gold
         if 'weapon' in feats:
             w = h.weapon
-            surf.blit(self.icons[w['id'] if w else 'sword'], (x, y - 1))
+            surf.blit(self.icons[w['id'] if w else h.defn.get('icon', 'sword')], (x, y - 1))
             if w and w.get('durability') is not None:
                 d = w['durability'] / 100.0
                 self._small_bar(surf, x + 15, y + 3, 30, 4, d, (230, 200, 90) if d > .25 else (230, 80, 70))

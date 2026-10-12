@@ -912,4 +912,44 @@ w = fresh(0); w.hero.weapon = dict(id='bow', durability=100.0); w.update(DT, Inp
 assert w.hero.attack_id == 'knife' and w.hero.sheet == 'knight_bow' and w.hero.weapon['durability'] == 100.0   # the knife costs nothing
 print('45 ok: secondary attack (knife on the right button, recharge only, frame 3, low life ok)')
 
+# 46) T42: ranger: bow combo (3 shots, the 3rd pierces), short sword secondary, arrow rain special, no weapon pickups
+assert 'ranger' in CLASSES and 'ranger' in T and all(n in T['ranger'] for n in ('attack_bow', 'attack_bow_2', 'attack_bow_3', 'attack_short', 'attack_special'))
+def ranger_world(x=0.0):
+    w = World(T, hero_class='ranger'); w.cam_off = 0; w.hero.x = x; w.ogre.x = x + 5000; w.ai_cooldown = 99; return w
+w = ranger_world(); h = w.hero
+assert h.max_hp == C.RANGER_MAX_HP < 100 and h.speed > 120 and h.primary == 'rg_1' and h.sheet == 'ranger'
+# the chain: click, click in the window, click: three arrows; the third pierces
+shots = []
+w.update(DT, Inputs(attack=True, attack_pressed=True))
+for n in range(int(4 / DT)):
+    inp = Inputs()
+    if h.state == 'attack' and h.frame_index(T) >= C.COMBO_WINDOW_START and len(shots) < 3 and not h.combo_next and ATTACKS[h.attack_id]['next']:
+        inp = Inputs(attack=True, attack_pressed=True)
+    n0 = len(w.projectiles); w.update(DT, inp)
+    for p in w.projectiles[n0:]: shots.append((h.attack_id, p.damage, p.pierce))
+assert [s[0] for s in shots] == ['rg_1', 'rg_2', 'rg_3'], shots
+assert [s[1] for s in shots] == list(C.RANGER_ARROW_DAMAGE) and [s[2] for s in shots] == [False, False, True]
+# secondary: short sword hits close targets and respects its cooldown
+w = ranger_world(); w.enemies = [Fighter('ogre', 30, -1)]; e = w.enemies[0]; e.ai_cooldown = 99; e.set_state('hurt'); e.invuln = 0
+w.update(DT, Inputs(secondary=True, secondary_pressed=True)); assert w.hero.attack_id == 'short_sword'
+run(w, 0.5, Inputs()); assert e.hp == 30 - C.RANGER_SHORT_DAMAGE
+# special: needs the full meter, rains arrows over an area in front, hitting several enemies; interrupted by a hit stops the rest
+w = ranger_world(); w.combo = C.COMBO_BAR_MAX
+en = [Fighter('ogre', 100 + 40 * i, -1) for i in range(3)]; w.enemies = en
+for e in en: e.ai_cooldown = 99; e.set_state('hurt'); e.invuln = 0; e.hp = 30
+run(w, C.SPECIAL_HOLD_MIN + 0.1, Inputs(attack=True)); w.update(DT, Inputs(attack=False))
+assert w.hero.attack_id == 'arrow_rain' and w.combo == 0 and len(w.timers) == C.RAIN_COUNT
+for _ in range(int(2.5 / DT)):
+    w.update(DT, Inputs())
+    for e in en:
+        if e.state == 'hurt' and e.t > 0.5: e.set_state('idle')               # keep them standing there (no AI)
+assert sum(1 for e in en if e.hp < 30) >= 2 and w.timers == [], [e.hp for e in en]
+w = ranger_world(); w.combo = C.COMBO_BAR_MAX; w.hero.invuln = 0
+run(w, C.SPECIAL_HOLD_MIN + 0.1, Inputs(attack=True)); w.update(DT, Inputs(attack=False)); run(w, 0.1, Inputs())
+left = len(w.timers); assert left > 0
+w.hero.invuln = 0; w._hit(w.ogre, w.hero); run(w, 1.2, Inputs()); assert w.timers == [] and sum(1 for p in w.projectiles if p.fall) < left   # hurt: the rest of the rain is lost
+# the ranger ignores weapon pickups (no art for them)
+w = ranger_world(); w.pickups = [Pickup('weapon', 0, 100.0, 'axe')]; run(w, 0.3, Inputs()); assert w.hero.weapon is None and len(w.pickups) == 1
+print('46 ok: ranger (bow chain with piercing 3rd arrow, short sword, arrow rain, no pickups)')
+
 print('ALL LOGIC TESTS PASSED')

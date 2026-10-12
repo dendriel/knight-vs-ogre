@@ -71,6 +71,11 @@ FIGHTER_DEFS = {
                    slash=None, reach=(0, 0), label='ARQUEIRO',
                    ai_params=dict(attack_dist=C.ARCHER_KEEP_DIST, wait=C.ARCHER_WAIT, cooldown=C.ARCHER_COOLDOWN,
                                   retreat_dist=C.ARCHER_TOO_CLOSE)),
+    'ranger': dict(hero=True, max_hp=C.RANGER_MAX_HP, speed=C.RANGER_SPEED, half_width=8, sheet='ranger', ai=None,
+                   voice='knight', jump=C.RANGER_JUMP, special='arrow_rain', secondary='short_sword', primary='rg_1',
+                   anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, slash=None, reach=(0, 0),
+                   label='ARQUEIRO', icon='bow',
+                   blurb='Rapido e fragil. Arco de longe, espada curta de perto, chuva de flechas.'),
     'spearman': dict(hero=False, max_hp=C.SPEARMAN_MAX_HP, speed=C.SPEARMAN_SPEED, half_width=8, sheet='spearman', ai='spear',
                      anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='spearman_thrust',
                      slash=None, reach=C.SPEARMAN_REACH, label='LANCEIRO',
@@ -88,7 +93,7 @@ FIGHTER_DEFS = {
 # Playable classes (T40): the id is a FIGHTER_DEFS key with hero=True. Everything a class changes is data there:
 # max_hp, speed, jump (height multiplier), sheet, anim map, primary (id of the first attack of its combo chain), secondary,
 # special, label and `blurb`. The three extra classes are added below (T42-T44).
-CLASSES = ['knight']
+CLASSES = ['knight', 'ranger']
 
 # Every attack is data (T03). Adding one = one entry here + one row in a sprite sheet.
 #   anim: sheet row | damage | reach: (from, to) in front of the hip | active: frames that can hit | slash_frame: frame
@@ -123,6 +128,24 @@ ATTACKS = {
     'knife': dict(anim='throw', damage=C.KNIFE_DAMAGE, reach=(0, 0), active=(), slash_frame=3, slash=None,
                   move_factor=C.KNIFE_MOVE_FACTOR, knockback=C.KNOCKBACK, guard_break=False, cooldown=C.KNIFE_COOLDOWN, wear=0.0,
                   next=None, shoot=dict(kind='straight', sprite='knife', speed=C.KNIFE_SPEED, max_range=C.KNIFE_RANGE)),
+    'rg_1': dict(anim='attack_bow', damage=C.RANGER_ARROW_DAMAGE[0], reach=(0, 0), active=(), slash_frame=4, slash=None,
+                 move_factor=0.6, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0, wear=0.0, next='rg_2',
+                 shoot=dict(kind='straight', sprite='arrow', speed=C.RANGER_ARROW_SPEED[0], max_range=C.RANGER_ARROW_RANGE)),
+    'rg_2': dict(anim='attack_bow_2', damage=C.RANGER_ARROW_DAMAGE[1], reach=(0, 0), active=(), slash_frame=4, slash=None,
+                 move_factor=0.6, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0, wear=0.0, next='rg_3',
+                 shoot=dict(kind='straight', sprite='arrow', speed=C.RANGER_ARROW_SPEED[1], max_range=C.RANGER_ARROW_RANGE)),
+    'rg_3': dict(anim='attack_bow_3', damage=C.RANGER_ARROW_DAMAGE[2], reach=(0, 0), active=(), slash_frame=4, slash=None,
+                 move_factor=0.5, knockback=C.KNOCKBACK * 1.6, guard_break=False, cooldown=0.0, wear=0.0, next=None,
+                 shoot=dict(kind='straight', sprite='arrow', speed=C.RANGER_ARROW_SPEED[2],
+                            max_range=C.RANGER_ARROW_RANGE * 1.2, pierce=True)),
+    'short_sword': dict(anim='attack_short', damage=C.RANGER_SHORT_DAMAGE, reach=C.RANGER_SHORT_REACH, active=C.ACTIVE_FRAMES,
+                        slash_frame=3, slash='sword_slash', move_factor=0.9, knockback=C.KNOCKBACK, guard_break=False,
+                        cooldown=C.RANGER_SHORT_COOLDOWN, wear=0.0, next=None),
+    'arrow_rain': dict(anim='attack_special', damage=C.RAIN_DAMAGE, reach=(0, 0), active=(), slash_frame=99, slash=None,
+                       move_factor=0.0, knockback=C.KNOCKBACK, guard_break=True, cooldown=0.0, wear=0.0, next=None,
+                       burst=[dict(t=0.18 + 0.045 * i, type='rain',
+                                   off=C.RAIN_SPAN[0] + (C.RAIN_SPAN[1] - C.RAIN_SPAN[0]) * i / (C.RAIN_COUNT - 1),
+                                   sprite='arrow', damage=C.RAIN_DAMAGE, radius=C.RAIN_RADIUS) for i in range(C.RAIN_COUNT)]),
     'special': dict(anim='attack_special', damage=C.SPECIAL_DAMAGE, reach=(-C.SPECIAL_RADIUS, C.SPECIAL_RADIUS),
                     active=(2, 3, 4, 5), slash_frame=1, slash='spin_slash', move_factor=0.0, knockback=C.SPECIAL_KNOCKBACK,
                     guard_break=True, cooldown=0.0, wear=0.0, next=None, rehit=4, ignore_invuln=True, ring=True),
@@ -289,7 +312,7 @@ class Projectile:
         self.damage, self.sprite, self.speed, self.max_range, self.pierce = damage, sprite, speed, max_range, pierce
         self.knockback, self.tx, self.ty = knockback, tx, base_y
         self.flight, self.apex, self.radius, self.chest = flight, apex, radius, chest
-        self.t = 0.0; self.height = chest; self.hit_set = []; self.done = False
+        self.t = 0.0; self.height = chest; self.hit_set = []; self.done = False; self.fall = False
 
 
 class AreaHit:
@@ -320,7 +343,7 @@ class World:
         if stage is not None: self.spawn_target = 0
         self._jump_held = False; self._box_cache = {}
         self.corpses = []; self.vfx = []
-        self.projectiles = []; self.areas = []
+        self.projectiles = []; self.areas = []; self.timers = []     # timers: [time left, owner, spec] (bursts)
         self.hero_deaths = 0; self.ogre_deaths = 0
         self.pickups = []; self.gold = 0                   # gold belongs to the player, so it survives hero deaths
         self.spawn_rng = random.Random(seed + 2000)        # which enemy enters next (separate stream, like loot)
@@ -423,6 +446,7 @@ class World:
         self._knockback(dt)
         for f in self.fighters(): self._physics(f, dt)
         self._attacks()
+        self._bursts(dt)
         self._projectiles(dt)
         self._areas(dt)
         self._pickups(dt)
@@ -717,6 +741,24 @@ class World:
             elif C.OGRE_HURT_INVULN: tgt.invuln = tgt.duration(self.timing) + C.OGRE_HURT_INVULN_EXTRA
             if not tgt.is_hero: tgt.ai_wait = None
 
+    def _bursts(self, dt):
+        """Delayed pieces of a special (arrow rain, volleys, fire storm): each spec fires once its time has come, if its
+        owner is still in the attack that scheduled it (a hit interrupts the rest)."""
+        keep = []
+        for t in self.timers:
+            t[0] -= dt
+            if t[0] > 0: keep.append(t); continue
+            _, f, spec = t
+            if f.state != 'attack': continue
+            if spec['type'] == 'rain':
+                tx = f.x + f.facing * spec['off']
+                p = Projectile('lob', f, tx, f.y, f.facing, spec['damage'], spec['sprite'], tx=tx, flight=C.RAIN_FALL_TIME,
+                               apex=0.0, radius=spec['radius'], chest=160.0)
+                p.fall = True; p.ty = f.y; self.projectiles.append(p)
+            elif spec['type'] == 'shot':
+                self.shoot(f, damage=spec['damage'], **spec['shoot'])
+        self.timers = keep
+
     # ------------------------------------------------------------------ projectiles and areas (T04)
     def targets_of(self, owner):
         return [e for e in self.enemies] if owner.is_hero else [self.hero]
@@ -810,6 +852,7 @@ class World:
     def start_attack(self, f, attack_id):
         f.attack_id = attack_id; f.set_state('attack'); f.chain = None
         if ATTACKS[attack_id]['cooldown']: f.cd[attack_id] = self.time + ATTACKS[attack_id]['cooldown']
+        for spec in ATTACKS[attack_id].get('burst', ()): self.timers.append([spec['t'], f, spec])
         wear = ATTACKS[attack_id].get('wear', 0.0)
         if wear and f.weapon:                                  # every swing wears the held weapon down
             f.weapon['durability'] -= wear
@@ -851,7 +894,8 @@ class World:
                 if p.y <= 0: p.y = 0.0; p.vy = 0.0
             if (h.state != 'dead' and abs(h.x - p.x) <= C.PICKUP_RADIUS and abs(h.y - p.y) <= C.PICKUP_REACH_Y
                     and not (p.kind == 'potion' and self.potions >= C.POTION_MAX_STOCK)    # full pouch: stays on the floor
-                    and not (p.kind == 'armor' and h.armor >= h.armor_max)):               # full armor: not wasted
+                    and not (p.kind == 'armor' and h.armor >= h.armor_max)                 # full armor: not wasted
+                    and not (p.kind == 'weapon' and h.kind != 'knight')):                  # only the knight has weapon sheets
                 if p.kind == 'potion': self.potions += 1                  # stored; drinking is a key press (T10)
                 elif p.kind == 'armor':
                     h.armor = min(h.armor_max, max(h.armor, p.amount)); self.add_vfx('coin_glint', h.x, h.facing < 0, y=h.y)

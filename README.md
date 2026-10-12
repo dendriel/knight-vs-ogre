@@ -75,7 +75,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 - [x] T32 boss e arena no fim de cada fase **(arte)**
 
 ### Classes
-- [x] T40 classes | T41 ataque secundario (botao direito; faca do cavaleiro) | T42 arqueiro | T45 selecao de classe
+- [x] T40 classes | T41 ataque secundario (botao direito; faca do cavaleiro) | [x] T42 arqueiro | T45 selecao de classe
 - [ ] T43 besteiro | T44 mago **(arte)**
 
 ### Economia

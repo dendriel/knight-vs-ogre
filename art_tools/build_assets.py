@@ -13,7 +13,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ASSETS = os.path.join(HERE, '..', 'assets')
 SHEETS = ['knight_spritesheet.png', 'knight_spritesheet.json', 'knight_axe_spritesheet.png', 'knight_axe_spritesheet.json',
           'knight_bow_spritesheet.png', 'knight_bow_spritesheet.json', 'knight_xbow_spritesheet.png',
-          'knight_xbow_spritesheet.json', 'soldier_spritesheet.png', 'soldier_spritesheet.json', 'spearman_spritesheet.png',
+          'knight_xbow_spritesheet.json', 'soldier_spritesheet.png', 'soldier_spritesheet.json', 'ranger_spritesheet.png', 'ranger_spritesheet.json', 'spearman_spritesheet.png',
           'spearman_spritesheet.json', 'archer_spritesheet.png', 'archer_spritesheet.json', 'shieldman_spritesheet.png',
           'shieldman_spritesheet.json',
           'ogre_captain_spritesheet.png', 'ogre_captain_spritesheet.json', 'minotaur_lord_spritesheet.png',
@@ -49,7 +49,7 @@ def main():
     check = '--check' in sys.argv
     tmp = tempfile.mkdtemp(prefix='ko_art_')
     try:
-        for g in ('knight_gen.py', 'ogre_gen.py', 'vfx_gen.py', 'scenery_gen.py', 'proj_gen.py', 'icons_gen.py', 'enemy_gen.py', 'theme_gen.py'): run(g, tmp)
+        for g in ('knight_gen.py', 'ogre_gen.py', 'vfx_gen.py', 'scenery_gen.py', 'proj_gen.py', 'icons_gen.py', 'enemy_gen.py', 'theme_gen.py', 'class_gen.py'): run(g, tmp)
         bad = []
         for name in SHEETS + SCENERY:
             src = os.path.join(tmp, name); dst = os.path.join(ASSETS, name)
