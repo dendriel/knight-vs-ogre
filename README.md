@@ -79,4 +79,4 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 - [ ] T43 besteiro | T44 mago **(arte)**
 
 ### Economia
-- [ ] T50 loja e fluxo da run (Selecao -> Fase -> Conclusao -> Loja -> Fase seguinte); ouro e itens passam de fase em fase
+- [x] T50 loja e fluxo da run (Selecao -> Fase -> Conclusao -> Loja -> Fase seguinte); ouro e itens passam de fase em fase

@@ -130,12 +130,41 @@ g.world.stats.update(kills=9, damage_dealt=120, gold_gained=40)
 finish(g); assert isinstance(g.scene, S.SummaryScene)
 assert dict(g.scene.rows)['Monstros derrotados'] == '9' and dict(g.scene.rows)['Dano causado'] == '120' and dict(g.scene.rows)['Ouro adquirido'] == '40'
 key(g, fp.K_RETURN)
+assert isinstance(g.scene, S.ShopScene) and g.scene.next_stage == 'stage2' and g.scene.run['gold'] == 77   # summary -> shop
+key(g, fp.K_RETURN)                                                          # first entry (potion, 25) is bought
+assert g.scene.run['potions'] == 5 and g.scene.run['gold'] == 52
+g.scene.menu.index = len(g.scene.menu.items) - 1; key(g, fp.K_RETURN)        # Continuar
 assert isinstance(g.scene, S.PlayScene) and g.world.stage.id == 'stage2'
-assert g.world.gold == 77 and g.world.potions == 4 and g.world.hero.weapon == dict(id='axe', durability=55.0)
+assert g.world.gold == 52 and g.world.potions == 5 and g.world.hero.weapon == dict(id='axe', durability=55.0)
 assert g.world.stats['kills'] == 0, 'numbers are per stage'
-finish(g); key(g, fp.K_RETURN); assert g.world.stage.id == 'stage3'
-finish(g); assert isinstance(g.scene, S.SummaryScene); key(g, fp.K_RETURN); assert isinstance(g.scene, S.EndScene)
+finish(g); key(g, fp.K_RETURN); assert isinstance(g.scene, S.ShopScene)
+g.scene.menu.index = len(g.scene.menu.items) - 1; key(g, fp.K_RETURN); assert g.world.stage.id == 'stage3'
+finish(g); assert isinstance(g.scene, S.SummaryScene); key(g, fp.K_RETURN); assert isinstance(g.scene, S.EndScene)   # no shop after the last stage
 key(g, fp.K_RETURN); assert isinstance(g.scene, S.TitleScene)
 print('8 ok: stage summary, run state carried to the next stage, end screen, back to the title')
+
+# 9) shop: prices, caps, class restrictions, items equipped for the stage; restart goes back to the snapshot via the shop
+g = main.Game('stage1'); step(g, 2)
+g.run_start = dict(gold=300, potions=9, weapon=None, armor=0, bombs=4); g.world.apply_run(g.run_start)
+g.restart_stage(); sc = g.scene; assert isinstance(sc, S.ShopScene) and sc.next_stage == 'stage1'
+ids = [it[1] for it in sc.menu.items]; assert ids == ['potion', 'armor', 'bomb', 'axe', 'bow', 'xbow', 'continue']
+def buy(i):
+    sc.menu.index = i; key(g, fp.K_RETURN)
+buy(0); buy(0)                                                                   # 10th potion ok, 11th refused (cap)
+assert sc.run['potions'] == 10 and sc.run['gold'] == 300 - C.SHOP_PRICES['potion']
+buy(1); assert sc.run['armor'] == C.ARMOR_MAX and sc.run['gold'] == 300 - C.SHOP_PRICES['potion'] - C.SHOP_PRICES['armor']
+buy(2); assert sc.run['bombs'] == 5; buy(2); assert sc.run['bombs'] == 5            # cap 5
+buy(5); assert sc.run['weapon']['id'] == 'xbow' and sc.run['gold'] == 300 - 25 - 60 - 30 - 100
+sc.menu.index = 6; key(g, fp.K_RETURN)
+assert isinstance(g.scene, S.PlayScene) and g.world.potions == 10 and g.world.hero.armor == C.ARMOR_MAX and g.world.bombs == 5
+assert g.world.hero.weapon['id'] == 'xbow' and g.world.gold == 85
+# not enough gold: the stage starts without the shop; other classes do not see weapons; the endless mode has no shop
+g.run_start = dict(gold=5, potions=0, weapon=None, armor=0, bombs=0); g.restart_stage()
+assert isinstance(g.scene, S.PlayScene) and g.world.gold == 5
+g.hero_class = 'mage'; g.run_start = dict(gold=100, potions=0, weapon=None, armor=0, bombs=0); g.restart_stage()
+assert [it[1] for it in g.scene.menu.items] == ['potion', 'armor', 'bomb', 'continue']
+g = main.Game('endless'); step(g, 2); g.run_start = dict(gold=500, potions=0, weapon=None, armor=0, bombs=0); g.restart_stage()
+assert isinstance(g.scene, S.PlayScene) and g.world.gold == 0
+print('9 ok: shop (prices, caps, knight-only weapons, free of charge below the cheapest price, restart goes through it)')
 
 print('ALL SCENE TESTS PASSED')

@@ -187,6 +187,65 @@ class DefeatScene(Scene):
         game.view.draw_menu(surf, self.menu)
 
 
+class ShopScene(Scene):
+    """Shop between stages (T50): spend the run's gold on potions, armor, pickup weapons (knight only) and bombs, then go
+    on to `next_stage`. Purchases change `run` (gold, potions, weapon, armor, bombs); it is what the stage starts with."""
+    def __init__(self, game, next_stage, run):
+        self.next_stage = next_stage; self.run = dict(run); self.msg = ''
+        self.cls = game.hero_class
+        self.menu = Menu(self._items(), x=(C.SCREEN_W - 260) // 2, y=58, w=260, row_h=20)
+        self.menu.index = 0
+
+    # item id -> (label, price, can buy?)
+    def _entries(self):
+        r = self.run; P = C.SHOP_PRICES; knight = self.cls == 'knight'
+        out = [('potion', f"Pocao de vida  ({r['potions']}/{C.POTION_MAX_STOCK})", P['potion'], r['potions'] < C.POTION_MAX_STOCK),
+               ('armor', f"Armadura  ({r['armor']}/{C.ARMOR_MAX})", P['armor'], r['armor'] < C.ARMOR_MAX),
+               ('bomb', f"Bomba, tecla 2  ({r.get('bombs', 0)}/{C.BOMB_MAX_STOCK})", P['bomb'], r.get('bombs', 0) < C.BOMB_MAX_STOCK)]
+        if knight:
+            have = r['weapon']['id'] if r.get('weapon') else None
+            for wid, name in (('axe', 'Machado'), ('bow', 'Arco'), ('xbow', 'Besta')):
+                out.append((wid, f"{name}" + ('  (equipado)' if have == wid else ''), P[wid], True))
+        return out
+
+    def _items(self):
+        items = []
+        for iid, label, price, ok in self._entries():
+            items.append((f'{label}   {price}', iid, ok and self.run['gold'] >= price))
+        items.append(('Continuar', 'continue', True))
+        return items
+
+    def buy(self, iid, game):
+        P = C.SHOP_PRICES; r = self.run
+        if iid == 'continue': game.start(self.next_stage, self.run); return
+        if r['gold'] < P[iid]: return
+        r['gold'] -= P[iid]
+        if iid == 'potion': r['potions'] += 1
+        elif iid == 'armor': r['armor'] = C.ARMOR_MAX
+        elif iid == 'bomb': r['bombs'] = r.get('bombs', 0) + 1
+        else: r['weapon'] = dict(id=iid, durability=C.WEAPON_DURABILITY)
+        game.shop_log.append(iid)
+        keep = self.menu.index; self.menu.items = self._items(); self.menu.index = keep
+        if not self.menu.items[keep][2]: self.menu.move(1)
+
+    def handle_event(self, e, game):
+        if key_pressed(e, pygame.K_UP, pygame.K_w): self.menu.move(-1)
+        elif key_pressed(e, pygame.K_DOWN, pygame.K_s): self.menu.move(1)
+        elif key_pressed(e, pygame.K_RETURN): self.buy(self.menu.current(), game) if self.menu.current() else None
+        elif e.type == pygame.MOUSEMOTION: self.menu.mouse_move(game.to_internal(e.pos))
+        elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+            a = self.menu.click(game.to_internal(e.pos))
+            if a: self.buy(a, game)
+
+    def draw(self, surf, game):
+        v = game.view
+        surf.fill((30, 28, 44))
+        v.title(surf, 'LOJA', 14)
+        v.center(surf, f"Ouro: {self.run['gold']}", 34, (255, 214, 80), v.font_big)
+        v.draw_menu(surf, self.menu)
+        v.center(surf, 'Cima/Baixo + Enter ou clique: comprar    Continuar: seguir para a fase', C.SCREEN_H - 14, (180, 190, 215))
+
+
 class SummaryScene(Scene):
     """Stage completed (T31): the numbers of this stage only, then Continue (-> shop / next stage / the end)."""
     transparent = True

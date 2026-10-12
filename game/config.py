@@ -275,6 +275,15 @@ AXE_SMALL_COOLDOWN = 0.6
 VOLLEY_COUNT = 6
 VOLLEY_DAMAGE = 10
 
+# ---- shop and consumables (T50, D8) -------------------------------------------------------
+SHOP_PRICES = dict(potion=25, armor=60, axe=70, bow=80, xbow=100, bomb=30)
+BOMB_MAX_STOCK = 5                 # throwable consumables (key 2): they are spent, unlike the infinite primary / secondary
+BOMB_DAMAGE = 25                   # everyone in the landing radius
+BOMB_RADIUS = 40
+BOMB_RANGE = 150                   # where it lands when nobody is in front of the hero
+BOMB_FLIGHT = 0.7
+BOMB_COOLDOWN = 0.6
+
 # ---- armor (T15) --------------------------------------------------------------------------
 ARMOR_MAX = 50                     # armor points; damage is taken from them before the life bar
 ARMOR_PICKUP = 50                  # a found armor piece restores the bar to this much (capped at ARMOR_MAX)
@@ -371,6 +380,7 @@ CONTROLS = [
     ('Mouse esquerdo', 'Atacar; clicar de novo = combo (3 golpes)'),
     ('Segurar mouse esq.', 'Barra cheia: carrega; soltar = giro especial'),
     ('1', 'Beber poção'),
+    ('2', 'Arremessar bomba (da loja)'),
     ('Mouse direito', 'Ataque secundario (faca)'),
     ('M', 'Liga / desliga o som'),
     ('F11', 'Tela cheia'),

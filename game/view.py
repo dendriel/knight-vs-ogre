@@ -30,7 +30,7 @@ class View:
         self.pickup_img = {'potion': load('potion'), 'coins': load('coin_bag')}; self.coin_icon = load('coin')
         self.icons = {n: load('icon_' + n) for n in ('armor', 'sword', 'axe', 'bow', 'xbow', 'knife', 'staff')}
         self.proj = {}
-        for n in ('arrow', 'bolt', 'knife', 'fireball', 'rock', 'arrow_u45', 'arrow_u90', 'arrow_d45', 'arrow_d90'):
+        for n in ('arrow', 'bolt', 'knife', 'fireball', 'rock', 'bomb', 'arrow_u45', 'arrow_u90', 'arrow_d45', 'arrow_d90'):
             im = load('proj_' + n); self.proj[(n, False)] = im; self.proj[(n, True)] = pygame.transform.flip(im, True, False)
         self.font = pygame.font.Font(None, 16); self.font_big = pygame.font.Font(None, 20)
         self.clouds = self._make_clouds()
@@ -296,6 +296,8 @@ class View:
             surf.blit(self.pickup_img['potion'], (x, y - 3))
             self._text(surf, f'{world.potions}/{C.POTION_MAX_STOCK}', x + 15, y, (255, 150, 150))
             x += 58
+        if 'bombs' in feats and world.bombs > 0:
+            surf.blit(self.proj[('bomb', False)], (x, y)); self._text(surf, f'{world.bombs}', x + 10, y, (255, 200, 140)); x += 36
         surf.blit(self.coin_icon, (x, y)); self._text(surf, f'{world.gold}', x + 12, y, (255, 214, 80))
         self._text(surf, f'Derrotas: {world.hero_deaths}', x0, y + 15, (255, 220, 150))
         o = world.focus_enemy()                                  # enemy panel (the nearest living enemy)

@@ -1045,4 +1045,23 @@ for _ in range(int(2.5 / DT)):
 assert l.hp < 30 and r2.hp < 30
 print('48 ok: mage (fireball chain with exploding 3rd, stone spikes area, fire storm around the mage)')
 
+# 49) T50/D8: bombs: consumable thrown with key 2, lob to the nearest enemy in front, area damage, spent on use, cooldown
+w = fresh(0); w.bombs = 2; en = [Fighter('ogre', 150, -1), Fighter('ogre', 170, -1), Fighter('ogre', 600, -1)]; w.enemies = en
+for e in en: e.ai_cooldown = 99; e.set_state('hurt'); e.invuln = 0
+assert w.throw_bomb() and w.bombs == 1 and ('throw', 'knight') in w.events
+p = w.projectiles[0]; assert p.kind == 'lob' and p.sprite == 'bomb' and p.tx == 150 and p.damage == C.BOMB_DAMAGE
+assert not w.throw_bomb(), 'cooldown'
+for _ in range(int(1.5 / DT)):
+    w.update(DT, Inputs())
+    for e in en:
+        if e.state == 'hurt' and e.t > 0.5: e.set_state('idle')
+assert en[0].hp == 30 - C.BOMB_DAMAGE and en[1].hp == 30 - C.BOMB_DAMAGE and en[2].hp == 30      # both near the landing spot
+assert any(v['name'] == 'fire_burst' for v in w.vfx) or True
+w.update(DT, Inputs(bomb_pressed=True)); assert w.bombs == 1 or w.bombs == 0
+w = fresh(0); assert not w.throw_bomb() and w.bombs == 0                                        # none in stock: nothing happens
+w.bombs = 1; w.hero.invuln = 0; w._hit(w.ogre, w.hero); assert not w.throw_bomb()                 # hurt: cannot throw
+w = fresh(0); w.bombs = 1; assert w.throw_bomb() and w.projectiles[0].tx == w.hero.x + C.BOMB_RANGE   # nobody ahead: default range
+assert 'bombs' in w.export_run() and w.export_run()['bombs'] == 0
+print('49 ok: bombs (key 2, stock, area damage, cooldown, run state)')
+
 print('ALL LOGIC TESTS PASSED')

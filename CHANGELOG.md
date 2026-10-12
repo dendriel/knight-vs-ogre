@@ -35,6 +35,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T45: **tela de seleção de classe** depois de Campanha / Modo infinito: cartões lado a lado com o quadro `idle` ampliado, nome, 4 barras (vida, velocidade, dano, alcance) e os 3 ataques; ←/→ + Enter ou clique escolhem; Esc volta. `--class ranger` pula o menu.
 - T43: nova classe **Besteiro** (armadura ferrugem): `XBOWMAN_MAX_HP` 110, `CROSSBOWMAN_SPEED` 105 (a mais lenta), pulo 0,9x. Primário = **besta** com combo de 3 virotes (dano 14 / 14 / 22, a 3ª atravessa; mira mais lenta no 1º; só reinicia a cadeia `XBOW_HERO_RELOAD` 0,8 s depois do 1º virote); secundário = **machado pequeno** (dano 12, ignora escudo, recarga 0,6 s); especial = **rajada de virotes** (`VOLLEY_COUNT` 6 virotes perfurantes de dano 10).
 - T44: nova classe **Mago** (túnica violeta, chapéu pontudo, cajado): `MAGE_MAX_HP` 70 (a mais frágil), `MAGE_SPEED` 115. Primário = **bolas de fogo** em combo de 3 (dano 12 / 12 / 16; a 3ª explode num raio de `FIREBALL_EXPLOSION` 36 px com dano 10 nos vizinhos); secundário = **espinhos de pedra** (área à frente de 22 a 104 px, dano 14 em todos, atraso 0,12 s, recarga 1,4 s); especial = **tempestade de fogo** (`STORM_COUNT` 12 bolas de fogo caindo num raio de 170 px dos dois lados, dano 10, com explosão no chão).
+- T50: **loja** entre as fases (depois da conclusão, antes da seguinte; também ao reiniciar a fase pela derrota ou pelo Esc, com o snapshot do início da fase — se houver ouro para comprar algo): poção 25, armadura 60 (`SHOP_PRICES`), arma pickup só para o cavaleiro (machado 70, arco 80, besta 100) e **bomba** 30 (consumível arremessável, **tecla 2**, `BOMB_DAMAGE` 25 num raio de 40, estoque `BOMB_MAX_STOCK` 5 — D8); o que se compra entra equipado na fase. O fluxo completo é Título → Classe → Fase 1 → Conclusão → Loja → Fase 2 → … → Fim. O modo infinito não tem loja.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -61,6 +62,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T42: `ranger_spritesheet` (couros verdes, arco em todas as linhas) com `attack_bow_2`, `attack_bow_3`, `attack_short` e `attack_special` (arco para o céu) — `art_tools/class_gen.py`.
 - T43: `crossbowman_spritesheet` (besta em todas as linhas) com `attack_crossbow_2`, `attack_crossbow_3`, `attack_axe_small` e `attack_special`.
 - T44: camada `staff` no rig (cajado com orbe), chapéu de mago, `mage_spritesheet` (`attack_staff`, `_2`, `_3`, `attack_stomp`, `attack_special`) e efeitos `stone_spikes` e `fire_burst`.
+- T50: sprite `proj_bomb` (bomba com pavio).
 
 ### Contrato de arte
 - T11: `knight_spritesheet` ganha as linhas 11 (`attack_sword_2`) e 12 (`attack_sword_3`), frames de golpe 3–4; `vfx_spritesheet` ganha as linhas 6 (`sword_slash_2`) e 7 (`sword_slash_3`). Linhas anteriores inalteradas pixel a pixel.
@@ -116,6 +118,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T45: `SelectScene`; `Game.hero_class`; `FIGHTER_DEFS[x].stats/card/label/icon`; cena 6 estendida.
 - T43: `ATTACKS` `xb_1..3`, `small_axe`, `bolt_volley` (rajada via `burst` do tipo `shot`); teste 47.
 - T44: `Projectile.explode` + `World._explode()`, `ATTACKS[x].area` (caixa atrasada no frame do golpe), burst `rain` com `abs`; teste 48.
+- T50: `ShopScene`, `Game.start_with_shop()`, `World.bombs/throw_bomb()`, `Inputs.bomb_pressed`, run state com `bombs`; cenas 8 e 9, teste 49.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

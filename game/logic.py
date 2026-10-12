@@ -261,10 +261,11 @@ class Inputs:
     """What the player does this frame. `attack` is the level (button held); the *_pressed / *_released flags are edges
     computed by main.py; attack_held_t = seconds the attack button has been held (T05)."""
     def __init__(self, left=False, right=False, attack=False, jump=False, secondary=False, attack_pressed=False,
-                 attack_released=False, attack_held_t=0.0, secondary_pressed=False, potion_pressed=False):
+                 attack_released=False, attack_held_t=0.0, secondary_pressed=False, potion_pressed=False, bomb_pressed=False):
         self.left, self.right, self.attack, self.jump = left, right, attack, jump
         self.secondary, self.attack_pressed, self.attack_released = secondary, attack_pressed, attack_released
         self.attack_held_t, self.secondary_pressed, self.potion_pressed = attack_held_t, secondary_pressed, potion_pressed
+        self.bomb_pressed = bomb_pressed
 
 
 class Fighter:
@@ -380,8 +381,8 @@ class World:
         self.timing = timing; self.rng = random.Random(seed)
         self.hero = Fighter(hero_class, 0.0, +1)
         self.enemies = [Fighter('ogre', C.START_OGRE_OFFSET, -1)]
-        self.features = {'potions', 'weapon', 'armor', 'combo', 'secondary'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
-        self.potions = 0; self.combo = 0                   # inventory / combo meter (T10, T12)
+        self.features = {'potions', 'weapon', 'armor', 'combo', 'secondary', 'bombs'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
+        self.bombs = 0; self.potions = 0; self.combo = 0                   # inventory / combo meter (T10, T12)
         self.max_attackers = C.MAX_ATTACKERS               # tokens (T26)
         self.stage = stage; self.next_enc = 0              # None = the endless mode; else a finite stage (T30)
         self.stage_clear = False; self.defeated = False
@@ -492,6 +493,7 @@ class World:
         for f in self.corpses: f.t += dt
         self.shake = max(0.0, self.shake - dt)
         if inp.potion_pressed: self.drink_potion()
+        if inp.bomb_pressed: self.throw_bomb()
         self._hero_control(dt, inp)
         for e in self.enemies: self._enemy_ai(e, dt)
         self._knockback(dt)
@@ -858,7 +860,7 @@ class World:
                 p.height = p.chest * (1 - u) + 4 * p.apex * u * (1 - u)
                 if u >= 1.0:
                     p.done = True; self.events.append(('impact', 'lob'))
-                    if p.sprite == 'fireball': self.add_vfx('fire_burst', p.tx, False, y=p.ty)
+                    if p.sprite in ('fireball', 'bomb'): self.add_vfx('fire_burst', p.tx, False, y=p.ty)
                     for tgt in targets:
                         if tgt.invuln > 0 or abs(tgt.x - p.tx) > p.radius + tgt.hw or abs(tgt.y - p.ty) > C.VERTICAL_REACH:
                             continue
@@ -895,11 +897,12 @@ class World:
     def export_run(self):
         """What travels between stages (D6): gold, potions, weapon, armor."""
         h = self.hero
-        return dict(gold=self.gold, potions=self.potions, weapon=dict(h.weapon) if h.weapon else None, armor=h.armor)
+        return dict(gold=self.gold, potions=self.potions, weapon=dict(h.weapon) if h.weapon else None, armor=h.armor,
+                    bombs=self.bombs)
 
     def apply_run(self, run):
         h = self.hero
-        self.gold = run.get('gold', 0); self.potions = run.get('potions', 0)
+        self.gold = run.get('gold', 0); self.potions = run.get('potions', 0); self.bombs = run.get('bombs', 0)
         h.weapon = dict(run['weapon']) if run.get('weapon') else None
         h.armor = min(h.armor_max, run.get('armor', 0))
 
@@ -914,6 +917,20 @@ class World:
         h.hp = h.max_hp; h.set_state('idle'); h.invuln = C.REVIVE_INVULN; h.kb_t = 0.0
         self.combo = 0; self.defeated = False; self.hero_timer = None
         self.add_vfx('heal', h.x, h.facing < 0, y=h.y); self.events.append(('revive', h.voice))
+        return True
+
+    def throw_bomb(self):
+        """Key 2: a consumable bought in the shop (D8). Lobbed to the nearest enemy in front (or BOMB_RANGE ahead), it
+        hurts everyone in its landing radius. Spent on use."""
+        h = self.hero
+        if self.bombs <= 0 or h.state not in ('idle', 'walk') or self.time < getattr(self, 'bomb_ready', 0.0): return False
+        ahead = [e for e in self.enemies if e.state != 'dead' and (e.x - h.x) * h.facing > 0 and abs(e.x - h.x) < 280]
+        tx = min(ahead, key=lambda e: abs(e.x - h.x)).x if ahead else h.x + h.facing * C.BOMB_RANGE
+        p = Projectile('lob', h, h.x + h.facing * 8, h.y, h.facing, C.BOMB_DAMAGE, 'bomb', tx=tx, flight=C.BOMB_FLIGHT,
+                       apex=70.0, radius=C.BOMB_RADIUS, knockback=C.KNOCKBACK * 1.5)
+        p.ty = h.y
+        self.projectiles.append(p); self.bombs -= 1; self.bomb_ready = self.time + C.BOMB_COOLDOWN
+        self.events.append(('throw', h.voice))
         return True
 
     def start_attack(self, f, attack_id):

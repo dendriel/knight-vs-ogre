@@ -78,7 +78,17 @@ def rot(im, ang):
     return big
 
 
-sprites = {'arrow': arrow, 'bolt': bolt, 'knife': knife, 'fireball': fireball, 'rock': rock,
+bomb = outline(from_grid([
+    "....g.",
+    "...gs.",
+    ".zzzz.",
+    "zxyyyz",
+    "zyyyyz",
+    "zyyyyz",
+    ".zzzz.",
+], dict(PAL, g=GOLD, s=C(255, 120, 60), z=C(20, 20, 30), x=C(120, 124, 148), y=C(54, 56, 72))))
+
+sprites = {'bomb': bomb, 'arrow': arrow, 'bolt': bolt, 'knife': knife, 'fireball': fireball, 'rock': rock,
            'arrow_u45': rot(arrow, 45), 'arrow_u90': rot(arrow, 90),
            'arrow_d45': rot(arrow, -45), 'arrow_d90': rot(arrow, -90)}
 for name, im in sprites.items():
