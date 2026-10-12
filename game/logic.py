@@ -5,9 +5,10 @@ from . import config as C
 # Default parameters of the enemy AIs (T20); a fighter def may override any of them in 'ai_params'.
 #   attack_dist: stops walking and prepares to swing | wait: random pause before a swing (the player's window) |
 #   cooldown: rest after a swing | retaliate: shorter pause after recovering from a hit | patience: how far the hero may
-#   step back before the enemy forgets its plan
+#   step back before the enemy forgets its plan | retreat_dist: hero closer than this and the enemy steps back
+#   while resting (0 = never)
 AI_DEFAULT = dict(attack_dist=C.OGRE_ATTACK_DIST, wait=C.OGRE_WAIT_BEFORE_ATTACK, cooldown=C.OGRE_COOLDOWN,
-                  retaliate=C.OGRE_RETALIATE_WAIT, patience=C.OGRE_PATIENCE_DIST)
+                  retaliate=C.OGRE_RETALIATE_WAIT, patience=C.OGRE_PATIENCE_DIST, retreat_dist=0)
 
 # Elite variants (T26): modifiers over any fighter def. speed/hp/damage multiply; wait/cooldown scale the AI pauses.
 # `tint` is a colour the view multiplies over the sprite, so elites need no new art.
@@ -22,6 +23,11 @@ FIGHTER_DEFS = {
     'knight': dict(hero=True, max_hp=C.HERO_MAX_HP, speed=C.HERO_SPEED, half_width=8, sheet='knight', ai=None,
                    anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, primary='sword',
                    slash='sword_slash', reach=C.KNIGHT_REACH, label='HERÓI'),
+    'spearman': dict(hero=False, max_hp=C.SPEARMAN_MAX_HP, speed=C.SPEARMAN_SPEED, half_width=8, sheet='spearman', ai='spear',
+                     anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='spearman_thrust',
+                     slash=None, reach=C.SPEARMAN_REACH, label='LANCEIRO',
+                     ai_params=dict(attack_dist=C.SPEARMAN_ATTACK_DIST, wait=C.SPEARMAN_WAIT, cooldown=C.SPEARMAN_COOLDOWN,
+                                    retreat_dist=C.SPEARMAN_RETREAT_DIST)),
     'soldier': dict(hero=False, max_hp=C.SOLDIER_MAX_HP, speed=C.SOLDIER_SPEED, half_width=8, sheet='soldier', ai='melee',
                     anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='soldier_sword',
                     slash='sword_slash', reach=C.KNIGHT_REACH, label='SOLDADO',
@@ -67,6 +73,9 @@ ATTACKS = {
     'soldier_sword': dict(anim='attack', damage=C.DAMAGE, reach=C.KNIGHT_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                           slash='sword_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
                           wear=0.0, next=None),
+    'spearman_thrust': dict(anim='attack', damage=C.DAMAGE, reach=C.SPEARMAN_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
+                            slash=None, move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
+                            wear=0.0, next=None),
     'ogre_axe': dict(anim='attack', damage=C.DAMAGE, reach=C.OGRE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                      slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
                      wear=0.0, next=None),
@@ -379,6 +388,8 @@ class World:
         return sum(1 for e in self.enemies if e is not o and e.state != 'dead' and not e.token
                    and (abs(e.x - self.hero.x), id(e)) < (d, id(o)))
 
+    def _ai_spear(self, o, dt): self._ai_melee(o, dt)       # same plan, other numbers (attack_dist / retreat_dist)
+
     def _ai_prelude(self, o, dt):
         """Shared first steps of every behaviour. Returns the hero when the enemy is free to decide something."""
         h = self.hero
@@ -397,6 +408,11 @@ class World:
         if h is None: return
         p = o.ai_p; dist = abs(h.x - o.x)
         reachable = abs(h.y - o.y) <= C.VERTICAL_REACH
+        rd = p['retreat_dist']
+        if rd and dist < rd and o.ai_cooldown > 0:        # spear: too close while resting -> step back to regain space
+            o.x -= o.facing * o.speed * 0.8 * dt
+            if o.state != 'walk': o.set_state('walk')
+            return
         need = p['attack_dist']
         if not o.token and self.free_tokens() <= 0:        # crowd: no free attack token, keep a standoff distance (T26)
             need += C.STANDOFF_BASE + C.STANDOFF_STEP * self.wait_rank(o)

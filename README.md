@@ -60,7 +60,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 
 ### Inimigos
 - [x] T20 IA modular | [x] T26 fichas de ataque e elites (veterano, bruto, agil)
-- [x] T22 cavaleiro inimigo | T21 lanceiro | T23 arqueiro (tiro em parabola com marcador) | T24 cavaleiro com escudo
+- [x] T22 cavaleiro inimigo | [x] T21 lanceiro | T23 arqueiro (tiro em parabola com marcador) | T24 cavaleiro com escudo
 - [ ] T25 monstros de fantasia (orc, goblin, kobold, minotauro) **(arte)**
 
 ### Fases e progressao

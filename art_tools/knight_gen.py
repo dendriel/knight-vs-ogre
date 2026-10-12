@@ -149,6 +149,16 @@ def atk_special(i):
                 plume=[(-8, 1), (-9, 0), (-6, -1), (-10, 1), (-6, -1), (-8, 0)][i],
                 flap=[-1, -2, -4, 2, -4, -1][i], shift=[1, 0, -2, 2, -2, 0][i])
 
+def atk_spear(i):
+    # estocada: recolhe a lanca, o corpo vai todo para a frente no golpe (frames 3-4 acertam)
+    return dict(weapon='spear', hx=[0, -3, -4, 3, 5, 2][i], footN=(CX + 8, GY), footF=(CX - 6, GY),
+                sink=[1, 2, 2.5, 2.5, 3, 2][i], lean=[0, -10, -14, 10, 16, 5][i],
+                handN=[(6, 4), (-1, 5), (-5, 5), (10, 3), (13, 3), (8, 4)][i],
+                wang=[110, 102, 98, 92, 90, 100][i],
+                handF=[(2, 9), (0, 8), (-2, 8), (4, 6), (6, 6), (3, 8)][i],
+                plume=[(-7, -1), (-8, 1), (-9, 1), (-9, 0), (-10, 2), (-8, 0)][i],
+                flap=[0, -1, -2, -2, -3, -1][i], shift=[-2, 1, 2, -5, -7, -3][i])
+
 ANIMS = [('idle', idle, 6), ('walk', walk, 10), ('run', lambda i: walk(i, True), 12),
          ('attack_sword', atk_sword, 12), ('attack_axe', atk_axe, 10),
          ('attack_bow', atk_bow, 10), ('attack_crossbow', atk_xbow, 10),
@@ -164,6 +174,12 @@ def carry(pose, weapon):
         pose = dict(pose, hold=weapon)                               # melee pose, bow / crossbow carried in the hand
         if weapon == 'xbow': pose['wang'] = (pose['wang'] + 2 * 165) / 3.0      # held more upright than a blade (stays inside the frame)
         if pose.get('wpos'): pose['wpos'] = (pose['wpos'][0] - 8, pose['wpos'][1] - 3)     # keep the lying weapon inside the frame
+    if weapon == 'spear' and pose['weapon'] == 'sword':
+        pose = dict(pose, weapon='spear')                            # carried tilted forward so it stays inside the frame
+        if not pose.get('wback'): pose['wang'] = 132 + (pose['wang'] - 165) * 0.45
+        pose['shift'] = pose.get('shift', 0) - 3
+        if pose.get('wpos'): pose['wpos'] = (pose['wpos'][0] - 4, pose['wpos'][1] - 2)
+        return pose
     if weapon == 'axe' and pose['weapon'] == 'sword':
         pose = dict(pose, weapon='axe')
         if pose.get('wpos'): pose['wpos'] = (pose['wpos'][0], pose['wpos'][1] - 3)     # the axe head is bigger: keep it in the frame

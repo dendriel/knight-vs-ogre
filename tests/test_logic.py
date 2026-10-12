@@ -599,4 +599,24 @@ s2.invuln = 0; w2._hit(w2.hero, s2); assert s2.state == 'dead' and w2.stats['kil
 assert w2.focus_enemy() is s2 and FIGHTER_DEFS['soldier']['label'] == 'SOLDADO'
 print('34 ok: soldier (20 hp, 62 px/s, sword stroke, own sheet)')
 
+# 35) T21: spearman: reaches 55 px (the ogre cannot), has a dead zone up close, steps back when pressed, 25 hp
+s = Fighter('spearman', 55, -1); assert s.max_hp == 25 and s.sheet == 'spearman' and s.defn['ai'] == 'spear'
+w = fresh(0); w.enemies = [s]; w.hero.invuln = 0; s.ai_cooldown = 99
+w.start_attack(s, 'spearman_thrust'); run(w, 0.8, Inputs()); assert w.hero.hp == 90, 'a spear hits at 55 px'
+w = fresh(0); o = Fighter('ogre', 55, -1); w.enemies = [o]; w.hero.invuln = 0; o.ai_cooldown = 99
+w.start_attack(o, 'ogre_axe'); run(w, 0.8, Inputs()); assert w.hero.hp == 100, 'the ogre axe does not reach 55 px'
+w = fresh(0); s = Fighter('spearman', 6, -1); w.enemies = [s]; w.hero.invuln = 0; s.ai_cooldown = 99; s.set_state('hurt')
+s.state = 'idle'; w.start_attack(s, 'spearman_thrust'); run(w, 0.8, Inputs())
+assert w.hero.hp == 100, 'dead zone: standing right on top of the spearman is safe'
+assert C.SPEARMAN_REACH[0] > 0 and C.SPEARMAN_REACH[1] > C.OGRE_REACH[1]
+# pressed spearman (resting) steps back; free spearman stops at its own distance
+w = fresh(0); s = Fighter('spearman', 14, -1); w.enemies = [s]; s.ai_cooldown = 5.0
+x0 = s.x; run(w, 0.5, Inputs()); assert s.x > x0 + 8, (s.x, x0)
+w = fresh(0); s = Fighter('spearman', 300, -1); w.enemies = [s]; s.ai_cooldown = 0
+for _ in range(int(8 / DT)):
+    w.update(DT, Inputs(left=False))
+    if s.state == 'attack': break
+assert 48 <= abs(s.x - w.hero.x) <= 58, abs(s.x - w.hero.x)
+print('35 ok: spearman (long reach, dead zone, steps back, own stop distance)')
+
 print('ALL LOGIC TESTS PASSED')

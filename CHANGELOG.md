@@ -17,6 +17,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T14: **arco e besta** como pickups raros (`BOW_DROP_CHANCE` 0,06, `XBOW_DROP_CHANCE` 0,04; durabilidade como a do machado). O ataque primário vira um tiro em linha reta que nasce no frame 4 da animação: arco = dano `BOW_DAMAGE` 10, `BOW_RANGE` 280, `BOW_WEAR` 2,5%/tiro; besta = virote de `XBOW_DAMAGE` 20, `XBOW_RANGE` 380, recarga `XBOW_RELOAD` 0,8 s, `XBOW_WEAR` 4%/tiro. O herói anda a 50% / 40% da velocidade enquanto atira.
 - T26: **fichas de ataque**: só `MAX_ATTACKERS` = 2 inimigos podem preparar/dar golpe ao mesmo tempo; os demais cercam o herói a uma distância crescente (`STANDOFF_BASE` 14 + `STANDOFF_STEP` 8 por posição na fila) sem parar de encarar. A ficha volta ao fim do golpe, ao levar dano, ao morrer ou quando o herói foge. **Variantes elite** sem arte nova (tinta de cor): *veterano* (+25% velocidade, espera −30%), *bruto* (+60% vida, golpe 15) e *ágil* (+40% velocidade, −30% vida).
 - T22: novo inimigo **soldado** (cavaleiro com armadura violeta): `SOLDIER_MAX_HP` 20 (2 golpes), `SOLDIER_SPEED` 62 (ogro 50), espera `SOLDIER_WAIT` 0,25–0,5 s e descanso `SOLDIER_COOLDOWN` 0,7–1,1 s, golpe de espada de 10. HUD mostra o nome do inimigo mais próximo (`label`) e a variante elite.
+- T21: novo inimigo **lanceiro** (armadura de couro, tabardo verde): `SPEARMAN_MAX_HP` 25, `SPEARMAN_SPEED` 52, alcance `SPEARMAN_REACH` (18, 62) — acerta a ~55 px onde o ogro não alcança, mas tem **zona morta** de 18 px (herói colado não é atingido); para a `SPEARMAN_ATTACK_DIST` 56, espera 0,4–0,7 s e descansa 1,0–1,5 s; se o herói chega a menos de `SPEARMAN_RETREAT_DIST` 24 durante o descanso ele recua.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -31,6 +32,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T12: nova animação `attack_special` (frame 0 = carga, 1–5 giro) e efeitos `spin_slash` (aro de luz) e `charge` (brasas e anel no chão).
 - T14: novos `knight_bow_spritesheet` e `knight_xbow_spritesheet` (herói carregando arco / besta em todas as linhas; as linhas de tiro vêm das poses `attack_bow` / `attack_crossbow` já existentes).
 - T22: `soldier_spritesheet` gerado por `art_tools/enemy_gen.py` (rig do cavaleiro com paleta inimiga via override temporário das cores do `sprite_rig`; sem tocar na saída do cavaleiro).
+- T21: camada `spear` no `sprite_rig.py` (lança de duas mãos, ponta de aço e borla vermelha; `held()` e a mão livre agarram a haste), pose `atk_spear` e `spearman_spritesheet`.
 
 ### Contrato de arte
 - T11: `knight_spritesheet` ganha as linhas 11 (`attack_sword_2`) e 12 (`attack_sword_3`), frames de golpe 3–4; `vfx_spritesheet` ganha as linhas 6 (`sword_slash_2`) e 7 (`sword_slash_3`). Linhas anteriores inalteradas pixel a pixel.
@@ -38,6 +40,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T12: `knight_spritesheet` (e `knight_axe_spritesheet`) ganham a linha 13 `attack_special`; `vfx_spritesheet` ganha as linhas 8 (`spin_slash`) e 9 (`charge`). Estado `charge` do herói congela no frame 0 de `attack_special`.
 - T14: sheets `knight_bow` e `knight_xbow` com as **mesmas linhas e nomes** do `knight_spritesheet`; `sprite_rig.render` ganha `hold=` ('sword' | 'axe' | 'bow' | 'xbow') para carregar outra arma com uma pose de corpo a corpo (`held()`).
 - T22: `soldier_spritesheet` = idle(6), walk(10), attack(12), hurt(10), death(8) (contrato do ogro); golpe nos frames 3–4 reaproveita `sword_slash`.
+- T21: `spearman_spritesheet` = idle(6), walk(10), attack(12), hurt(10), death(8); `render` aceita `weapon='spear'` / `hold='spear'`.
 
 ### Áudio
 - T10: pegar poção reaproveita o SFX `coin_pickup`; beber usa o `heal` existente (evento `potion`).
@@ -63,6 +66,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T20: IA modular: `FIGHTER_DEFS[kind]['ai']` escolhe o comportamento (`_ai_melee` = o ogro atual, sem mudança) e `ai_params` sobrescreve `AI_DEFAULT` (distância de ataque, espera, descanso, revide, paciência) por tipo; `Fighter.speed` pronto para as variantes elite. Teste 32.
 - T26: `World.max_attackers`, `free_tokens()`, `wait_rank()`, `spawn_enemy(kind, x, elite=)`, `ELITE_MODS`, `Fighter.mods/token`; a View multiplica a tinta (`BLEND_RGB_MULT`, em cache) e o `fake_pygame` ganhou `fill(..., special_flags)`. HUD: a barra de armadura só aparece com armadura > 0. Teste 33.
 - T22: `FIGHTER_DEFS['soldier']`, `ATTACKS['soldier_sword']`, `World.focus_enemy()`; `enemy_gen.py` é o gerador de todas as sheets de inimigos (T21/T23/T24/T25). Teste 34.
+- T21: IA `spear` (`_ai_spear`) com `retreat_dist` em `AI_DEFAULT`; `ATTACKS['spearman_thrust']`. Teste 35.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

@@ -66,9 +66,18 @@ def human_rows(attack_fn, hold=None):
             ('hurt', carry(KG.hurt), 10), ('death', carry(KG.death), 8)]
 
 
+SPEARMAN = dict(
+    PN=dict(shade=C(66, 56, 42), base=C(124, 108, 84), hl=C(184, 166, 130)),     # leather / bronze
+    PF=dict(shade=C(40, 34, 26), base=C(84, 72, 54), hl=C(120, 104, 80)),
+    RED=C(52, 128, 74), RED_D=C(30, 82, 46),                                     # green tabard and plume
+    GOLD=C(214, 176, 80), LEATH=C(100, 68, 40), LEATH_D=C(62, 42, 26))
+
+
 def build(out):
     # T22 soldier: the knight with an enemy palette; stroke 1 of the sword is its attack (frames 3-4 hit)
     write_sheet(out, 'soldier', human_rows(KG.atk_sword), SR.render, pal=SOLDIER)
+    # T21 spearman: same rig, green palette, two-handed spear (carried tilted; thrust is the attack row)
+    write_sheet(out, 'spearman', human_rows(KG.atk_spear, hold='spear'), SR.render, pal=SPEARMAN)
 
 
 if __name__ == '__main__':

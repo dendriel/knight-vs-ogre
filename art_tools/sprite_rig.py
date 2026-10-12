@@ -143,6 +143,19 @@ def axe(h, a):
         seg(d, P(17), P(21), 1, PN['base'])
     return layer(f)
 
+def spear(h, a):
+    """Two-handed spear (T21): long shaft, leaf-shaped steel head, small red tassel under it."""
+    dr = vec(a); n = (dr[1], -dr[0])
+    def P(t, s=0): return (h[0] + dr[0] * t + n[0] * s, h[1] + dr[1] * t + n[1] * s)
+    def f(d):
+        seg(d, P(-6), P(16), 2, WOOD)
+        d.line([rd(P(-6, .5)), rd(P(16, .5))], fill=WOOD_D, width=1)
+        d.polygon([rd(P(15, 0)), rd(P(17, -2.5)), rd(P(23, 0)), rd(P(17, 2.5))], fill=BLADE)
+        d.line([rd(P(17, -1.2)), rd(P(22, 0))], fill=BLADE_HL, width=1)
+        d.point(rd(P(15, 2)), fill=RED); d.point(rd(P(14, 3)), fill=RED); d.point(rd(P(13, 2.5)), fill=RED_D)
+    return layer(f)
+
+
 def trail(h, a0, a1, r):
     def f(d):
         for rr, col in ((r, TRAIL1), (r - 3, TRAIL2)):
@@ -168,6 +181,7 @@ def held(kind, pos, ang):
     """Layers of a weapon simply carried in the hand at `pos`, pointing along `ang` (sword / axe / bow / xbow)."""
     if kind == 'sword': return [sword(pos, ang)]
     if kind == 'axe': return [axe(pos, ang)]
+    if kind == 'spear': return [spear(pos, ang)]
     if kind == 'bow':
         bl, st, _ = bow(pos, 90 - ang, 0)                      # limbs along the direction the blade used to point
         return [bl, st]
@@ -191,8 +205,9 @@ def render(p):
     img = Image.new('RGBA', (F, F), (0, 0, 0, 0))
     hN = (S[0] + p['handN'][0], S[1] + p['handN'][1])
     armN, hand = arm(S, hN, PN, LEATH_D)
-    if p['weapon'] == 'axe' and not p.get('wback'):                  # lying body (death): the free hand stays where it was
-        v = vec(p['wang']); hF = (hand[0] - v[0] * 4, hand[1] - v[1] * 4)
+    if p['weapon'] in ('axe', 'spear') and not p.get('wback'):                  # lying body (death): the free hand stays where it was
+        k = 7 if p['weapon'] == 'spear' else 4                       # the free hand grips the shaft behind the first
+        v = vec(p['wang']); hF = (hand[0] - v[0] * k, hand[1] - v[1] * k)
     else:
         hF = (S[0] + p['handF'][0], S[1] + p['handF'][1])
     armF, _ = arm(S, hF, PF, LEATH_D)

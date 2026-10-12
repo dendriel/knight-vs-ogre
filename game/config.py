@@ -12,6 +12,13 @@ ANCHOR_X_FLIP = 33
 HERO_MAX_HP = 100
 OGRE_MAX_HP = 30                   # 3 hits
 MAX_HP = HERO_MAX_HP               # (kept for old code/tests)
+SPEARMAN_MAX_HP = 25               # 3 sword strokes
+SPEARMAN_SPEED = 52.0
+SPEARMAN_REACH = (18, 62)          # reach from 18 to 62 px: the start is the DEAD ZONE, too close and it misses
+SPEARMAN_ATTACK_DIST = 56          # stops here to thrust (the ogre stops at 38)
+SPEARMAN_RETREAT_DIST = 24         # hero closer than this: the spearman steps back to regain space
+SPEARMAN_WAIT = (0.4, 0.7)
+SPEARMAN_COOLDOWN = (1.0, 1.5)
 SOLDIER_MAX_HP = 20                # 2 sword strokes
 SOLDIER_SPEED = 62.0               # faster than the ogre (50)
 SOLDIER_WAIT = (0.25, 0.5)         # shorter window than the ogre's: it is the quick enemy
@@ -44,6 +51,8 @@ COMBO_DAMAGE = (10, 10, 15)        # damage of strokes 1, 2, 3
 COMBO_KNOCKBACK = (14.0, 14.0, 24.0)
 WALK_ANIM_SPEED = 1.2              # ogre walk cycle; keep it proportional to OGRE_SPEED so the feet don't slide
 RUN_ANIM_SPEED = 1.65              # the hero's movement uses the 'run' cycle (~72 px/s per 1.0x), proportional to HERO_SPEED
+SPEAR_WALK_ANIM_SPEED = 1.25         # spearman walk cycle, proportional to SPEARMAN_SPEED (52)
+SPEAR_ATTACK_ANIM_SPEED = 1.3        # slow, telegraphed thrust (row fps 12)
 SOLDIER_WALK_ANIM_SPEED = 1.55      # soldier walk cycle, proportional to SOLDIER_SPEED (62)
 SOLDIER_ATTACK_ANIM_SPEED = KNIGHT_ATTACK_ANIM_SPEED   # same sword stroke as the hero's stroke 1 AND its slash effect
 ANIM_SPEED = {
@@ -53,6 +62,7 @@ ANIM_SPEED = {
                'run': RUN_ANIM_SPEED, 'jump_up': 1.6},
     'ogre': {'attack': ATTACK_ANIM_SPEED, 'walk': WALK_ANIM_SPEED},
     'soldier': {'attack': SOLDIER_ATTACK_ANIM_SPEED, 'walk': SOLDIER_WALK_ANIM_SPEED},
+    'spearman': {'attack': SPEAR_ATTACK_ANIM_SPEED, 'walk': SPEAR_WALK_ANIM_SPEED},
     'vfx': {'sword_slash': KNIGHT_ATTACK_ANIM_SPEED, 'sword_slash_2': KNIGHT_COMBO2_ANIM_SPEED,
             'sword_slash_3': KNIGHT_COMBO3_ANIM_SPEED, 'axe_slash': ATTACK_ANIM_SPEED,
             'spin_slash': SPECIAL_ANIM_SPEED},
