@@ -1073,4 +1073,13 @@ missing = sorted(e for e in emitted if e not in SOUND_FOR and e not in SILENT)
 assert not missing, missing
 print('50 ok: %d event kinds, all with a sound (or silent on purpose)' % len(emitted))
 
+# 51) every boss runs its own AI for real (a kwargs clash in the minotaur lord's charge once crashed the game)
+for name in ('ogre_captain', 'minotaur_lord', 'black_knight'):
+    w = fresh(0); b = Fighter(name, 160, -1); w.enemies = [b]; b.ai_cooldown = 0; w.hero.invuln = 99; seen = set()
+    for _ in range(int(8 / DT)):
+        w.update(DT, Inputs()); seen.add(b.state)
+    assert 'attack' in seen or 'dash' in seen, (name, seen)
+    if name == 'minotaur_lord': assert {'charge', 'dash'} <= seen, seen
+print('51 ok: boss AIs run (captain slam, lord charge, black knight combo)')
+
 print('ALL LOGIC TESTS PASSED')

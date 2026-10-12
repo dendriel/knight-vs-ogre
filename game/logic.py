@@ -636,7 +636,8 @@ class World:
         heavy melee fighter. Jumping over it (feet above VERTICAL_REACH) dodges the dash. T25."""
         h = self.hero
         cp = dict(cooldown=C.MINOTAUR_CHARGE_COOLDOWN, telegraph=C.MINOTAUR_TELEGRAPH, speed=C.MINOTAUR_DASH_SPEED,
-                  time=C.MINOTAUR_DASH_TIME, damage=C.MINOTAUR_DASH_DAMAGE, rest=C.MINOTAUR_REST, **o.defn.get('charge', {}))
+                  time=C.MINOTAUR_DASH_TIME, damage=C.MINOTAUR_DASH_DAMAGE, rest=C.MINOTAUR_REST)
+        cp.update(o.defn.get('charge', {}))                # a boss overrides the regular minotaur's numbers
         o.charge_cd = max(0.0, getattr(o, 'charge_cd', 0.0) - dt)
         if o.state == 'charge':                            # telegraph: standing still, axe raised, tracking nothing
             o.ai_wait -= dt
