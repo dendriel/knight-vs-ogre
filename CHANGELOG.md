@@ -9,6 +9,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 
 ### Técnico
 - `README.md`: nova seção **TODO** com as ideias planejadas (armas pickup com durabilidade, arco/besta, classes, inimigos, fases e bosses, loja, poções e armadura).
+- `TASKS_PLAN.md`: plano de execução das tarefas do TODO (incoerências corrigidas, dependências, ordem, proposta por tarefa e decisões D1–D7 incorporadas; D8–D10 em aberto com padrão recomendado). `README.md` TODO ganhou dificuldade crescente, derrota (renascer por 100 de ouro ou reiniciar) e menu do Esc.
 - `README.md` TODO: 3 fases temáticas (planície, floresta inglesa, cidade), novos inimigos humanos (cavaleiro, arqueiro, lanceiro, cavaleiro com escudo), combo de até 3 golpes no ataque primário e ataque especial com barra de combo.
 
 ## [2026-10-11]

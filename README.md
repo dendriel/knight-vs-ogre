@@ -36,6 +36,7 @@ descanso entre golpes (`OGRE_COOLDOWN`), alcance dos golpes, dano, tempo de resp
 ## TODO (ideias e tarefas planejadas)
 
 Registro de ideias, sem ordem de prioridade. As marcadas com **(arte)** exigem novas animacoes/sprites.
+A ordem de execucao, as dependencias e as incoerencias encontradas estao em `TASKS_PLAN.md`.
 
 ### Armas e equipamentos
 - [ ] Armas como pickups: o ogro pode derrubar o proprio machado; o heroi pega e passa a usa-lo no lugar da espada.
@@ -87,6 +88,11 @@ Registro de ideias, sem ordem de prioridade. As marcadas com **(arte)** exigem n
 - [ ] **(arte)** Cenario de cada fase (props, tiles de chao e parallax do fundo de cada tema).
 - [ ] Boss no fim de cada cenario: perto do final a tela trava em modo "arena" ate o boss ser derrotado; depois que a
       tela e liberada, o jogador segue em frente para concluir o cenario.
+- [ ] Dificuldade crescente: fases mais dificeis que as anteriores e, dentro de cada fase, encontros mais densos e
+      perigosos quanto mais perto do boss. Varios inimigos ao mesmo tempo e variantes mais rapidas/resistentes (elites).
+- [ ] Derrota: o jogador escolhe gastar 100 de ouro para renascer no mesmo ponto do mapa, ou reiniciar a fase (podendo
+      comprar itens na loja de novo para a nova tentativa). Sem ouro suficiente, so reiniciar.
+- [ ] Menu do Esc: continuar, ver comandos, reiniciar fase, sair.
 - [ ] Tela de conclusao do cenario com estatisticas (monstros mortos, dano causado, ouro adquirido).
 - [ ] Segunda tela: loja, onde o heroi gasta o ouro em equipamentos para a proxima partida (armas pickup, pocoes,
       arremessaveis e armadura).
