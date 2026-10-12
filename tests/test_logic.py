@@ -80,7 +80,7 @@ assert first is not None and first >= C.OGRE_WAIT_BEFORE_ATTACK[0] - 0.05
 print('6 ok: ogre waited %.2fs in range before its first swing' % first)
 
 # 6b) spamming attack does not stun-lock the ogre: it gets to hit back; damage is always a multiple of 10
-w = World(T); seen = set(); ogre_hit_hero = False
+w = World(T); w.roster = [(0, 'ogre', 1)]; seen = set(); ogre_hit_hero = False
 for n in range(int(90 / DT)):
     hp0 = w.hero.hp
     w.update(DT, bot_fighter(w)); seen.add(w.hero.hp); seen.add(w.ogre.hp)
@@ -670,5 +670,55 @@ t = 0.0
 while s.facing == -1 and t < 2.0: w.update(DT, Inputs()); t += DT
 assert 0.35 <= t <= 0.7, t
 print('37 ok: shield blocks frontal sword/arrows, axe/special/rear hits connect, 0.5 s to turn')
+
+# 38) T25: orc / goblin / kobold / minotaur
+for k in ('orc', 'goblin', 'kobold', 'minotaur'): assert k in T and Fighter(k, 0, 1).sheet == k
+orc, gob, kob, mino = (Fighter(k, 0, 1) for k in ('orc', 'goblin', 'kobold', 'minotaur'))
+assert orc.max_hp == 40 and gob.max_hp == 10 and kob.max_hp == 12 and mino.max_hp == 50
+assert gob.speed > orc.speed > FIGHTER_DEFS['ogre']['speed'] and gob.hw < orc.hw
+# goblin: one sword stroke kills it; its hit is small (5)
+w = fresh(0); g = Fighter('goblin', 20, -1); g.ai_cooldown = 99; w.enemies = [g]; g.invuln = 0
+w._hit(w.hero, g); assert g.state == 'dead'
+w = fresh(0); g = Fighter('goblin', 20, -1); w.enemies = [g]; w.hero.invuln = 0; g.ai_cooldown = 0
+run(w, 3.0, Inputs()); assert w.hero.hp < 100 and (100 - w.hero.hp) % C.GOBLIN_DAMAGE == 0      # hits of 5
+# kobold throws a lobbed rock (sprite 'rock'), 5 damage
+w = fresh(0); k = Fighter('kobold', 120, -1); w.enemies = [k]; k.ai_cooldown = 99; w.hero.invuln = 0
+w.start_attack(k, 'kobold_rock'); lob = None
+for _ in range(int(2.5 / DT)):
+    w.update(DT, Inputs())
+    if lob is None and w.projectiles: lob = w.projectiles[0]
+assert lob is not None and lob.sprite == 'rock' and lob.kind == 'lob' and w.hero.hp == 95
+# minotaur: telegraph (axe raised, ~0.7 s warning), then a dash that hurts for 15; jumping over it dodges
+def mino_world():
+    w = fresh(0); m = Fighter('minotaur', 150, -1); w.enemies = [m]; m.ai_cooldown = 0; w.hero.invuln = 0; return w, m
+w, m = mino_world(); seen = []
+for _ in range(int(4 / DT)):
+    w.update(DT, Inputs()); w.hero.invuln = 0 if w.hero.hp == 100 else w.hero.invuln
+    if not seen or seen[-1] != m.state: seen.append(m.state)
+    if w.hero.hp < 100: break
+assert 'charge' in seen and 'dash' in seen and seen.index('charge') < seen.index('dash'), seen
+assert w.hero.hp == 85 and ('telegraph', 'minotaur') in w.events
+w, m = mino_world(); tele = None
+for _ in range(int(4 / DT)):
+    w.update(DT, Inputs(jump=(m.state == 'dash' and w.hero.grounded and abs(m.x - w.hero.x) < 75)))   # jumps as it arrives
+    if m.state == 'charge' and tele is None: tele = w.time
+    if m.state == 'dash' and tele is not None: warn = w.time - tele; break
+assert abs(warn - C.MINOTAUR_TELEGRAPH) < 0.1, warn
+for _ in range(int(1.0 / DT)): w.update(DT, Inputs(jump=(w.hero.grounded and m.state == 'dash' and abs(m.x - w.hero.x) < 75)))
+assert w.hero.hp == 100, 'jumping dodged the charge'
+print('38 ok: orc, goblin (1 stroke), kobold (lobbed rock), minotaur (telegraphed charge, dodgeable by jumping)')
+
+# 39) T25: endless roster: only ogres at first, new kinds unlock with kills, deterministic, elites late
+w = World(T); kinds = [w._draw_enemy()[0] for _ in range(30)]; assert set(kinds) == {'ogre'}
+w.ogre_deaths = 5; kinds = {w._draw_enemy()[0] for _ in range(200)}
+assert kinds == {'ogre', 'soldier', 'goblin', 'spearman'}, kinds
+w.ogre_deaths = 14; draws = [w._draw_enemy() for _ in range(300)]
+assert {k for k, _ in draws} == {k for _, k, _ in C.ENDLESS_ROSTER} and any(e for _, e in draws) and any(e is None for _, e in draws)
+a, b = World(T, seed=9), World(T, seed=9); a.ogre_deaths = b.ogre_deaths = 10
+assert [a._draw_enemy() for _ in range(20)] == [b._draw_enemy() for _ in range(20)]
+w = World(T); w.ogre_deaths = 12; w.update(DT, Inputs()); assert len(w.enemies) >= 1
+for _ in range(3): w.ogre_deaths += 5
+w.enemies = []; w.update(DT, Inputs()); assert len(w.enemies) == C.ENDLESS_CROWD_MAX
+print('39 ok: endless roster unlocks with kills, deterministic, crowds and elites grow')
 
 print('ALL LOGIC TESTS PASSED')

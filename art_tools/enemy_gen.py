@@ -14,6 +14,7 @@ from PIL import Image
 
 import sprite_rig as SR
 import knight_gen as KG
+import ogre_gen as OG
 
 F = 64
 
@@ -100,12 +101,72 @@ def shield_rows():
     return rows
 
 
+# ---- ogre-rig variants (T25): recolours, small or large versions, extra head parts ---------------------------------------
+def scaler(k):
+    """Post-process: scales a frame about the hip column / feet row so the anchors stay valid (k < 1 small, k > 1 large)."""
+    def post(img):
+        if k == 1: return img
+        bb0 = img.getbbox(); kk = k
+        if bb0 and k > 1:                                       # a frame that would cross the edge is scaled down to fit
+            x0, y0, x1, y1 = bb0
+            lim = [k, 57.0 / max(1, 58 - y0), 58.0 / max(1, x1 - x0)]
+            if x1 > 30: lim.append(32.0 / (x1 - 30))
+            if x0 < 30: lim.append(29.0 / (30 - x0))
+            kk = min(lim)
+        n = int(round(F * kk)); big = img.resize((n, n), Image.NEAREST)
+        out = Image.new('RGBA', (F, F), (0, 0, 0, 0))
+        out.paste(big, (int(round(30 - 30 * kk)), int(round(58 - 58 * kk))), big)
+        bb = out.getbbox()
+        if bb and bb[0] < 1:                                   # a scaled lying body must not cross the frame edge
+            o2 = Image.new('RGBA', (F, F), (0, 0, 0, 0)); o2.paste(out, (1 - bb[0], 0), out); out = o2
+        return out
+    return post
+
+
+def ogre_rows(): return list(OG.ANIMS)
+
+
+ORC = dict(SK=dict(shade=C(46, 54, 44), base=C(98, 112, 82), hl=C(158, 172, 124)),
+           SKF=dict(shade=C(30, 38, 32), base=C(66, 78, 58), hl=C(96, 110, 78)),
+           FUR=C(122, 54, 46), FUR_D=C(78, 32, 30), TUSK=C(236, 228, 196), EYE=C(236, 70, 50))
+GOBLIN = dict(SK=dict(shade=C(30, 92, 44), base=C(110, 188, 76), hl=C(188, 240, 124)),
+              SKF=dict(shade=C(22, 62, 36), base=C(70, 136, 58), hl=C(100, 170, 80)),
+              FUR=C(150, 104, 62), FUR_D=C(104, 70, 42), EYE=C(255, 236, 90))
+KOBOLD = dict(SK=dict(shade=C(120, 56, 40), base=C(206, 112, 70), hl=C(244, 170, 112)),
+              SKF=dict(shade=C(84, 38, 30), base=C(150, 78, 52), hl=C(186, 112, 76)),
+              FUR=C(88, 74, 60), FUR_D=C(56, 46, 38), EYE=C(255, 255, 160))
+MINOTAUR = dict(SK=dict(shade=C(60, 36, 24), base=C(122, 78, 46), hl=C(180, 128, 80)),
+                SKF=dict(shade=C(40, 24, 18), base=C(88, 54, 34), hl=C(120, 80, 52)),
+                FUR=C(70, 50, 40), FUR_D=C(44, 32, 28), EYE=C(255, 90, 60))
+
+
+def minotaur_head():
+    """Ogre head + two curved horns (the head function is swapped only while the minotaur is rendered)."""
+    orig = OG.o_head
+    def head(c, eye='open'):
+        base = orig(c, eye); x, y = SR.rd(c)
+        def horns(d):
+            d.polygon([(x - 3, y - 6), (x - 7, y - 9), (x - 8, y - 13), (x - 5, y - 10), (x - 2, y - 7)], fill=C(236, 226, 196))
+            d.polygon([(x + 3, y - 6), (x + 7, y - 9), (x + 8, y - 13), (x + 5, y - 10), (x + 2, y - 7)], fill=C(236, 226, 196))
+            d.line([(x - 7, y - 10), (x - 5, y - 8)], fill=C(176, 166, 140))
+            d.line([(x + 7, y - 10), (x + 5, y - 8)], fill=C(176, 166, 140))
+        base.alpha_composite(SR.layer(horns))
+        return base
+    return head
+
+
 def build(out):
     # T22 soldier: the knight with an enemy palette; stroke 1 of the sword is its attack (frames 3-4 hit)
     write_sheet(out, 'soldier', human_rows(KG.atk_sword), SR.render, pal=SOLDIER)
     # T21 spearman: same rig, green palette, two-handed spear (carried tilted; thrust is the attack row)
     write_sheet(out, 'spearman', human_rows(KG.atk_spear, hold='spear'), SR.render, pal=SPEARMAN)
     # T23 archer: bow carried in the melee rows, the bow-draw poses as the attack row (arrow leaves on frame 4)
+    # T25 monsters: the ogre rig recoloured / scaled (rows idle, walk, attack, hurt, death)
+    write_sheet(out, 'orc', ogre_rows(), OG.o_render, pal_module=OG, pal=ORC)
+    write_sheet(out, 'goblin', ogre_rows(), OG.o_render, pal_module=OG, pal=GOBLIN, post=scaler(0.72))
+    write_sheet(out, 'kobold', ogre_rows(), OG.o_render, pal_module=OG, pal=KOBOLD, post=scaler(0.8))
+    write_sheet(out, 'minotaur', ogre_rows(), OG.o_render, pal_module=OG, pal=dict(MINOTAUR, o_head=minotaur_head()),
+                post=scaler(1.1))
     # T24 shield knight: shield in the free hand + a guard row appended at the end
     write_sheet(out, 'shieldman', shield_rows(), SR.render, pal=SHIELDMAN)
     write_sheet(out, 'archer', human_rows(KG.atk_bow, hold='bow'), SR.render, pal=ARCHER)

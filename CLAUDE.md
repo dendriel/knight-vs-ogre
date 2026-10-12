@@ -92,6 +92,7 @@ no final**. O jogo lê o `fps` de cada animação do `.json`.
 | `spearman_spritesheet` | contrato do ogro (idle, walk, attack(12, estocada, frames 3-4), hurt, death); lança carregada inclinada (`hold='spear'`); `enemy_gen.py` |
 | `archer_spritesheet` | contrato do ogro; `attack` = poses do arco (a flecha sai no frame 4, projétil `lob`); arco carregado nas demais linhas |
 | `shieldman_spritesheet` | contrato do ogro + linha `guard`(6, escudo erguido; é o estado parado do jogo) **no final**; escudo na mão livre |
+| `orc_`, `goblin_`, `kobold_`, `minotaur_spritesheet` | contrato do ogro (idle, walk, attack, hurt, death), gerados por `enemy_gen.py` a partir do `ogre_gen` (recolor / escala 0,72 / 0,8 / 1,1 / chifres); o minotauro usa a linha `attack` congelada no frame 2 como pose de investida |
 | `vfx_spritesheet` | sword_slash(12), axe_slash(10), blood_splash(12), spirit(6), heal(10), coin_glint(12), sword_slash_2(12), sword_slash_3(12), spin_slash(12, aro do especial), charge(10, brasas enquanto segura), block_spark(14, na frente do escudo) |
 
 - **Âncora**: coluna do quadril = 30 no frame normal, **33 quando espelhado** (63−30); linha do chão = 58 dentro do frame

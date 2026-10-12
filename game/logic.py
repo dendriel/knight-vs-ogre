@@ -23,6 +23,25 @@ FIGHTER_DEFS = {
     'knight': dict(hero=True, max_hp=C.HERO_MAX_HP, speed=C.HERO_SPEED, half_width=8, sheet='knight', ai=None,
                    anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, primary='sword',
                    slash='sword_slash', reach=C.KNIGHT_REACH, label='HERÓI'),
+    'orc': dict(hero=False, max_hp=C.ORC_MAX_HP, speed=C.ORC_SPEED, half_width=10, sheet='orc', ai='melee',
+                anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='orc_axe',
+                slash='axe_slash', reach=C.OGRE_REACH, label='ORC',
+                ai_params=dict(wait=C.ORC_WAIT, cooldown=C.ORC_COOLDOWN)),
+    'goblin': dict(hero=False, max_hp=C.GOBLIN_MAX_HP, speed=C.GOBLIN_SPEED, half_width=6, sheet='goblin', ai='melee',
+                   anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='goblin_stab',
+                   slash=None, reach=C.GOBLIN_REACH, label='GOBLIN',
+                   ai_params=dict(attack_dist=C.GOBLIN_ATTACK_DIST, wait=C.GOBLIN_WAIT, cooldown=C.GOBLIN_COOLDOWN,
+                                  retaliate=(0.0, 0.1), patience=14)),
+    'kobold': dict(hero=False, max_hp=C.KOBOLD_MAX_HP, speed=C.KOBOLD_SPEED, half_width=7, sheet='kobold', ai='ranged_lob',
+                   anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='kobold_rock',
+                   slash=None, reach=(0, 0), label='KOBOLD',
+                   ai_params=dict(attack_dist=C.KOBOLD_KEEP_DIST, wait=C.KOBOLD_WAIT, cooldown=C.KOBOLD_COOLDOWN,
+                                  retreat_dist=C.KOBOLD_TOO_CLOSE)),
+    'minotaur': dict(hero=False, max_hp=C.MINOTAUR_MAX_HP, speed=C.MINOTAUR_SPEED, half_width=11, sheet='minotaur',
+                     ai='charger', anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death',
+                                         'charge': 'attack', 'dash': 'walk'}, charge_frame=2, primary='minotaur_axe',
+                     slash='axe_slash', reach=C.OGRE_REACH, label='MINOTAURO',
+                     ai_params=dict(wait=(0.3, 0.5), cooldown=(0.9, 1.4))),
     'shieldman': dict(hero=False, max_hp=C.SHIELDMAN_MAX_HP, speed=C.SHIELDMAN_SPEED, half_width=9, sheet='shieldman',
                       ai='guard', guard=True, turn_delay=C.SHIELD_TURN_DELAY,
                       anim={'idle': 'guard', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='shield_sword',
@@ -92,6 +111,18 @@ ATTACKS = {
     'shield_sword': dict(anim='attack', damage=C.DAMAGE, reach=C.KNIGHT_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                          slash='sword_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
                          wear=0.0, next=None),
+    'orc_axe': dict(anim='attack', damage=C.DAMAGE, reach=C.OGRE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
+                    slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0, wear=0.0,
+                    next=None),
+    'goblin_stab': dict(anim='attack', damage=C.GOBLIN_DAMAGE, reach=C.GOBLIN_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
+                        slash=None, move_factor=1.0, knockback=C.KNOCKBACK * 0.6, guard_break=False, cooldown=0.0,
+                        wear=0.0, next=None),
+    'kobold_rock': dict(anim='attack', damage=C.KOBOLD_DAMAGE, reach=(0, 0), active=(), slash_frame=3, slash=None,
+                        move_factor=0.0, knockback=C.KNOCKBACK * 0.6, guard_break=False, cooldown=0.0, wear=0.0, next=None,
+                        shoot=dict(kind='lob', sprite='rock', flight=C.LOB_FLIGHT, apex=C.LOB_APEX, radius=C.LOB_RADIUS)),
+    'minotaur_axe': dict(anim='attack', damage=C.MINOTAUR_DAMAGE, reach=(-12, 50), active=C.ACTIVE_FRAMES, slash_frame=3,
+                         slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK * 1.4, guard_break=False, cooldown=0.0,
+                         wear=0.0, next=None),
     'ogre_axe': dict(anim='attack', damage=C.DAMAGE, reach=C.OGRE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
                      slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
                      wear=0.0, next=None),
@@ -99,7 +130,7 @@ ATTACKS = {
 ANIM = {k: d['anim'] for k, d in FIGHTER_DEFS.items()}          # (aliases kept for old code / tests)
 SLASH = {k: d['slash'] for k, d in FIGHTER_DEFS.items()}
 REACH = {k: d['reach'] for k, d in FIGHTER_DEFS.items()}
-LOOPING = ('idle', 'walk')
+LOOPING = ('idle', 'walk', 'dash')
 
 
 def load_timing(assets_dir):
@@ -144,6 +175,7 @@ class Fighter:
         self.armor = 0; self.armor_max = C.ARMOR_MAX if self.defn['hero'] else 0; self.weapon = None   # equipment (T13, T15); weapon = dict(id, durability)
         self.attack_id = self.defn['primary']                   # which ATTACKS entry the 'attack' state plays
         self.hit_set = []                                       # targets already hit by the current swing
+        self.charge_cd = 0.0; self.dash_t = 0.0; self.dash_hit = False
         self.rehit_done = False; self.cd = {}                    # cd: attack id -> time it can be used again
         self.combo_next = None; self.chain = None               # queued next stroke / (time, id) just after a stroke ended
         self.ai_wait = None; self.ai_cooldown = 0.6             # enemy AI state (per fighter, so many enemies can coexist)
@@ -167,7 +199,7 @@ class Fighter:
         if self.is_hero and self.airborne and self.state in ('idle', 'walk'):
             return 'jump_up' if self.vy > 0 else 'jump_fall'      # falling off a ledge without jumping plays jump_fall too
         if self.state == 'attack': return ATTACKS[self.attack_id]['anim']
-        if self.state == 'charge': return 'attack_special'              # frame 0 of the spin: crouched, blade pulled back
+        if self.state == 'charge': return self.defn['anim'].get('charge', 'attack_special')   # hero: frame 0 of the spin
         return self.defn['anim'][self.state]
 
     @property
@@ -187,7 +219,7 @@ class Fighter:
         a = self.anim; tm = timing[self.sheet]
         if a == 'jump_up': return min(int(self.air_t * tm[a]), 5)
         if a == 'jump_fall': return int(self.air_t * tm[a]) % 6
-        if self.state == 'charge': return 0
+        if self.state == 'charge': return self.defn.get('charge_frame', 0)
         n = int(self.t * tm[a])
         return n % 6 if self.state in LOOPING else min(n, 5)
 
@@ -239,6 +271,8 @@ class World:
         self.projectiles = []; self.areas = []
         self.hero_deaths = 0; self.ogre_deaths = 0
         self.pickups = []; self.gold = 0                   # gold belongs to the player, so it survives hero deaths
+        self.spawn_rng = random.Random(seed + 2000)        # which enemy enters next (separate stream, like loot)
+        self.roster = C.ENDLESS_ROSTER                     # endless mode: grows with the kill count
         self.loot_rng = random.Random(seed + 1000)         # separate stream: drops never disturb the AI's random sequence
         self.hero_timer = None
         self.cam_off = C.SCREEN_W / 2 - C.START_HERO_SCREEN_X     # hero starts on the left, camera glides to center
@@ -383,6 +417,19 @@ class World:
         """Dispatches to the behaviour named by FIGHTER_DEFS[kind]['ai'] (T20): _ai_melee, and the ones added later."""
         getattr(self, '_ai_' + o.defn['ai'])(o, dt)
 
+    def _draw_enemy(self):
+        """Next endless enemy: weighted draw among the roster entries unlocked by the kill count (+ maybe an elite)."""
+        pool = [(k, wgt) for need, k, wgt in self.roster if self.ogre_deaths >= need]
+        total = sum(wgt for _, wgt in pool); r = self.spawn_rng.uniform(0, total)
+        kind = pool[-1][0]
+        for k, wgt in pool:
+            r -= wgt
+            if r <= 0: kind = k; break
+        elite = None
+        if self.ogre_deaths >= C.ENDLESS_ELITE_FROM and self.spawn_rng.random() < C.ENDLESS_ELITE_CHANCE:
+            elite = self.spawn_rng.choice(sorted(ELITE_MODS))
+        return kind, elite
+
     def spawn_enemy(self, kind, x, facing=-1, elite=None):
         e = Fighter(kind, x, facing, elite=elite); e.ai_cooldown = 0.6
         self.enemies.append(e); self.events.append(('spawn', kind))
@@ -436,6 +483,34 @@ class World:
         if delay <= 0: o.facing = d; return
         o.turn_t += dt
         if o.turn_t >= delay: o.facing = d; o.turn_t = 0.0
+
+    def _ai_charger(self, o, dt):
+        """Minotaur: a telegraphed charge in a straight line (a pose with the axe raised, then a dash), otherwise a
+        heavy melee fighter. Jumping over it (feet above VERTICAL_REACH) dodges the dash. T25."""
+        h = self.hero
+        o.charge_cd = max(0.0, getattr(o, 'charge_cd', 0.0) - dt)
+        if o.state == 'charge':                            # telegraph: standing still, axe raised, tracking nothing
+            o.ai_wait -= dt
+            if o.ai_wait <= 0:
+                o.set_state('dash'); o.dash_t = C.MINOTAUR_DASH_TIME; o.dash_hit = False
+            return
+        if o.state == 'dash':
+            o.dash_t -= dt; o.x += o.facing * C.MINOTAUR_DASH_SPEED * dt
+            if (not o.dash_hit and h.state != 'dead' and h.invuln <= 0 and abs(h.x - o.x) <= o.hw + h.hw + 4
+                    and abs(h.y - o.y) <= C.VERTICAL_REACH):
+                o.dash_hit = True
+                self._hit(o, h, at=dict(damage=C.MINOTAUR_DASH_DAMAGE, knockback=C.MINOTAUR_DASH_KNOCKBACK), src_x=o.x)
+            if o.dash_t <= 0:
+                o.set_state('idle'); o.ai_cooldown = C.MINOTAUR_REST; o.token = False
+            return
+        if o.can_act() and h.state != 'dead' and o.charge_cd <= 0 and o.ai_cooldown <= 0:
+            d = abs(h.x - o.x)
+            if C.MINOTAUR_CHARGE_MIN <= d <= C.MINOTAUR_CHARGE_MAX and abs(h.y - o.y) <= C.VERTICAL_REACH:
+                o.facing = 1 if h.x > o.x else -1
+                o.set_state('charge'); o.ai_wait = C.MINOTAUR_TELEGRAPH; o.charge_cd = C.MINOTAUR_CHARGE_COOLDOWN
+                o.token = False; self.events.append(('telegraph', o.kind))
+                return
+        self._ai_melee(o, dt)
 
     def _ai_guard(self, o, dt): self._ai_melee(o, dt)          # shield bearer: melee plan, the guard is in _hit()
 
@@ -702,9 +777,11 @@ class World:
             if e.respawn_t is not None:
                 e.respawn_t -= dt
                 if e.respawn_t <= 0: self.bury(e); self.enemies.remove(e)
-        while len(self.enemies) < self.spawn_target:       # endless mode: keep the quota filled, entering from the right
-            e = Fighter('ogre', self.cam_x() + C.SCREEN_W + C.OGRE_SPAWN_MARGIN, -1)
-            e.ai_cooldown = 0.6; self.enemies.append(e); self.events.append(('spawn', 'ogre'))
+        quota = max(self.spawn_target, min(1 + self.ogre_deaths // C.ENDLESS_CROWD_EVERY, C.ENDLESS_CROWD_MAX))
+        while len(self.enemies) < quota:                   # endless mode: keep the quota filled, entering from the right
+            kind, elite = self._draw_enemy()
+            e = Fighter(kind, self.cam_x() + C.SCREEN_W + C.OGRE_SPAWN_MARGIN, -1, elite=elite)
+            e.ai_cooldown = 0.6; self.enemies.append(e); self.events.append(('spawn', kind))
 
 
 def _stairs(x, direction):

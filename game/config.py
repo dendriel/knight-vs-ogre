@@ -12,6 +12,36 @@ ANCHOR_X_FLIP = 33
 HERO_MAX_HP = 100
 OGRE_MAX_HP = 30                   # 3 hits
 MAX_HP = HERO_MAX_HP               # (kept for old code/tests)
+ORC_MAX_HP = 40                    # 4 strokes: an ogre with more teeth
+ORC_SPEED = 56.0
+ORC_WAIT = (0.3, 0.55)
+ORC_COOLDOWN = (0.8, 1.2)
+GOBLIN_MAX_HP = 10                 # one stroke; they come in bands
+GOBLIN_SPEED = 70.0
+GOBLIN_DAMAGE = 5
+GOBLIN_REACH = (-8, 28)
+GOBLIN_ATTACK_DIST = 24
+GOBLIN_WAIT = (0.15, 0.3)
+GOBLIN_COOLDOWN = (0.5, 0.9)
+KOBOLD_MAX_HP = 12
+KOBOLD_SPEED = 54.0
+KOBOLD_DAMAGE = 5                  # a thrown rock
+KOBOLD_KEEP_DIST = 130
+KOBOLD_TOO_CLOSE = 80
+KOBOLD_WAIT = (0.35, 0.6)
+KOBOLD_COOLDOWN = (1.3, 2.0)
+MINOTAUR_MAX_HP = 50
+MINOTAUR_SPEED = 58.0
+MINOTAUR_DAMAGE = 15               # the axe
+MINOTAUR_CHARGE_MIN = 70           # it charges when the hero is between these distances (px)...
+MINOTAUR_CHARGE_MAX = 200
+MINOTAUR_TELEGRAPH = 0.7           # ...after this long pose with the axe raised (the player's warning)
+MINOTAUR_DASH_SPEED = 240.0
+MINOTAUR_DASH_TIME = 0.6           # seconds (about 144 px); he stops, tired, and rests
+MINOTAUR_DASH_DAMAGE = 15          # a jump over it (hero feet higher than VERTICAL_REACH) dodges the charge
+MINOTAUR_DASH_KNOCKBACK = 34.0
+MINOTAUR_CHARGE_COOLDOWN = 4.0
+MINOTAUR_REST = 1.0
 SHIELDMAN_MAX_HP = 30              # as sturdy as an ogre, but only open from behind / to heavy blows
 SHIELDMAN_SPEED = 46.0
 SHIELDMAN_WAIT = (0.5, 0.9)
@@ -64,6 +94,10 @@ COMBO_KNOCKBACK = (14.0, 14.0, 24.0)
 WALK_ANIM_SPEED = 1.2              # ogre walk cycle; keep it proportional to OGRE_SPEED so the feet don't slide
 RUN_ANIM_SPEED = 1.65              # the hero's movement uses the 'run' cycle (~72 px/s per 1.0x), proportional to HERO_SPEED
 SHIELD_WALK_ANIM_SPEED = 1.1
+ORC_WALK_ANIM_SPEED = 1.35           # proportional to the move speeds below (ogre: 1.2 at 50 px/s)
+GOBLIN_WALK_ANIM_SPEED = 2.8
+KOBOLD_WALK_ANIM_SPEED = 2.0
+MINOTAUR_WALK_ANIM_SPEED = 1.5
 ARCHER_WALK_ANIM_SPEED = 1.2
 ARCHER_ATTACK_ANIM_SPEED = 1.1        # draw and release (row fps 10): the arrow leaves on frame 4
 SPEAR_WALK_ANIM_SPEED = 1.25         # spearman walk cycle, proportional to SPEARMAN_SPEED (52)
@@ -80,6 +114,10 @@ ANIM_SPEED = {
     'spearman': {'attack': SPEAR_ATTACK_ANIM_SPEED, 'walk': SPEAR_WALK_ANIM_SPEED},
     'archer': {'attack': ARCHER_ATTACK_ANIM_SPEED, 'walk': ARCHER_WALK_ANIM_SPEED},
     'shieldman': {'attack': SOLDIER_ATTACK_ANIM_SPEED, 'walk': SHIELD_WALK_ANIM_SPEED},
+    'orc': {'attack': ATTACK_ANIM_SPEED, 'walk': ORC_WALK_ANIM_SPEED},
+    'goblin': {'attack': 1.8, 'walk': GOBLIN_WALK_ANIM_SPEED},
+    'kobold': {'attack': 1.3, 'walk': KOBOLD_WALK_ANIM_SPEED},
+    'minotaur': {'attack': 1.35, 'walk': MINOTAUR_WALK_ANIM_SPEED},
     'vfx': {'sword_slash': KNIGHT_ATTACK_ANIM_SPEED, 'sword_slash_2': KNIGHT_COMBO2_ANIM_SPEED,
             'sword_slash_3': KNIGHT_COMBO3_ANIM_SPEED, 'axe_slash': ATTACK_ANIM_SPEED,
             'spin_slash': SPECIAL_ANIM_SPEED},
@@ -166,6 +204,15 @@ OGRE_RETALIATE_WAIT = (0.05, 0.18) # shorter pause when the ogre has just recove
 MAX_ATTACKERS = 2                  # enemies allowed to prepare / throw a blow at the same time (the rest circle and wait)
 STANDOFF_STEP = 8                  # px: each waiting enemy keeps this much more distance than the one closer to the hero
 STANDOFF_BASE = 14                 # px beyond OGRE_ATTACK_DIST where the first waiting enemy stops
+
+# ---- endless mode roster (the fight that never ends grows with the kill count) --------------------
+# (kills needed, kind, weight): a new enemy is drawn among the kinds whose threshold has been reached
+ENDLESS_ROSTER = [(0, 'ogre', 5), (2, 'soldier', 3), (4, 'goblin', 2), (5, 'spearman', 3), (7, 'archer', 2),
+                  (8, 'shieldman', 2), (9, 'orc', 2), (10, 'kobold', 2), (12, 'minotaur', 1)]
+ENDLESS_ELITE_FROM = 8             # kills from which new enemies may be elites...
+ENDLESS_ELITE_CHANCE = 0.25        # ...with this chance
+ENDLESS_CROWD_EVERY = 5            # one more simultaneous enemy every N kills (up to ENDLESS_CROWD_MAX)
+ENDLESS_CROWD_MAX = 3
 
 # ---- spawning / camera --------------------------------------------------------------------
 RESPAWN_DELAY = 1.6                # seconds between a death and the new fighter appearing
