@@ -93,9 +93,9 @@ class View:
         # bodies stay where they fell, then the living fighters (the hero is drawn over the ogre when they overlap)
         for f in world.corpses:
             if -80 < f.x - cx < C.SCREEN_W + 80:
-                self.blit_char(surf, f.kind, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)))
+                self.blit_char(surf, f.sheet, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)))
         for f in sorted(world.fighters(), key=lambda q: q is not world.hero):
-            self.blit_char(surf, f.kind, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)))
+            self.blit_char(surf, f.sheet, f.anim, f.frame_index(self.timing), f.x, cx, f.facing < 0, oy - int(round(f.y)))
         # layer order: scenery -> boxes -> bodies -> fighters -> pickups (in front of the characters) -> effects -> HUD
         for p in world.pickups:                                     # items bob a little once they have landed
             if -40 < p.x - cx < C.SCREEN_W + 40:

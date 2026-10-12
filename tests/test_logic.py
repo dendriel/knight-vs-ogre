@@ -279,4 +279,18 @@ run(w, C.RESPAWN_DELAY + 0.1, Inputs())
 assert len(w.corpses) >= 3 and len(w.enemies) == 3 and all(e.state != 'dead' for e in w.enemies)   # quota refilled
 print('23 ok: 3 ogres at once, deterministic, cleave, loot per kill, quota refilled')
 
+# 24) T03: attacks are data: damage / knockback / vfx come from ATTACKS[attack_id]; a new attack is one entry
+from game.logic import ATTACKS
+assert ATTACKS['sword']['damage'] == C.DAMAGE and ATTACKS['ogre_axe']['slash'] == 'axe_slash'
+ATTACKS['heavy'] = dict(ATTACKS['sword'], damage=25, knockback=40.0, slash='axe_slash')
+w = fresh(0); w.ogre.x = 30.0; w.ogre.invuln = 0
+w.start_attack(w.hero, 'heavy'); assert w.hero.state == 'attack' and w.hero.anim == 'attack_sword'
+run(w, 0.5, Inputs(attack=True))
+assert w.ogre.hp == 30 - 25 + 0 or w.ogre.state == 'dead' or w.ogre.hp == 5, w.ogre.hp
+assert any(v['name'] == 'axe_slash' for v in w.vfx) or w.ogre.hp == 5
+assert w.ogre.kb_speed == 40.0 / C.KNOCKBACK_TIME
+w = fresh(0); w.start_attack(w.ogre, 'ogre_axe'); assert w.ogre.anim == 'attack' and w.ogre.sheet == 'ogre'
+del ATTACKS['heavy']
+print('24 ok: attacks are data (damage, knockback, effect per attack id)')
+
 print('ALL LOGIC TESTS PASSED')

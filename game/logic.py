@@ -5,11 +5,24 @@ from . import config as C
 # One entry per kind of fighter: everything that differs between a knight and an ogre lives here (T01).
 FIGHTER_DEFS = {
     'knight': dict(hero=True, max_hp=C.HERO_MAX_HP, speed=C.HERO_SPEED, half_width=8, sheet='knight', ai=None,
-                   anim={'idle': 'idle', 'walk': 'run', 'attack': 'attack_sword', 'hurt': 'hurt', 'dead': 'death'},
+                   anim={'idle': 'idle', 'walk': 'run', 'hurt': 'hurt', 'dead': 'death'}, primary='sword',
                    slash='sword_slash', reach=C.KNIGHT_REACH),
     'ogre': dict(hero=False, max_hp=C.OGRE_MAX_HP, speed=C.OGRE_SPEED, half_width=10, sheet='ogre', ai='melee',
-                 anim={'idle': 'idle', 'walk': 'walk', 'attack': 'attack', 'hurt': 'hurt', 'dead': 'death'},
+                 anim={'idle': 'idle', 'walk': 'walk', 'hurt': 'hurt', 'dead': 'death'}, primary='ogre_axe',
                  slash='axe_slash', reach=C.OGRE_REACH),
+}
+
+# Every attack is data (T03). Adding one = one entry here + one row in a sprite sheet.
+#   anim: sheet row | damage | reach: (from, to) in front of the hip | active: frames that can hit | slash_frame: frame
+#   where the trail effect is born | slash: vfx row | move_factor: walking speed multiplier while swinging |
+#   knockback: pixels the victim is pushed | guard_break: ignores shields (T24) | cooldown: seconds before reuse
+ATTACKS = {
+    'sword': dict(anim='attack_sword', damage=C.DAMAGE, reach=C.KNIGHT_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
+                  slash='sword_slash', move_factor=C.ATTACK_MOVE_FACTOR, knockback=C.KNOCKBACK, guard_break=False,
+                  cooldown=0.0, wear=0.0),
+    'ogre_axe': dict(anim='attack', damage=C.DAMAGE, reach=C.OGRE_REACH, active=C.ACTIVE_FRAMES, slash_frame=3,
+                     slash='axe_slash', move_factor=1.0, knockback=C.KNOCKBACK, guard_break=False, cooldown=0.0,
+                     wear=0.0),
 }
 ANIM = {k: d['anim'] for k, d in FIGHTER_DEFS.items()}          # (aliases kept for old code / tests)
 SLASH = {k: d['slash'] for k, d in FIGHTER_DEFS.items()}
@@ -18,10 +31,12 @@ LOOPING = ('idle', 'walk')
 
 
 def load_timing(assets_dir):
-    """fps of every animation, read from the sprite atlases and scaled by config.ANIM_SPEED."""
+    """fps of every animation, read from the sprite atlases (every *_spritesheet.json) and scaled by config.ANIM_SPEED."""
     t = {}
-    for k in ('knight', 'ogre', 'vfx'):
-        with open(os.path.join(assets_dir, f'{k}_spritesheet.json')) as f:
+    for fn in sorted(os.listdir(assets_dir)):
+        if not fn.endswith('_spritesheet.json'): continue
+        k = fn[:-len('_spritesheet.json')]
+        with open(os.path.join(assets_dir, fn)) as f:
             mult = C.ANIM_SPEED.get(k, {})
             t[k] = {n: a['fps'] * mult.get(n, 1.0) for n, a in json.load(f)['animations'].items()}
     return t
@@ -41,7 +56,8 @@ class Fighter:
         self.y = 0.0; self.vy = 0.0; self.grounded = True      # y = height of the feet above the ground (up is +)
         self.air_t = 0.0; self.air_phase = None                 # time in the current rising / falling phase
         self.hit_done = False; self.slash_done = False
-        self.kb_dir = 0; self.kb_t = 0.0
+        self.kb_dir = 0; self.kb_t = 0.0; self.kb_speed = C.KNOCKBACK / C.KNOCKBACK_TIME
+        self.attack_id = self.defn['primary']                   # which ATTACKS entry the 'attack' state plays
         self.hit_set = []                                       # targets already hit by the current swing
         self.ai_wait = None; self.ai_cooldown = 0.6             # enemy AI state (per fighter, so many enemies can coexist)
         self.respawn_t = None                                   # enemies: countdown (after death) until the body is buried
@@ -57,21 +73,25 @@ class Fighter:
 
     @property
     def anim(self):
-        if self.kind == 'knight' and self.airborne and self.state in ('idle', 'walk'):
+        if self.is_hero and self.airborne and self.state in ('idle', 'walk'):
             return 'jump_up' if self.vy > 0 else 'jump_fall'      # falling off a ledge without jumping plays jump_fall too
-        return ANIM[self.kind][self.state]
+        if self.state == 'attack': return ATTACKS[self.attack_id]['anim']
+        return self.defn['anim'][self.state]
+
+    @property
+    def sheet(self): return self.defn['sheet']
 
     @property
     def hw(self): return self.defn['half_width']
 
     def frame_index(self, timing):
-        a = self.anim
-        if a == 'jump_up': return min(int(self.air_t * timing[self.kind][a]), 5)
-        if a == 'jump_fall': return int(self.air_t * timing[self.kind][a]) % 6
-        n = int(self.t * timing[self.kind][a])
+        a = self.anim; tm = timing[self.sheet]
+        if a == 'jump_up': return min(int(self.air_t * tm[a]), 5)
+        if a == 'jump_fall': return int(self.air_t * tm[a]) % 6
+        n = int(self.t * tm[a])
         return n % 6 if self.state in LOOPING else min(n, 5)
 
-    def duration(self, timing): return 6.0 / timing[self.kind][self.anim]
+    def duration(self, timing): return 6.0 / timing[self.sheet][self.anim]
 
     def can_act(self): return self.state in ('idle', 'walk')
 
@@ -196,11 +216,11 @@ class World:
             h.vy = 2 * C.JUMP_HEIGHT / C.JUMP_RISE_TIME; h.grounded = False; h.air_phase = None
             self.events.append(('jump', 'knight'))
         if h.state == 'attack' or inp.attack:                                         # can walk (not turn) while swinging
-            if h.state != 'attack': h.set_state('attack')
-            h.x += dx * C.HERO_SPEED * C.ATTACK_MOVE_FACTOR * dt
+            if h.state != 'attack': self.start_attack(h, h.defn['primary'])
+            h.x += dx * h.defn['speed'] * ATTACKS[h.attack_id]['move_factor'] * dt
             return
         if dx:
-            h.facing = dx; h.x += dx * C.HERO_SPEED * dt
+            h.facing = dx; h.x += dx * h.defn['speed'] * dt
             if h.state != 'walk': h.set_state('walk')
         elif h.state != 'idle':
             h.set_state('idle')
@@ -228,12 +248,12 @@ class World:
             if o.ai_wait is None: o.ai_wait = self.rng.uniform(*C.OGRE_WAIT_BEFORE_ATTACK)
             o.ai_wait -= dt
             if o.ai_wait <= 0:
-                o.ai_wait = None; o.set_state('attack')
+                o.ai_wait = None; self.start_attack(o, o.defn['primary'])
 
     def _knockback(self, dt):
         for f in self.fighters():
             if f.kb_t > 0:
-                f.x += f.kb_dir * (C.KNOCKBACK / C.KNOCKBACK_TIME) * dt; f.kb_t -= dt
+                f.x += f.kb_dir * f.kb_speed * dt; f.kb_t -= dt
 
     def _attacks(self):
         hits = []
@@ -241,13 +261,14 @@ class World:
         for atk, tgt in pairs:
             if atk.state != 'attack': continue
             idx = atk.frame_index(self.timing)
-            if idx >= 3 and not atk.slash_done:
-                atk.slash_done = True; self.add_vfx(SLASH[atk.kind], atk.x, atk.facing < 0, y=atk.y)
+            at = ATTACKS[atk.attack_id]
+            if idx >= at['slash_frame'] and not atk.slash_done:
+                atk.slash_done = True; self.add_vfx(at['slash'], atk.x, atk.facing < 0, y=atk.y)
                 self.events.append(('swing', atk.kind))
-            if tgt in atk.hit_set or idx not in C.ACTIVE_FRAMES: continue     # one hit per target per swing
+            if tgt in atk.hit_set or idx not in at['active']: continue         # one hit per target per swing
             if tgt.state == 'dead' or tgt.invuln > 0: continue
             if abs(atk.y - tgt.y) > C.VERTICAL_REACH: continue          # too high / low for the swing to connect
-            lo, hi = REACH[atk.kind]
+            lo, hi = at['reach']
             a0, a1 = (atk.x + lo, atk.x + hi) if atk.facing > 0 else (atk.x - hi, atk.x - lo)
             if a0 <= tgt.x + tgt.hw and a1 >= tgt.x - tgt.hw:
                 atk.hit_done = True; atk.hit_set.append(tgt); hits.append((atk, tgt))
@@ -262,13 +283,14 @@ class World:
         return amount
 
     def _hit(self, atk, tgt):
-        self.apply_damage(atk, tgt, C.DAMAGE)
+        at = ATTACKS[atk.attack_id]
+        self.apply_damage(atk, tgt, at['damage'])
         self.add_vfx('blood_splash', tgt.x, tgt.x > atk.x, y=tgt.y)
         self.shake = C.SHAKE_TIME
         self.events.append(('hit', tgt.kind))
         dirn = 1 if tgt.x >= atk.x else -1
         tgt.facing = -dirn                                   # turns toward the attacker, recoils backwards
-        tgt.kb_dir = dirn; tgt.kb_t = C.KNOCKBACK_TIME
+        tgt.kb_dir = dirn; tgt.kb_t = C.KNOCKBACK_TIME; tgt.kb_speed = at['knockback'] / C.KNOCKBACK_TIME
         if tgt.hp <= 0:
             tgt.set_state('dead'); tgt.invuln = 999.0
             self.events.append(('death', tgt.kind))
@@ -283,6 +305,9 @@ class World:
             if tgt is self.hero: tgt.invuln = tgt.duration(self.timing) + C.HURT_INVULN_EXTRA
             elif C.OGRE_HURT_INVULN: tgt.invuln = tgt.duration(self.timing) + C.OGRE_HURT_INVULN_EXTRA
             if not tgt.is_hero: tgt.ai_wait = None
+
+    def start_attack(self, f, attack_id):
+        f.attack_id = attack_id; f.set_state('attack')
 
     def heal(self, f, amount):
         """Restores life (capped at max_hp) with the heal effect and sound. Any healing item should go through here."""
