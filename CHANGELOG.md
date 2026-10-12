@@ -5,6 +5,11 @@ commitadas entram no bloco do dia, ou em **[Não lançado]** se forem de outra d
 Constantes entre crases estão em `game/config.py`. Só aparecem as categorias que têm itens.
 Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio · Técnico · Correções · Pendente de validação.
 
+## [2026-10-12]
+
+### Técnico
+- `README.md`: nova seção **TODO** com as ideias planejadas (armas pickup com durabilidade, arco/besta, classes, inimigos, fases e bosses, loja, poções e armadura).
+
 ## [2026-10-11]
 
 ### Jogabilidade
