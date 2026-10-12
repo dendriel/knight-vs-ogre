@@ -282,6 +282,19 @@ def prop_at(scene, name, x_base, g=None, flip=False, f=1.0, dy=0, out=None):
     scene.blit(im, x_base - im.width // 2, GROUND_Y + 1 - im.height + dy)
 
 
+def safe_save(im, path):
+    """Windows can hold a PNG open (an image viewer, an indexer) and refuse the write: write a temp file and replace."""
+    import time
+    tmp = path[:-4] + '._tmp.png'
+    im.save(tmp)
+    for k in range(20):
+        try:
+            os.replace(tmp, path); return
+        except OSError:
+            time.sleep(0.15)
+    os.replace(tmp, path[:-4] + '_new.png')
+
+
 def caption(im, title, sub):
     d = ImageDraw.Draw(im)
     for dx, dy in ((1, 1), (-1, 1), (1, -1), (-1, -1), (0, 2)):
@@ -297,9 +310,9 @@ DETAIL = (70, 120, 430, 240)          # the fighting area, shown at 4x in the "_
 def finish(scene, path, title, sub):
     rgb = scene.im.convert('RGB')
     big = rgb.resize((W * SCALE, H * SCALE), Image.NEAREST)
-    caption(big, title, sub); big.save(path)
+    caption(big, title, sub); safe_save(big, path)
     det = rgb.crop(DETAIL); det = det.resize((det.width * 4, det.height * 4), Image.NEAREST)
-    det.save(path.replace('.png', '_detalhe.png'))
+    safe_save(det, path.replace('.png', '_detalhe.png'))
     return big
 
 

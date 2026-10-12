@@ -40,6 +40,7 @@ assets/                 spritesheets (png + json) e cenário (png) usados pelo j
 assets/sfx/             efeitos sonoros .wav (gerados por código, ver skill game-audio-synthesis)
 assets/music/           trilha .wav em loop (`music_gen.py` da mesma skill regenera)
 tests/                  test_logic.py (69 testes), test_scenes.py, test_fuzz.py, real_pygame_smoke.py, simulate.py, fake_pygame.py (stand-in em Pillow)
+docs/PERSONAGENS.md     catálogo dos estilos de personagens humanos propostos (imagens em docs/personagens/; gerado por art_tools/human_styles.py)
 art_tools/              geradores da arte (ver seção 5); build_assets.py regenera tudo em assets/ (knight/ogre/enemy/class/vfx/theme/proj/icons_gen)
 .claude/skills/         4 skills do projeto (carregadas automaticamente pelo Claude Code, ver seção 6)
 install_skills.py       OPCIONAL: instala as skills também como skills pessoais (~/.claude/skills)

@@ -61,6 +61,7 @@ dificuldade ficam em `game/stages.py`.
 - `main.py` laco principal, entrada, pilha de telas, janela (escala inteira 3x, 480x270 internos)
 - `game/logic.py` regras (sem pygame, testavel) | `game/stages.py` fases, temas, curva | `game/config.py` numeros
 - `game/view.py` desenho, HUD e parallax | `game/scenes.py` telas | `game/ui.py` menu | `game/audio.py` sons
+- `docs/PERSONAGENS.md` catalogo de estilos de personagens humanos (propostas, ainda nao aplicadas ao jogo)
 - `assets/` spritesheets (png + json), cenario, projeteis, icones, sons | `art_tools/` geradores da arte
 - `tests/` `test_logic.py` (regras), `test_scenes.py` (telas), `test_fuzz.py` (teclas aleatorias), `real_pygame_smoke.py`
   (pygame real, sem janela), `simulate.py` (grava GIFs)

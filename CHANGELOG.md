@@ -156,6 +156,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - `art_tools/proposals_gen.py` (novo, fora do `build_assets`): gera em `out/art_proposals/` propostas estáticas de direção de arte (personagens mais baixos + visual mais sombrio) reaproveitando as fichas e props atuais. Não altera o jogo nem `assets/`.
 - README: seção final "Lista de features", mantida atualizada por regra no `CLAUDE.md` (6.2).
 - `sprite_rig.py`: proporções do corpo viram constantes lidas na hora do desenho (`LEG1`, `LEG2`, `TORSO_L`, `ARM_L`, `HEAD_UP`), sem mudar nenhuma saída (`--check` igual). `art_tools/human_styles.py` (novo, fora do `build_assets`) usa isso para desenhar propostas de estilos humanos em `out/art_humanos/` (mais baixos, peito/ombros largos, capacetes e equipamentos diferentes).
+- `docs/PERSONAGENS.md` (novo): catálogo dos 6 estilos humanos aprovados (descrição, uso sugerido, proporções, imagens em `docs/personagens/`), gerado por `human_styles.py`. `proposals_gen.safe_save` evita o erro de gravação do Windows quando o PNG está aberto num visualizador.
 
 ### Correções
 - `Game.run` (o laço principal) estava sobrescrito pelo atributo `self.run` (estado da run, T37): o jogo empacotado quebrava com 'dict object is not callable' ao iniciar. Atributo renomeado para `run_state`; achado ao rodar o executável do PyInstaller. Novos testes cobrem o laço principal (`Game.run`) com o stand-in e com o pygame real.

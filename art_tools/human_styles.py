@@ -276,7 +276,7 @@ def lineup(path):
             img.paste(bg, (260 + c * cw * z, y0), bg)
             if r == 0: d.text((260 + c * cw * z + 8, 4), lab, fill=(220, 220, 230))
         d.line([(0, y0 + ch * z - 1), (img.width, y0 + ch * z - 1)], fill=(70, 72, 86))
-    img.save(path)
+    PG.safe_save(img, path)
 
 
 HUMANS = ('knight', 'ranger', 'mage', 'soldier', 'shieldman', 'spearman', 'archer', 'crossbowman', 'black_knight')
@@ -334,12 +334,28 @@ def scenes(out):
         print('wrote', fname)
 
 
+def export_catalog(dest):
+    """Transparent 4x PNGs of every style x role (for docs/PERSONAGENS.md) + the lineup and the scenes."""
+    import shutil
+    os.makedirs(dest, exist_ok=True)
+    roles = [('knight', 'cavaleiro'), ('knight_atk', 'golpe'), ('ranger', 'arqueiro'), ('mage', 'mago'), ('soldier', 'soldado')]
+    for n in STYLES:
+        for role, lab in roles:
+            im = figure(n, role)
+            bb = im.getbbox(); im = im.crop((bb[0] - 2, bb[1] - 2, bb[2] + 2, bb[3] + 2))
+            PG.safe_save(im.resize((im.width * 4, im.height * 4), Image.NEAREST), os.path.join(dest, f'{n}_{lab}.png'))
+    out = os.path.normpath(os.path.join(HERE, '..', 'out', 'art_humanos'))
+    for fn in os.listdir(out):
+        if fn.endswith('.png') and not fn.endswith('_detalhe.png'): shutil.copyfile(os.path.join(out, fn), os.path.join(dest, fn))
+
+
 def main():
-    out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '..', 'out', 'art_humanos')
+    out = os.path.normpath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '..', 'out', 'art_humanos'))
     os.makedirs(out, exist_ok=True)
     lineup(os.path.join(out, '00_linha_de_estilos.png'))
     print('wrote lineup')
     scenes(out)
+    export_catalog(os.path.normpath(os.path.join(HERE, '..', 'docs', 'personagens')))
 
 
 if __name__ == '__main__':
