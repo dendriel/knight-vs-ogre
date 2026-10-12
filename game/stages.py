@@ -66,11 +66,16 @@ THEMES = {
                    dirt=(46, 36, 32), ground='forest_tile', extras=('treeline', 'fog'),
                    props_even=[('oak', .36), ('log', .14), ('stone_wall', .12), ('bush', .12)],
                    props_odd=[('oak', .30), ('fern', .20), ('mushrooms', .12), ('bush', .12)]),
+    'city': dict(sky=(212, 200, 204), hills_far=((132, 130, 156), 74, (5, 3, 2), 61), hills_near=((98, 100, 122), 34, (3, 2, 1), 67),
+                 dirt=(70, 54, 46), ground='street_tile', extras=('skyline', 'wall'),
+                 props_even=[('medieval_house', .5), ('market_stall', .18), ('barrels', .10)],
+                 props_odd=[('lamppost', .28), ('well', .12), ('barrels', .14), ('market_stall', .14)]),
 }
 # where a prop may stand inside its slot: x offset in randint(first, SLOT_W - last)
 PROP_PLACE = {'medieval_house': (0, 160), 'well': (8, 56), 'tree': (0, 112), 'tent': (0, 82), 'banner': (4, 28),
               'palisade': (0, 68), 'planted_swords': (4, 38), 'dead_tree': (0, 64), 'cart': (0, 80), 'campfire': (8, 28),
-              'oak': (0, 140), 'fern': (4, 34), 'log': (0, 78), 'mushrooms': (4, 26), 'stone_wall': (0, 88), 'bush': (0, 50)}
+              'oak': (0, 140), 'fern': (4, 34), 'log': (0, 78), 'mushrooms': (4, 26), 'stone_wall': (0, 88), 'bush': (0, 50),
+              'market_stall': (0, 90), 'barrels': (4, 42), 'lamppost': (20, 22)}
 
 # ---- the campaign (three stages; T36 fills in the difficulty curve, T32-T35 the bosses and the themes) ---------------
 STAGES = {
@@ -83,7 +88,7 @@ STAGES = {
         enc(0.55, 'goblin', 'goblin', 'kobold', 'orc'), enc(0.77, 'shieldman', 'archer', 'kobold'),
         enc(0.86, ('goblin', 'agile'), ('goblin', 'agile'), 'orc', 'kobold', 'archer')],
         difficulty=((3, 2), (4, 2), (5, 3)), elites=(0.5, 0.15, 0.3), loot=(1.3, 1.8), boss='minotaur_lord'),
-    'stage3': Stage('stage3', 'FASE 3 - CIDADE', 'village', 4400, [
+    'stage3': Stage('stage3', 'FASE 3 - CIDADE', 'city', 4400, [
         enc(0.08, 'shieldman', 'spearman', 'soldier'), enc(0.22, 'orc', 'archer', 'archer'), enc(0.40, 'minotaur'),
         enc(0.58, 'shieldman', 'spearman', 'orc', 'archer', ('soldier', 'veteran')),
         enc(0.78, ('orc', 'brute'), 'shieldman', 'archer', 'archer', 'spearman'),

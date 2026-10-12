@@ -249,6 +249,52 @@ props.update(oak=oak(), fern=fern(), log=log(), mushrooms=mushrooms(), stone_wal
 props['forest_tile'] = tile_ground(MOSS2, MOSS1, C(132, 178, 88), C(46, 36, 32), (C(66, 52, 42), C(30, 24, 24), C(86, 70, 50)),
                                    (LF1, LF2, MOSS1), seed=23)
 
+# =============================================================== city (T35)
+IRON1, IRON2, IRON3 = C(40, 42, 54), C(76, 80, 98), C(122, 128, 148)
+GLASS1, GLASS2 = C(255, 214, 110), C(255, 244, 190)
+APPLE, APPLE_L, BREAD = C(200, 50, 44), C(236, 100, 80), C(214, 160, 84)
+
+
+def market_stall():
+    w, h = 90, 70; im = canvas(w, h); d = ImageDraw.Draw(im); gy = h - 2
+    for x in (6, 80): d.rectangle([x, 14, x + 3, gy], fill=WM); d.line([(x, 14), (x, gy)], fill=WL)      # posts
+    n = 7                                                                                                  # striped awning
+    for i in range(n):
+        x0 = 2 + i * 12; col = CRM if i % 2 == 0 else CRM_
+        d.polygon([(x0, 4), (x0 + 12, 4), (x0 + 12, 18), (x0 + 6, 22), (x0, 18)], fill=col)
+        d.line([(x0, 4), (x0 + 11, 4)], fill=CRL if i % 2 == 0 else C(255, 252, 232))
+    d.line([(2, 18), (86, 18)], fill=CRD)
+    d.rectangle([4, 44, 86, gy], fill=WM); d.line([(4, 44), (86, 44)], fill=WL); d.line([(4, gy), (86, gy)], fill=WD)   # counter
+    for x in (22, 44, 66): d.line([(x, 46), (x, gy - 1)], fill=WD)
+    for cx in (12, 22, 32):                                                                                # apples
+        d.ellipse([cx - 4, 36, cx + 4, 44], fill=APPLE); d.point((cx - 2, 38), fill=APPLE_L)
+    for cx in (52, 62, 72):                                                                                # loaves
+        d.ellipse([cx - 6, 38, cx + 6, 44], fill=BREAD); d.line([(cx - 3, 39), (cx + 3, 39)], fill=C(240, 200, 130))
+    d.rectangle([44, 34, 80, 44], fill=WD); d.line([(44, 34), (80, 34)], fill=WL)                         # crate under the bread
+    return outline(im)
+
+def barrels():
+    w, h = 42, 40; im = canvas(w, h); d = ImageDraw.Draw(im); gy = h - 2
+    def barrel(cx, bottom):
+        x0 = cx - 8; top = bottom - 20
+        d.rounded_rectangle([x0, top, x0 + 16, bottom], radius=4, fill=WM)
+        d.line([(x0 + 2, top + 2), (x0 + 2, bottom - 2)], fill=WL); d.line([(x0 + 14, top + 2), (x0 + 14, bottom - 2)], fill=WD)
+        for y in (top + 4, bottom - 4): d.line([(x0, y), (x0 + 16, y)], fill=IRON2, width=2)
+    barrel(10, gy); barrel(30, gy); barrel(20, gy - 18)
+    return outline(im)
+
+def lamppost():
+    w, h = 22, 80; im = canvas(w, h); d = ImageDraw.Draw(im); gy = h - 2
+    d.rectangle([5, gy - 6, 15, gy], fill=IRON2); d.line([(5, gy - 6), (15, gy - 6)], fill=IRON3)       # base
+    d.rectangle([9, 18, 11, gy - 6], fill=IRON2); d.line([(9, 18), (9, gy - 6)], fill=IRON3)             # pole
+    d.rectangle([6, 6, 14, 18], fill=GLASS1); d.rectangle([8, 8, 12, 14], fill=GLASS2)                   # lantern
+    d.line([(6, 6), (14, 6)], fill=IRON1); d.line([(6, 18), (14, 18)], fill=IRON1)
+    d.polygon([(4, 6), (10, 1), (16, 6)], fill=IRON2); d.line([(4, 6), (16, 6)], fill=IRON1)           # roof
+    d.line([(10, 30), (4, 24)], fill=IRON2, width=1); d.line([(10, 30), (16, 24)], fill=IRON2, width=1)  # brackets
+    return outline(im)
+
+props.update(market_stall=market_stall(), barrels=barrels(), lamppost=lamppost())
+
 for name, im in props.items():
     im.save(f'{out}/{name}.png')
 print('ok', len(props))

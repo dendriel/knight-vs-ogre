@@ -29,7 +29,7 @@ SCENERY = ['tree.png', 'medieval_house.png', 'well.png', 'street_tile.png', 'box
            'icon_staff.png',
            'tent.png', 'banner.png', 'palisade.png', 'planted_swords.png', 'dead_tree.png', 'cart.png', 'campfire.png',
            'grass_tile.png', 'oak.png', 'fern.png', 'log.png', 'mushrooms.png', 'stone_wall.png', 'bush.png',
-           'forest_tile.png']
+           'forest_tile.png', 'market_stall.png', 'barrels.png', 'lamppost.png']
 
 
 def same(a, b):

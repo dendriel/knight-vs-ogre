@@ -29,6 +29,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T33: **tema Planície** na fase 1: céu claro, colinas verdes, castelo distante com fumaça no parallax, chão de grama e terra; cenário com tendas listradas, estandartes, paliçadas, espadas fincadas, árvore seca, carroça de feno e fogueira.
 - T32: **chefe e arena** no fim de cada fase: depois do último encontro, ao entrar na última tela do percurso (a `ARENA_ENTER_MARGIN` 30 px) a tela trava (a câmera desliza até ela; paredes à esquerda e à direita) e o chefe entra pela direita; a barra de vida dele aparece embaixo. Ao morrer ele solta 2 poções + bolsa de `BOSS_LOOT_COINS` 30–50 ouro, a tela é liberada, aparece a seta >>> e a fase só termina quando o herói chega ao fim. Fase 1: **Ogro-Capitão** (`CAPTAIN_MAX_HP` 90, golpe largo de 15 que ignora guarda; chama 2 soldados com metade da vida). Fase 2: **Rei Minotauro** (120 de vida, investida mais rápida e frequente, chama goblins e kobold). Fase 3: **Cavaleiro Negro** (110 de vida, combo próprio de 3 golpes, guarda com escudo, chama 2 arqueiros). Comprimentos das fases: 3600 / 4000 / 4400 px.
 - T34: **tema Floresta inglesa** na fase 2: céu verde-acinzentado, linha de árvores no horizonte, névoa em parallax, chão de musgo escuro; carvalhos densos, samambaias, tronco caído, cogumelos, muro de pedra e arbustos com frutas.
+- T35: **tema Cidade** na fase 3: céu quente, silhueta de telhados e torres ao fundo, muralha com torres e ameias no parallax, rua de pedra; casas, barracas de feira, barris empilhados, postes de lampião e poço.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -50,6 +51,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T33: novos props `tent`, `banner`, `palisade`, `planted_swords`, `dead_tree`, `cart`, `campfire` e tile `grass_tile` (`art_tools/theme_gen.py`).
 - T32: `ogre_captain`, `minotaur_lord` e `black_knight` (quadros 96x96, escala 1,5 / 1,45 / 1,3 do rig; elmo com espinhos, chifres grandes, armadura negra com escudo).
 - T34: novos props `oak`, `fern`, `log`, `mushrooms`, `stone_wall`, `bush` e tile `forest_tile` (`theme_gen.py`); parallax `treeline` e `fog` desenhados pelo `view.py`.
+- T35: novos props `market_stall`, `barrels`, `lamppost` (`theme_gen.py`); parallax `skyline` e `wall` no `view.py`.
 
 ### Contrato de arte
 - T11: `knight_spritesheet` ganha as linhas 11 (`attack_sword_2`) e 12 (`attack_sword_3`), frames de golpe 3–4; `vfx_spritesheet` ganha as linhas 6 (`sword_slash_2`) e 7 (`sword_slash_3`). Linhas anteriores inalteradas pixel a pixel.

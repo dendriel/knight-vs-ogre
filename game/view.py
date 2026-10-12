@@ -52,6 +52,8 @@ class View:
             return self._make_hills(height, color, seed=seed, amp=amp)
         far = hills(t['hills_far']); near = hills(t['hills_near'])
         if 'castle' in t['extras']: self._stamp_castle(far)
+        if 'skyline' in t['extras']: self._stamp_skyline(far, (110, 108, 138), seed=2)
+        if 'wall' in t['extras']: self._stamp_wall(near, (84, 86, 108), (116, 118, 140))
         if 'treeline' in t['extras']:
             self._stamp_trees(far, (62, 104, 88), seed=3, step=26); self._stamp_trees(near, (34, 74, 54), seed=8, step=34)
         ground = self._load_img(t['ground'])
@@ -61,6 +63,30 @@ class View:
         if d['fog'] and not hasattr(self, 'fog'): self.fog = self._make_fog()
         self.themes[theme_id] = d
         return d
+
+    def _stamp_skyline(self, strip, color, seed):
+        """Roofs, chimneys and a few towers of a city seen from afar (flat silhouettes)."""
+        rnd = random.Random(seed); h = strip.get_height(); x = 0
+        while x < STRIP_W:
+            w = rnd.randint(34, 64); top = h - rnd.randint(34, 56)
+            strip.fill(color + (255,), (x, top + 10, w, h - top))
+            for k in range(0, 10):                                           # gabled roof as stacked narrowing rows
+                strip.fill(color + (255,), (x + k * 2, top + 10 - k, w - k * 4, 1))
+            if rnd.random() < .5: strip.fill(tuple(c - 18 for c in color) + (255,), (x + w // 2, top - 6, 4, 10))      # chimney
+            if rnd.random() < .22:                                                                                     # tower
+                strip.fill(color + (255,), (x + w - 12, top - 20, 12, 30)); strip.fill(tuple(c - 20 for c in color) + (255,), (x + w - 14, top - 26, 16, 7))
+            x += w - rnd.randint(0, 8)
+
+    def _stamp_wall(self, strip, color, lit):
+        """A long city wall with square towers and crenellations along the near strip."""
+        h = strip.get_height(); top = h - 30
+        strip.fill(color + (255,), (0, top, STRIP_W, h - top))
+        for x in range(0, STRIP_W, 10): strip.fill(color + (255,), (x, top - 5, 6, 5))              # merlons
+        strip.fill(lit + (255,), (0, top, STRIP_W, 2))
+        for x in range(50, STRIP_W, 230):                                                           # towers
+            strip.fill(color + (255,), (x, top - 20, 26, 20 + 30)); strip.fill(lit + (255,), (x, top - 20, 26, 2))
+            for k in range(0, 26, 8): strip.fill(color + (255,), (x + k, top - 25, 5, 5))
+            strip.fill((40, 40, 58, 255), (x + 10, top - 12, 5, 9))                                 # arrow slit
 
     def _stamp_trees(self, strip, color, seed, step):
         """A line of round-crowned trees along the top of a hill strip (forest horizon)."""
