@@ -244,7 +244,7 @@ assert 'heal' in T['vfx'] and 'coin_glint' in T['vfx']
 from game.audio import SOUND_FOR
 sfx = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'sfx')
 for ev, kinds in SOUND_FOR.items():
-    for k, snd in kinds.items(): assert os.path.exists(os.path.join(sfx, snd + '.wav')), snd
+    for snd in (kinds.values() if isinstance(kinds, dict) else [kinds]): assert os.path.exists(os.path.join(sfx, snd + '.wav')), snd
 print('21 ok: heal / coin effects, events and sound files')
 
 # 22) T01: damage funnel and statistics; fighter definitions drive max hp / half width
@@ -1063,5 +1063,14 @@ w.bombs = 1; w.hero.invuln = 0; w._hit(w.ogre, w.hero); assert not w.throw_bomb(
 w = fresh(0); w.bombs = 1; assert w.throw_bomb() and w.projectiles[0].tx == w.hero.x + C.BOMB_RANGE   # nobody ahead: default range
 assert 'bombs' in w.export_run() and w.export_run()['bombs'] == 0
 print('49 ok: bombs (key 2, stock, area damage, cooldown, run state)')
+
+# 50) audio: every event the rules emit has a sound (or is on the silent list), and every sound file exists
+import re
+src = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'game', 'logic.py'), encoding='utf-8').read()
+emitted = set(re.findall(r"events\.append\(\('(\w+)'", src))
+SILENT = {'land'}                                                  # events that are deliberately mute
+missing = sorted(e for e in emitted if e not in SOUND_FOR and e not in SILENT)
+assert not missing, missing
+print('50 ok: %d event kinds, all with a sound (or silent on purpose)' % len(emitted))
 
 print('ALL LOGIC TESTS PASSED')

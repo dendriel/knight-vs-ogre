@@ -112,8 +112,126 @@ def heal():                # soft rising shimmer: a major arpeggio of bells with
     return finish(mix(bells + [(pad, 0.35, 0)]), peak=0.6)
 
 
+# ---- combat events added with the new features (not yet heard by the author: volumes / timbres to tune) ------------
+def shoot():               # arrow / bolt / fireball leaving the weapon: a short airy "thwip"
+    r = rng('shoot')
+    air = env_hump(highpass(lowpass(noise(0.16, r), 3600, 1500), 900), power=1.2, peak=0.3)
+    twang = env_exp(tone(420, 0.16, 190, 'tri'), 0.04)
+    return finish(mix([(air, 1.0, 0), (twang, 0.5, 0)]), peak=0.7)
+
+
+def throw():               # knife / bomb: a lighter whoosh
+    r = rng('throw')
+    air = env_hump(highpass(lowpass(noise(0.18, r), 3000, 1200), 1100), power=1.5, peak=0.35)
+    return finish(air, peak=0.6)
+
+
+def impact():              # a lobbed arrow / rock coming down: dull thud + a little dust
+    r = rng('impact')
+    thud = env_exp(tone(110, 0.2, 55, 'sine'), 0.06)
+    dust = env_exp(lowpass(noise(0.12, r), 1800), 0.03)
+    return finish(mix([(thud, 1.0, 0), (dust, 0.5, 0)]), peak=0.7)
+
+
+def block():               # a blow stopped by a shield: bright metallic clang
+    r = rng('block')
+    clang = mix([(env_exp(tone(f, 0.35, shape='square', duty=.3), 0.09), a, 0)
+                 for f, a in ((880, 0.5), (1320, 0.4), (1975, 0.3), (2790, 0.2))])
+    crack = env_exp(highpass(noise(0.06, r), 2500), 0.012)
+    return finish(mix([(clang, 1.0, 0), (crack, 0.6, 0)]), peak=0.6)
+
+
+def armor_hit():           # armor soaking a hit: a duller clink than a shield
+    r = rng('armor_hit')
+    clink = env_exp(tone(1400, 0.2, 900, 'square', duty=.4), 0.05)
+    thud = env_exp(tone(130, 0.15, 70, 'sine'), 0.05)
+    return finish(mix([(clink, 0.5, 0), (thud, 0.9, 0), (env_exp(noise(0.05, r), 0.01), 0.3, 0)]), peak=0.6)
+
+
+def armor_break():         # armor giving way: crunch + a few falling plates
+    r = rng('armor_break')
+    crunch = env_exp(lowpass(noise(0.35, r), 3000, 900), 0.1)
+    plates = [(env_exp(tone(f, 0.2, shape='square', duty=.3), 0.05), 0.3, d) for f, d in ((1500, 0.05), (1100, 0.14), (800, 0.24))]
+    return finish(mix([(crunch, 1.0, 0)] + plates), peak=0.75)
+
+
+def weapon_break():        # a weapon snapping: sharp crack and splinters
+    r = rng('weapon_break')
+    crack = env_exp(highpass(noise(0.12, r), 1800), 0.025)
+    snap = env_exp(tone(320, 0.15, 90, 'saw'), 0.04)
+    bits = [(env_exp(tone(f, 0.1, shape='square', duty=.25), 0.03), 0.25, d) for f, d in ((2100, 0.1), (1700, 0.17), (2400, 0.22))]
+    return finish(mix([(crack, 1.0, 0), (snap, 0.6, 0)] + bits), peak=0.75)
+
+
+def charge():              # holding the special: a rising hum
+    hum = env_hump(lowpass(tone(110, 0.5, 330, 'saw'), 1600, 700), power=1.0, peak=0.8)
+    shimmer = env_hump(tone(660, 0.5, 1320, 'sine'), power=1.5, peak=0.7)
+    return finish(mix([(hum, 0.6, 0), (shimmer, 0.25, 0)]), peak=0.5)
+
+
+def special():             # releasing the special: a big whoosh with a ring
+    r = rng('special')
+    air = env_hump(highpass(lowpass(noise(0.5, r), 2400, 600), 300), power=1.1, peak=0.4)
+    ring = env_exp(tone(880, 0.5, 440, 'tri'), 0.18)
+    return finish(mix([(air, 1.0, 0), (ring, 0.35, 0.02)]), peak=0.85)
+
+
+def spikes():              # stone spikes erupting: rumble + cracks
+    r = rng('spikes')
+    rumble = env_exp(lowpass(noise(0.4, r), 500, 200), 0.14)
+    cracks = [(env_exp(highpass(noise(0.05, r), 1500), 0.01), 0.6, d) for d in (0.0, 0.05, 0.1)]
+    return finish(mix([(rumble, 1.0, 0)] + cracks), peak=0.8)
+
+
+def explosion():           # a fireball / bomb bursting: boom + crackle
+    r = rng('explosion')
+    boom = env_exp(tone(80, 0.5, 35, 'sine'), 0.16)
+    blast = env_exp(lowpass(noise(0.45, r), 2600, 300), 0.12)
+    return finish(mix([(boom, 1.0, 0), (blast, 0.8, 0)]), peak=0.9)
+
+
+def telegraph():           # the minotaur warning: low snort / horn
+    horn = drive(lowpass(tone(70, 0.5, 100, 'saw', vibrato=(9, 0.04)), 800, 400), 2.5)
+    return finish(env_hump(horn, power=0.9, peak=0.5), peak=0.7)
+
+
+def boss_start():          # the boss arrives: a long, low horn
+    horn = drive(lowpass(tone(55, 1.1, 73, 'saw', vibrato=(5, 0.03)), 600, 300), 2.5)
+    horn2 = lowpass(tone(110, 1.1, 146, 'saw'), 700, 300)
+    return finish(mix([(env_hump(horn, power=0.7, peak=0.5), 1.0, 0), (env_hump(horn2, power=0.7, peak=0.5), 0.5, 0.05)]), peak=0.75)
+
+
+def victory():             # boss defeated / stage complete: a short triumphant arpeggio
+    notes = ((392, 0.0), (523, 0.11), (659, 0.22), (784, 0.33), (1047, 0.5))
+    parts = [(env_exp(tone(f, 0.5, shape='square', duty=.4), 0.16), 1.0, d) for f, d in notes]
+    pad = env_hump(lowpass(tone(262, 1.0, 262, 'tri'), 1500), power=1.0, peak=0.4)
+    return finish(mix(parts + [(pad, 0.5, 0)]), peak=0.45)
+
+
+def revive():              # paid revival: a rising chime
+    bells = [(env_exp(mix([(tone(f, 0.6), 1.0, 0), (tone(f * 2, 0.6), 0.25, 0)]), 0.2, attack=0.01), 1.0, i * 0.09)
+             for i, f in enumerate((330, 440, 554, 659, 880))]
+    return finish(mix(bells), peak=0.6)
+
+
+def gulp():                # drinking a potion
+    r = rng('gulp')
+    g1 = env_exp(tone(240, 0.1, 140, 'sine'), 0.04)
+    g2 = env_exp(tone(200, 0.1, 110, 'sine'), 0.04)
+    return finish(mix([(g1, 1.0, 0), (g2, 0.9, 0.12), (env_exp(lowpass(noise(0.25, r), 900), 0.05), 0.2, 0)]), peak=0.55)
+
+
+def jump():                # a short rising whoosh (the hero leaves the ground)
+    r = rng('jump')
+    air = env_hump(highpass(lowpass(noise(0.14, r), 1800, 3200), 500), power=1.2, peak=0.35)
+    return finish(air, peak=0.35)
+
+
+
 SOUNDS = {f.__name__: f for f in (sword_swing, axe_swing, hit_knight, hit_ogre, hurt_knight, hurt_ogre,
-                                  death_knight, death_ogre, spawn_hero, spawn_ogre, coin_pickup, heal)}
+                                  death_knight, death_ogre, spawn_hero, spawn_ogre, coin_pickup, heal,
+                                  shoot, throw, impact, block, armor_hit, armor_break, weapon_break, charge, special,
+                                  spikes, explosion, telegraph, boss_start, victory, revive, gulp, jump)}
 
 
 def main():

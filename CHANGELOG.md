@@ -81,6 +81,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 ### Áudio
 - T10: pegar poção reaproveita o SFX `coin_pickup`; beber usa o `heal` existente (evento `potion`).
 - T15: eventos `armor_hit`/`armor_break` usam sons provisórios (`hit_knight`/`death_ogre`) até haver SFX próprios.
+- Passada de áudio: 17 novos SFX sintetizados (`shoot`, `throw`, `impact`, `block`, `armor_hit`, `armor_break`, `weapon_break`, `charge`, `special`, `spikes`, `explosion`, `telegraph`, `boss_start`, `victory`, `revive`, `gulp`, `jump`) e mapeados nos eventos; os sons provisórios das T14–T25 foram trocados. Monstros usam a família 'ogro' e humanos/classes a do cavaleiro (`audio.FAMILY`). `sfx_gen.py` regenera tudo (os 12 sons antigos continuam idênticos byte a byte).
 
 ### Técnico
 - T00: `README.md` TODO reorganizado por fundação/cavaleiro/inimigos/fases/classes/economia (fases duplicadas unidas, vocabulário fixo fase/cenário/tela, IDs das tarefas do `TASKS_PLAN.md`).
@@ -119,12 +120,14 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T43: `ATTACKS` `xb_1..3`, `small_axe`, `bolt_volley` (rajada via `burst` do tipo `shot`); teste 47.
 - T44: `Projectile.explode` + `World._explode()`, `ATTACKS[x].area` (caixa atrasada no frame do golpe), burst `rain` com `abs`; teste 48.
 - T50: `ShopScene`, `Game.start_with_shop()`, `World.bombs/throw_bomb()`, `Inputs.bomb_pressed`, run state com `bombs`; cenas 8 e 9, teste 49.
+- Teste 50: todo evento emitido por `logic.py` tem som (ou está na lista de mudos).
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).
 - Poses do combo vistas só em imagem estática; o feeling da janela do combo e do golpe 1 mais lento precisa de teste real.
 - O soldado ainda só aparece em jogo pelo mundo montado em código/fases; entra no modo infinito junto com o elenco completo (fim da T25).
 - Curva de dificuldade só medida com um bot simples; o equilíbrio real (vida, pausas dos inimigos, drop de poções) precisa de jogo humano.
+- Os 17 SFX novos nunca foram ouvidos (volume, timbre e duração a ajustar com o ouvido). A música continua a mesma para todas as fases.
 
 ## [2026-10-11]
 

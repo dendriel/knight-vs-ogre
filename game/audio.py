@@ -4,7 +4,12 @@ import os
 import pygame
 from . import config as C
 
-# world event -> sound file name. Events are (name, kind) with kind = 'knight' | 'ogre'.
+# fighter kind -> sound family: every human-ish fighter sounds like the knight, every monster like the ogre
+FAMILY = {'knight': 'knight', 'ranger': 'knight', 'crossbowman': 'knight', 'mage': 'knight', 'soldier': 'knight',
+          'spearman': 'knight', 'archer': 'knight', 'shieldman': 'knight', 'black_knight': 'knight'}
+
+# world event -> sound file name, or {family: sound file}. Events are (name, kind); kind = a fighter kind (mapped through
+# FAMILY) or an item kind ('coins', 'potion'...).
 SOUND_FOR = {
     'swing': {'knight': 'sword_swing', 'ogre': 'axe_swing'},
     'hit': {'knight': 'hit_knight', 'ogre': 'hit_ogre'},          # kind = the one who was hit
@@ -12,11 +17,12 @@ SOUND_FOR = {
     'death': {'knight': 'death_knight', 'ogre': 'death_ogre'},
     'spawn': {'knight': 'spawn_hero', 'ogre': 'spawn_ogre'},
     'pickup': {'coins': 'coin_pickup', 'potion': 'coin_pickup', 'weapon': 'coin_pickup', 'armor': 'coin_pickup'},
-    'special': {'knight': 'sword_swing'}, 'charge': {'knight': 'spawn_hero'},    # placeholders until T-audio
-    'block': {'shieldman': 'hit_knight'},                                       # placeholder until T-audio
-    'armor_hit': {'knight': 'hit_knight'}, 'armor_break': {'knight': 'death_ogre'},   # placeholders until T-audio
-                            # kind = the item kind
-    'heal': {'knight': 'heal', 'ogre': 'heal'},                    # any life recovery (potions, future items)
+    'heal': 'heal',                                                # any life recovery
+    'potion': 'gulp', 'jump': 'jump',
+    'shoot': 'shoot', 'throw': 'throw', 'impact': 'impact', 'explosion': 'explosion', 'spikes': 'spikes',
+    'block': 'block', 'armor_hit': 'armor_hit', 'armor_break': 'armor_break', 'break': 'weapon_break',
+    'charge': 'charge', 'special': 'special', 'telegraph': 'telegraph',
+    'boss_start': 'boss_start', 'summon': 'spawn_ogre', 'boss_dead': 'victory', 'stage_clear': 'victory', 'revive': 'revive',
 }
 
 
@@ -44,7 +50,9 @@ class Audio:
     def play_events(self, events):
         if self.muted: return
         for name, kind in events:
-            s = self.sounds.get(SOUND_FOR.get(name, {}).get(kind))
+            snd = SOUND_FOR.get(name)
+            if isinstance(snd, dict): snd = snd.get(FAMILY.get(kind, 'ogre'))      # unknown kinds are monsters
+            s = self.sounds.get(snd)
             if s: s.play()
 
     def toggle_mute(self):
