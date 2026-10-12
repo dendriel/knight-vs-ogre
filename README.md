@@ -67,7 +67,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 
 ### Fases e progressao
 - [x] T30 sistema de fases (percurso finito; o modo infinito vira a fase `endless`)
-- [ ] T36 encontros e dificuldade crescente (entre fases e dentro de cada fase; varios inimigos ao mesmo tempo)
+- [x] T36 encontros e dificuldade crescente (entre fases e dentro de cada fase; varios inimigos ao mesmo tempo)
 - [ ] T37 derrota: renascer por 100 de ouro ou reiniciar a fase
 - [ ] T31 tela de conclusao com estatisticas
 - [ ] T33 / T34 / T35 temas: planicie, floresta inglesa, cidade **(arte)**

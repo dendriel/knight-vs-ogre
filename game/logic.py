@@ -267,6 +267,8 @@ class World:
         self.max_attackers = C.MAX_ATTACKERS               # tokens (T26)
         self.stage = stage; self.next_enc = 0              # None = the endless mode; else a finite stage (T30)
         self.stage_clear = False; self.defeated = False
+        self.queue = []                                    # enemies of fired encounters waiting for room (T36)
+        self.diff = stage.difficulty(0.0) if stage is not None else None
         if stage is not None:                              # a path: starts at the left end, no automatic respawns
             self.hero.x = stage.start_x; self.enemies = []; self.cam_off = 0.0
         self.spawn_target = 1                              # endless mode keeps this many enemies in the world (T02)
@@ -728,7 +730,8 @@ class World:
     def _drop_loot(self, x):
         r = self.loot_rng; items = []
         if r.random() < C.POTION_DROP_CHANCE: items.append(Pickup('potion', 0, C.POTION_HEAL))
-        if r.random() < C.COIN_BAG_DROP_CHANCE: items.append(Pickup('coins', 0, r.randint(*C.COIN_BAG_COINS)))
+        mult = self.diff['loot_mult'] if self.diff else 1.0          # later parts of a stage pay more (T36)
+        if r.random() < C.COIN_BAG_DROP_CHANCE: items.append(Pickup('coins', 0, int(round(r.randint(*C.COIN_BAG_COINS) * mult))))
         if r.random() < C.AXE_DROP_CHANCE: items.append(Pickup('weapon', 0, C.WEAPON_DURABILITY, 'axe'))
         if r.random() < C.ARMOR_DROP_CHANCE: items.append(Pickup('armor', 0, C.ARMOR_PICKUP))
         if r.random() < C.BOW_DROP_CHANCE: items.append(Pickup('weapon', 0, C.WEAPON_DURABILITY, 'bow'))
@@ -774,23 +777,27 @@ class World:
                     else: f.ai_cooldown = 0.0; f.ai_wait = self.rng.uniform(*f.ai_p['retaliate'])
 
     def _stage(self, dt):
-        """Stage rules (T30): path bounds, encounters that fire when the hero crosses their line, and the end of the stage."""
+        """Stage rules (T30/T36): path bounds, encounters that fire when the hero crosses their line (their enemies
+        wait in a queue and enter from the right edge while fewer than max_alive are alive), end of the stage."""
         st = self.stage
         if st is None: return
         h = self.hero
         if h.state != 'dead': h.x = max(0.0, min(st.length, h.x))
+        self.diff = d = st.difficulty(st.progress(h.x))
+        self.max_attackers = d['max_attackers']
         while self.next_enc < len(st.encounters) and h.x >= st.trigger_x(st.encounters[self.next_enc]):
-            self._spawn_encounter(st.encounters[self.next_enc]); self.next_enc += 1
-        if (not self.stage_clear and self.next_enc >= len(st.encounters) and h.state != 'dead'
+            self.queue.extend(st.encounters[self.next_enc]['enemies']); self.next_enc += 1
+        alive = sum(1 for e in self.enemies if e.state != 'dead')
+        while self.queue and alive < d['max_alive']:
+            kind, elite = self.queue.pop(0)
+            if elite is None and d['elite_frac'] > 0 and self.spawn_rng.random() < d['elite_frac']:
+                elite = self.spawn_rng.choice(sorted(ELITE_MODS))
+            x = self.cam_x() + C.SCREEN_W + C.OGRE_SPAWN_MARGIN + (alive % 3) * C.ENCOUNTER_SPACING
+            e = Fighter(kind, x, -1, elite=elite); e.ai_cooldown = 0.6
+            self.enemies.append(e); self.events.append(('spawn', kind)); alive += 1
+        if (not self.stage_clear and self.next_enc >= len(st.encounters) and not self.queue and h.state != 'dead'
                 and not any(e.state != 'dead' for e in self.enemies) and h.x >= st.length - C.STAGE_FINISH_DIST):
             self.stage_clear = True; self.events.append(('stage_clear', 'knight'))
-
-    def _spawn_encounter(self, enc):
-        """Enemies of an encounter walk in from beyond the right edge of the screen, a little apart from each other."""
-        x0 = self.cam_x() + C.SCREEN_W + C.OGRE_SPAWN_MARGIN
-        for i, (kind, elite) in enumerate(enc['enemies']):
-            e = Fighter(kind, x0 + i * C.ENCOUNTER_SPACING, -1, elite=elite); e.ai_cooldown = 0.6
-            self.enemies.append(e); self.events.append(('spawn', kind))
 
     def _respawns(self, dt):
         if self.hero_timer is not None:

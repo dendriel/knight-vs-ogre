@@ -23,6 +23,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T25: **monstros**: *orc* (`ORC_MAX_HP` 40, 56 px/s, machado), *goblin* (10 de vida = 1 golpe, 70 px/s, dano 5, alcance curto, ataca rápido; vem em bando), *kobold* (12 de vida, atira **pedras em parábola** de longe, dano 5) e *minotauro* (50 de vida, machado de 15, **investida telegrafada**: pose com o machado erguido por 0,7 s e depois corre 240 px/s por 0,6 s causando 15; pular por cima desvia; fica 1 s cansado). **Modo infinito**: o elenco cresce com os abates (`ENDLESS_ROSTER`: ogro → soldado (2) → goblin (4) → lanceiro (5) → arqueiro (7) → escudeiro (8) → orc (9) → kobold (10) → minotauro (12)); a partir de 8 abates 25% dos novos podem ser elite; +1 inimigo simultâneo a cada 5 abates (até 3).
 - T30: **fases**: percurso finito da esquerda para a direita (`game/stages.py`: `Stage` com tema, comprimento, encontros por progresso `p`); a câmera trava nas pontas, os inimigos entram pela direita quando o herói cruza a linha do encontro (uma vez só), sem reposição automática; a fase termina com todos os encontros disparados, todos derrotados e o herói a `STAGE_FINISH_DIST` 30 px do fim. Morrer **não** renasce sozinho em fase (estado `defeated`; a tela de derrota é a T37). O modo infinito continua igual. A campanha tem 3 fases (tabelas iniciais; a curva de dificuldade vem na T36). HUD mostra nome da fase e barra de progresso com marcas dos encontros.
 - T30: o jogo agora abre num **menu inicial** (Campanha · Modo infinito · Ver comandos · Sair); `--endless` / `--stage N` pulam o menu.
+- T36: **dificuldade crescente**: cada fase tem 3 trechos por progresso (abertura 0–35%, meio 35–75%, pré-boss 75–100%) com `max_alive` e `max_attackers` próprios (fase 1: 2/1 → 3/2 → 3/2; fase 2: 3/2 → 4/2 → 5/3; fase 3: 4/2 → 5/3 → 6/3). Os encontros entram numa fila e os inimigos aparecem pela borda direita enquanto houver menos de `max_alive` vivos; a fração de elites sorteados cresce com o progresso (fase 1 só a partir de 75%); as bolsas de ouro pagam mais no fim (fase 1 ×1,0→1,4; fase 3 ×1,6→2,2). Encontros da fase 1 conforme a seção 4.2 do plano.
 
 ### Balanceamento
 - T11: `KNIGHT_ATTACK_ANIM_SPEED` 2.0 → 1.7 (golpe 1 mais lento); novos `KNIGHT_COMBO2_ANIM_SPEED` = 2.4 e `KNIGHT_COMBO3_ANIM_SPEED` = 2.6, `COMBO_DAMAGE` = (10, 10, 15), `COMBO_KNOCKBACK` = (14, 14, 24).
@@ -81,11 +82,13 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T24: `FIGHTER_DEFS[x].guard/turn_delay`, `World._face()` (virada com atraso), bloqueio dentro de `_hit` (evento `block`), IA `guard`. Teste 37.
 - T25: IA `charger` (estados `charge`/`dash`), `World.roster`/`_draw_enemy()` (fluxo de sorteio próprio `spawn_rng`), constantes `ENDLESS_*`. Testes 38 e 39.
 - T30: `World(stage=...)`, `_stage()`, `_spawn_encounter()`, `Game.start(stage_id)`, `TitleScene`; constantes `STAGE_END_MARGIN`, `STAGE_FINISH_DIST`, `ENCOUNTER_SPACING`; testes de cena passam a iniciar com `Game('endless')`. Teste 40 + cena 6.
+- T36: `Stage.difficulty(p)`, `Stage.threat(section)`, `THREAT`, `World.queue/diff`; teste 41 verifica que a ameaça cresce entre trechos e entre fases e que nunca há mais de `max_alive` vivos. Bot ingênuo (aperta sem esquivar): fase 1 vence 1 de 3 seeds, fase 2 vence 3 de 3, fase 3 perde — a fase 3 exige esquiva, poções e especial.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).
 - Poses do combo vistas só em imagem estática; o feeling da janela do combo e do golpe 1 mais lento precisa de teste real.
 - O soldado ainda só aparece em jogo pelo mundo montado em código/fases; entra no modo infinito junto com o elenco completo (fim da T25).
+- Curva de dificuldade só medida com um bot simples; o equilíbrio real (vida, pausas dos inimigos, drop de poções) precisa de jogo humano.
 
 ## [2026-10-11]
 

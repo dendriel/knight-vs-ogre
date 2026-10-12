@@ -760,4 +760,42 @@ for sid in CAMPAIGN:
     assert all(k in FIGHTER_DEFS and not FIGHTER_DEFS[k]['hero'] for e in s.encounters for k, _ in e['enemies'])
 print('40 ok: stages (path bounds, locked camera, one-shot encounters, clear, final defeat) + campaign data')
 
+# 41) T36: difficulty curve: sections grow inside a stage and from stage to stage; queue never exceeds max_alive;
+#     elites only late; loot grows; deterministic
+from game.stages import SECTIONS, THREAT
+for sid in CAMPAIGN:
+    s = STAGES[sid]
+    th = [s.threat(i) for i in range(3)]; assert th[0] < th[1] < th[2], (sid, th)
+    d = [s.difficulty(p) for p in (0.1, 0.5, 0.9)]
+    assert [x['section'] for x in d] == [0, 1, 2]
+    assert d[0]['max_alive'] <= d[1]['max_alive'] <= d[2]['max_alive'] and d[0]['max_attackers'] <= d[2]['max_attackers']
+    assert d[0]['elite_frac'] == 0.0 or d[0]['elite_frac'] < d[2]['elite_frac']
+    assert d[0]['loot_mult'] < d[1]['loot_mult'] < d[2]['loot_mult']
+tot = [sum(STAGES[s].threat(i) for i in range(3)) for s in CAMPAIGN]; assert tot[0] < tot[1] < tot[2], tot
+ma = [STAGES[s].difficulty(0.9)['max_alive'] for s in CAMPAIGN]; assert ma == sorted(ma) and ma[0] < ma[-1]
+assert STAGES['stage1'].difficulty(0.2)['elite_frac'] == 0.0           # no random elites in the opening
+# the world never has more living enemies than max_alive, tokens follow the section, everything eventually enters
+big = Stage('b', 'GRANDE', 'village', 1000, [enc(0.1, *(['goblin'] * 9))], difficulty=((3, 1), (3, 1), (3, 1)), elites=(0.9, 0, 0))
+w = World(T, stage=big); w.hero.x = big.trigger_x(big.encounters[0]) + 5; w.hero.invuln = 99
+peak = 0; seen = 0
+for _ in range(int(40 / DT)):
+    w.hero.hp = 100; w.update(DT, Inputs())
+    alive = sum(1 for e in w.enemies if e.state != 'dead'); peak = max(peak, alive)
+    for e in w.enemies:                                                 # a bot standing in place: kill whoever arrives
+        if e.state != 'dead' and abs(e.x - w.hero.x) < 30: e.invuln = 0; e.hp = 1; w._hit(w.hero, e)
+assert peak <= 3 and w.stats['kills'] == 9 and w.queue == [], (peak, w.stats['kills'], len(w.queue))
+assert w.max_attackers == 1
+# determinism with the same seed; loot multiplier scales coin bags
+def run_stage(seed):
+    w = World(T, seed=seed, stage=STAGES['stage1']); w.hero.x = 2800.0; w.hero.invuln = 99
+    for _ in range(600): w.update(DT, Inputs())
+    return [(e.kind, e.elite, round(e.x, 2)) for e in w.enemies]
+assert run_stage(4) == run_stage(4)
+w = World(T, stage=STAGES['stage3']); w.hero.x = STAGES['stage3'].length - 100; w.update(DT, Inputs())
+C_old = C.COIN_BAG_DROP_CHANCE; C.COIN_BAG_DROP_CHANCE = 1.0; w.pickups.clear(); w._drop_loot(0.0)
+amt = [p.amount for p in w.pickups if p.kind == 'coins'][0]
+C.COIN_BAG_DROP_CHANCE = C_old
+assert amt >= C.COIN_BAG_COINS[0] * 2, amt                              # x ~2.1 near the end of stage 3
+print('41 ok: difficulty curve, queue capped at max_alive, tokens per section, elites late, loot grows')
+
 print('ALL LOGIC TESTS PASSED')
