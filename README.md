@@ -35,64 +35,38 @@ descanso entre golpes (`OGRE_COOLDOWN`), alcance dos golpes, dano, tempo de resp
 
 ## TODO (ideias e tarefas planejadas)
 
-Registro de ideias, sem ordem de prioridade. As marcadas com **(arte)** exigem novas animacoes/sprites.
-A ordem de execucao, as dependencias e as incoerencias encontradas estao em `TASKS_PLAN.md`.
+Vocabulario: **fase** = percurso com tema; **cenario** = arte do tema; **tela** = UI (selecao, conclusao, loja).
+A ordem de execucao, as dependencias, as decisoes (D1-D10) e as incoerencias resolvidas estao em `TASKS_PLAN.md`.
+Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(arte)** exigem sprites novos.
 
-### Armas e equipamentos
-- [ ] Armas como pickups: o ogro pode derrubar o proprio machado; o heroi pega e passa a usa-lo no lugar da espada.
-- [ ] Durabilidade das armas (100% -> 0%): cada ataque gasta uma parte (ex.: ~3% por golpe no machado); ao zerar, a arma quebra.
-- [ ] O machado precisa ter um efeito proprio que compense o desgaste (mais dano, mais alcance ou golpe mais lento e forte).
-- [ ] **(arte)** Animacoes do heroi com cada arma nova: para cada arma/equipamento, redesenhar o heroi com **todas** as
-      animacoes base (idle, walk/run, ataque, hurt, death, jump_up, jump_fall) segurando a arma. Primeiro caso: o machado do ogro.
-- [ ] Arco e besta como pickups, tambem com durabilidade.
-- [ ] Armadura: obtida pelo jogador; todo dano sofrido desconta da armadura e nao da vida. Quando quebra, o dano volta a descontar da vida.
-- [ ] Pocoes de vida no inventario: ate 10, exibidas no HUD e consumidas por tecla de atalho (tecla 1).
+### Fundacoes
+- [ ] T01 dados por tipo de lutador | T02 varios inimigos | T03 ataques como dados | T04 projeteis e dano em area
+- [ ] T05 entrada ampliada, cenas e menu do Esc (continuar, ver comandos, reiniciar fase, sair) | T06 HUD em slots
 
-### Combate e classes
-- [ ] Combate a distancia com arco e flecha (projetil, mira, dano, alcance).
-- [ ] Combate a distancia com besta (projetil proprio; diferenciar do arco, ex.: mais dano e recarga mais lenta).
-- [ ] Novas classes jogaveis: **arqueiro**, **besteiro** e **mago**, cada uma com atributos diferentes (vida, velocidade, dano, alcance...).
-- [ ] Ataque primario e secundario por classe:
-  - Cavaleiro: primario = espada; secundario = arremessar uma faca.
-  - Arqueiro: primario = arco e flecha; secundario = corte com espada curta.
-  - Besteiro: primario = besta; secundario = machado pequeno.
-  - Mago: primario = cajado que arremessa bolas de fogo; secundario = bater o cajado no chao e fazer surgir
-    espinhos de pedra a frente, atingindo os inimigos na area.
-- [ ] Combo no ataque primario: com o heroi atacando, um novo clique no botao de ataque encadeia outro golpe, com
-      animacao propria. Vale so para o ataque primario; no maximo 3 golpes encadeados, depois volta a um ataque normal.
-      Os golpes encadeados sao mais rapidos, entao o primeiro golpe fica ligeiramente mais lento que o atual.
-- [ ] Ataque especial com barra de combo: a barra carrega conforme o dano causado e recebido (X de dano). Com a barra
-      cheia, o jogador segura o botao de ataque para indicar que quer o especial, e ele dispara ao soltar. Cada classe
-      tem um especial tematico (ex.: cavaleiro = golpe giratorio/investida de escudo; arqueiro = chuva de flechas;
-      besteiro = rajada de viroteis; mago = tempestade de fogo/meteoro).
-- [ ] **(arte)** Animacoes do combo (2 golpes encadeados alem do primeiro) e do ataque especial de cada classe, com efeitos.
-- [ ] **(arte)** Sprites e animacoes de cada classe e de cada ataque (incluindo projeteis, bola de fogo e espinhos de pedra).
-- [ ] Tela de selecao de classe no inicio da partida: cards lado a lado, cada um com uma imagem representativa e os
-      atributos da classe; a classe e escolhida com um clique.
+### Cavaleiro
+- [ ] T10 pocoes no inventario (ate 10, tecla 1; **substitui** o "consumir ao pegar")
+- [ ] T11 combo de 3 golpes (sistema unico, serve a todas as classes) **(arte)**
+- [ ] T13 machado como pickup, com durabilidade e efeito proprio (mais dano/alcance, golpe mais lento) **(arte)**
+- [ ] T15 armadura (o dano desconta dela antes da vida)
+- [ ] T12 barra de combo e ataque especial (segurar com a barra cheia, soltar para disparar) **(arte)**
+- [ ] T14 arco e besta como pickups (projetil, durabilidade) **(arte)**
 
 ### Inimigos
-- [ ] Novos inimigos de fantasia medieval (goblin, minotauro, kobold, orc...), com versoes de ataque curto (corpo a corpo)
-      e de ataque a distancia.
-- [ ] O ataque a distancia dos monstros e um tiro/arremesso para cima que faz uma curva no ceu e cai no chao, dando ao
-      heroi chance de desviar.
-- [ ] Inimigos humanos: **cavaleiro**, **arqueiro** (a distancia), **lanceiro** (alcance maior) e **cavaleiro com
-      escudo** (defende golpes de frente; exige outra estrategia, ex.: atacar pelas costas ou com o especial).
-- [ ] **(arte)** Sprites e animacoes de cada novo inimigo (reaproveitar o esqueleto de `ogre_gen.py`).
+- [ ] T20 IA modular | T26 fichas de ataque e elites (veterano, bruto, agil)
+- [ ] T22 cavaleiro inimigo | T21 lanceiro | T23 arqueiro (tiro em parabola com marcador) | T24 cavaleiro com escudo
+- [ ] T25 monstros de fantasia (orc, goblin, kobold, minotauro) **(arte)**
 
 ### Fases e progressao
-- [ ] Fases: um percurso da esquerda para a direita, com o cenario variando e diferentes encontros de inimigos.
-- [ ] Criar 3 fases para o jogo, cada uma com tema proprio:
-  1. Campo de batalha em uma planicie.
-  2. Floresta inglesa.
-  3. Cidade.
-- [ ] **(arte)** Cenario de cada fase (props, tiles de chao e parallax do fundo de cada tema).
-- [ ] Boss no fim de cada cenario: perto do final a tela trava em modo "arena" ate o boss ser derrotado; depois que a
-      tela e liberada, o jogador segue em frente para concluir o cenario.
-- [ ] Dificuldade crescente: fases mais dificeis que as anteriores e, dentro de cada fase, encontros mais densos e
-      perigosos quanto mais perto do boss. Varios inimigos ao mesmo tempo e variantes mais rapidas/resistentes (elites).
-- [ ] Derrota: o jogador escolhe gastar 100 de ouro para renascer no mesmo ponto do mapa, ou reiniciar a fase (podendo
-      comprar itens na loja de novo para a nova tentativa). Sem ouro suficiente, so reiniciar.
-- [ ] Menu do Esc: continuar, ver comandos, reiniciar fase, sair.
-- [ ] Tela de conclusao do cenario com estatisticas (monstros mortos, dano causado, ouro adquirido).
-- [ ] Segunda tela: loja, onde o heroi gasta o ouro em equipamentos para a proxima partida (armas pickup, pocoes,
-      arremessaveis e armadura).
+- [ ] T30 sistema de fases (percurso finito; o modo infinito vira a fase `endless`)
+- [ ] T36 encontros e dificuldade crescente (entre fases e dentro de cada fase; varios inimigos ao mesmo tempo)
+- [ ] T37 derrota: renascer por 100 de ouro ou reiniciar a fase
+- [ ] T31 tela de conclusao com estatisticas
+- [ ] T33 / T34 / T35 temas: planicie, floresta inglesa, cidade **(arte)**
+- [ ] T32 boss e arena no fim de cada fase **(arte)**
+
+### Classes
+- [ ] T40 classes | T41 ataque secundario (botao direito; faca do cavaleiro) | T42 arqueiro | T45 selecao de classe
+- [ ] T43 besteiro | T44 mago **(arte)**
+
+### Economia
+- [ ] T50 loja e fluxo da run (Selecao -> Fase -> Conclusao -> Loja -> Fase seguinte); ouro e itens passam de fase em fase
