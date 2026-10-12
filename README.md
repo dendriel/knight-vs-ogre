@@ -43,7 +43,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 
 ### Fundacoes
 - [x] T01 dados por tipo de lutador | T02 varios inimigos | T03 ataques como dados | T04 projeteis e dano em area
-- [x] T05 entrada ampliada, cenas e menu do Esc (continuar, ver comandos, reiniciar fase, sair) | [ ] T06 HUD em slots
+- [x] T05 entrada ampliada, cenas e menu do Esc (continuar, ver comandos, reiniciar fase, sair) | [x] T06 HUD em slots
 
 ### Cavaleiro
 - [ ] T10 pocoes no inventario (ate 10, tecla 1; **substitui** o "consumir ao pegar")

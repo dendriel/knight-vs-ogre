@@ -16,7 +16,9 @@ SHEETS = ['knight_spritesheet.png', 'knight_spritesheet.json', 'ogre_spritesheet
 SCENERY = ['tree.png', 'medieval_house.png', 'well.png', 'street_tile.png', 'box.png',
            'potion.png', 'coin_bag.png', 'coin.png',
            'proj_arrow.png', 'proj_bolt.png', 'proj_knife.png', 'proj_fireball.png', 'proj_rock.png',
-           'proj_arrow_u45.png', 'proj_arrow_u90.png', 'proj_arrow_d45.png', 'proj_arrow_d90.png']
+           'proj_arrow_u45.png', 'proj_arrow_u90.png', 'proj_arrow_d45.png', 'proj_arrow_d90.png',
+           'icon_armor.png', 'icon_sword.png', 'icon_axe.png', 'icon_bow.png', 'icon_xbow.png', 'icon_knife.png',
+           'icon_staff.png']
 
 
 def same(a, b):
@@ -36,7 +38,7 @@ def main():
     check = '--check' in sys.argv
     tmp = tempfile.mkdtemp(prefix='ko_art_')
     try:
-        for g in ('knight_gen.py', 'ogre_gen.py', 'vfx_gen.py', 'scenery_gen.py', 'proj_gen.py'): run(g, tmp)
+        for g in ('knight_gen.py', 'ogre_gen.py', 'vfx_gen.py', 'scenery_gen.py', 'proj_gen.py', 'icons_gen.py'): run(g, tmp)
         bad = []
         for name in SHEETS + SCENERY:
             src = os.path.join(tmp, name); dst = os.path.join(ASSETS, name)

@@ -66,6 +66,11 @@ LOB_FLIGHT = 0.95                  # seconds a lobbed shot stays in the air
 LOB_APEX = 70.0                    # extra height (px) of the top of the arc
 LOB_RADIUS = 12.0                  # landing zone half-width (px), plus the target's own half width
 
+# ---- HUD (positions of the fixed parts; the slots below the life bar stack automatically) --------
+HUD = dict(name=(10, 6), hp_bar=(10, 20), hp_num=(156, 18))
+COMBO_BAR_MAX = 100                # points of damage (dealt + taken, weighted) that fill the combo meter (T12)
+POTION_MAX_STOCK = 10              # potions the hero can carry (T10)
+
 # ---- ogre AI ------------------------------------------------------------------------------
 OGRE_ATTACK_DIST = 38              # distance at which the ogre stops walking and prepares to attack
 OGRE_WAIT_BEFORE_ATTACK = (0.35, 0.65)   # random pause (seconds) before each swing: the player's window

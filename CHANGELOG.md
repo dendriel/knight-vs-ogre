@@ -12,6 +12,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 
 ### Arte
 - T04: novos sprites de projétil (`proj_arrow` + variantes inclinadas `u45/u90/d45/d90`, `proj_bolt`, `proj_knife`, `proj_fireball`, `proj_rock`) gerados por `art_tools/proj_gen.py` e desenhados em camada própria (com sombra no chão).
+- T06: ícones de HUD 12x12 (`icon_armor`, `icon_sword`, `icon_axe`, `icon_bow`, `icon_xbow`, `icon_knife`, `icon_staff`) gerados por `art_tools/icons_gen.py`.
 
 ### Técnico
 - T00: `README.md` TODO reorganizado por fundação/cavaleiro/inimigos/fases/classes/economia (fases duplicadas unidas, vocabulário fixo fase/cenário/tela, IDs das tarefas do `TASKS_PLAN.md`).
@@ -23,6 +24,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T03: `ATTACKS[id]` (animação, dano, alcance, frames ativos, frame do rastro, efeito, fator de movimento, knockback, `guard_break`, cooldown, desgaste) e `Fighter.attack_id`; `World.start_attack()`. Ataques do herói (`sword`) e do ogro (`ogre_axe`) idênticos aos anteriores. Um ataque novo = uma entrada + uma linha de sheet. `load_timing` lê todo `*_spritesheet.json` e o lutador usa `defn['sheet']` para animação/desenho. Teste 24.
 - T04: `Projectile` (`straight`: voa reto e acerta o 1º alvo na faixa vertical, com `pierce` opcional; `lob`: parábola até onde o alvo estava, com marcador de queda no chão, dá para desviar), `AreaHit` (caixa com atraso/duração, multi-alvo, um acerto por alvo), `World.shoot()`, `World.add_area()`, eventos `shoot`/`impact`. Novas constantes `PROJ_CHEST`, `ARROW_SPEED`, `ARROW_RANGE`, `LOB_FLIGHT`, `LOB_APEX`, `LOB_RADIUS`. `_hit` aceita `at`/`src_x` (dano/knockback de projétil). `build_assets.py` não reescreve PNG com pixels idênticos. Teste 25.
 - T05: `Inputs` ganha `attack_pressed/released`, `attack_held_t`, `secondary(_pressed)`, `potion_pressed` (bordas calculadas em `Game.sample_inputs`); pilha de cenas em `main.py` (`PlayScene`, `PauseScene`, `ControlsScene` em `game/scenes.py`; menu em `game/ui.py`); `Game.to_internal` converte o mouse para a tela de 480x270. `fake_pygame` simula botão direito, tecla 1, Enter, cliques e movimento do mouse. Novos `tests/test_scenes.py` e `tests/real_pygame_smoke.py` (jogo com o pygame real em modo headless).
+- T06: HUD do herói reorganizado em slots que empilham sob a barra de vida e só existem quando a feature existe (`World.features`: `armor`, `combo`, `weapon`, `potions`); posições fixas em `config.HUD`; novas constantes `COMBO_BAR_MAX` = 100 e `POTION_MAX_STOCK` = 10. Com nenhuma feature o HUD fica igual ao anterior.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

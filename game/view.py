@@ -19,6 +19,7 @@ class View:
         self.props = {n: load(n) for n in ('medieval_house', 'tree', 'well')}
         self.box = load('box')
         self.pickup_img = {'potion': load('potion'), 'coins': load('coin_bag')}; self.coin_icon = load('coin')
+        self.icons = {n: load('icon_' + n) for n in ('armor', 'sword', 'axe', 'bow', 'xbow', 'knife', 'staff')}
         self.proj = {}
         for n in ('arrow', 'bolt', 'knife', 'fireball', 'rock', 'arrow_u45', 'arrow_u90', 'arrow_d45', 'arrow_d90'):
             im = load('proj_' + n); self.proj[(n, False)] = im; self.proj[(n, True)] = pygame.transform.flip(im, True, False)
@@ -151,16 +152,53 @@ class View:
             pygame.draw.rect(surf, color, (fx, y, fill, h))
             pygame.draw.rect(surf, tuple(min(255, c + 60) for c in color), (fx, y, fill, 3))
 
+    def _small_bar(self, surf, x, y, w, h, frac, color, back=(30, 32, 52)):
+        pygame.draw.rect(surf, OUTLINE, (x - 1, y - 1, w + 2, h + 2))
+        pygame.draw.rect(surf, back, (x, y, w, h))
+        fill = int(round(w * max(0.0, min(1.0, frac))))
+        if fill > 0: pygame.draw.rect(surf, color, (x, y, fill, h))
+
     def _hud(self, surf, world, t):
-        # hero: left corner. ogre: right corner (like a fighting game)
-        self._text(surf, 'HERÓI', 10, 6, (230, 240, 255), self.font_big)
-        self._bar(surf, 10, 20, world.hero.hp, world.hero.max_hp, (84, 200, 96), 'left')
-        self._text(surf, f'{world.hero.hp}', 156, 18, font=self.font_big)
-        surf.blit(self.coin_icon, (10, 37)); self._text(surf, f'{world.gold}', 22, 37, (255, 214, 80))
-        self._text(surf, f'Derrotas: {world.hero_deaths}', 10, 52, (255, 220, 150))
-        self._text(surf, 'OGRO', C.SCREEN_W - 10, 6, (255, 220, 200), self.font_big, 'right')
-        self._bar(surf, C.SCREEN_W - 10, 20, world.ogre.hp, world.ogre.max_hp, (222, 80, 60), 'right')
-        self._text(surf, f'{world.ogre.hp}', C.SCREEN_W - 156, 18, font=self.font_big, align='right')
+        """Hero panel in the left corner (slots stack top to bottom and only exist when their feature does), enemy
+        panel in the right corner like a fighting game. Positions live in config.HUD."""
+        h = world.hero; P = C.HUD; feats = world.features
+        self._text(surf, 'HERÓI', *P['name'], (230, 240, 255), self.font_big)
+        self._bar(surf, P['hp_bar'][0], P['hp_bar'][1], h.hp, h.max_hp, (84, 200, 96), 'left')
+        self._text(surf, f'{h.hp}', *P['hp_num'], font=self.font_big)
+        y = P['hp_bar'][1] + 16
+        x0 = P['hp_bar'][0]
+        if 'armor' in feats:                                     # blue bar under the life bar
+            self._small_bar(surf, x0, y, 140, 6, h.armor / max(1, h.armor_max), (96, 150, 235))
+            if h.armor > 0:
+                surf.blit(self.icons['armor'], (x0 + 146, y - 3))
+                self._text(surf, f'{h.armor}', x0 + 160, y - 3, (150, 190, 255))
+            y += 10
+        if 'combo' in feats:                                     # combo meter; blinks when full
+            full = world.combo >= C.COMBO_BAR_MAX
+            col = (255, 230, 90) if full and int(t * 6) % 2 else (240, 150, 60)
+            self._small_bar(surf, x0, y, 140, 5, world.combo / C.COMBO_BAR_MAX, col)
+            y += 9
+        x = x0                                                   # equipment row: weapon - potions - gold
+        if 'weapon' in feats:
+            w = h.weapon
+            surf.blit(self.icons[w['id'] if w else 'sword'], (x, y - 1))
+            if w and w.get('durability') is not None:
+                d = w['durability'] / 100.0
+                self._small_bar(surf, x + 15, y + 3, 30, 4, d, (230, 200, 90) if d > .25 else (230, 80, 70))
+            else:
+                self._text(surf, 'inf', x + 15, y, (200, 210, 230))
+            x += 58
+        if 'potions' in feats:
+            surf.blit(self.pickup_img['potion'], (x, y - 3))
+            self._text(surf, f'{world.potions}/{C.POTION_MAX_STOCK}', x + 15, y, (255, 150, 150))
+            x += 58
+        surf.blit(self.coin_icon, (x, y)); self._text(surf, f'{world.gold}', x + 12, y, (255, 214, 80))
+        self._text(surf, f'Derrotas: {world.hero_deaths}', x0, y + 15, (255, 220, 150))
+        o = world.ogre                                           # enemy panel (the nearest / current enemy)
+        if o is not None:
+            self._text(surf, 'OGRO', C.SCREEN_W - 10, 6, (255, 220, 200), self.font_big, 'right')
+            self._bar(surf, C.SCREEN_W - 10, 20, o.hp, o.max_hp, (222, 80, 60), 'right')
+            self._text(surf, f'{o.hp}', C.SCREEN_W - 156, 18, font=self.font_big, align='right')
         self._text(surf, f'Derrotas: {world.ogre_deaths}', C.SCREEN_W - 10, 38, (255, 220, 150), align='right')
         if t < 8:
             self._center(surf, 'SETAS ou A D: andar   ESPACO: pular   MOUSE ESQ: atacar   ESC: menu', C.SCREEN_H - 14)

@@ -62,6 +62,7 @@ class Fighter:
         self.air_t = 0.0; self.air_phase = None                 # time in the current rising / falling phase
         self.hit_done = False; self.slash_done = False
         self.kb_dir = 0; self.kb_t = 0.0; self.kb_speed = C.KNOCKBACK / C.KNOCKBACK_TIME
+        self.armor = 0; self.armor_max = 0; self.weapon = None   # equipment (T13, T15); weapon = dict(id, durability)
         self.attack_id = self.defn['primary']                   # which ATTACKS entry the 'attack' state plays
         self.hit_set = []                                       # targets already hit by the current swing
         self.ai_wait = None; self.ai_cooldown = 0.6             # enemy AI state (per fighter, so many enemies can coexist)
@@ -135,6 +136,8 @@ class World:
         self.timing = timing; self.rng = random.Random(seed)
         self.hero = Fighter('knight', 0.0, +1)
         self.enemies = [Fighter('ogre', C.START_OGRE_OFFSET, -1)]
+        self.features = set()                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
+        self.potions = 0; self.combo = 0                   # inventory / combo meter (T10, T12)
         self.spawn_target = 1                              # endless mode keeps this many enemies in the world (T02)
         self._jump_held = False; self._box_cache = {}
         self.corpses = []; self.vfx = []
