@@ -78,7 +78,7 @@ class View:
         off = -int(cx * parallax) % STRIP_W
         surf.blit(strip, (off - STRIP_W, y)); surf.blit(strip, (off, y))
 
-    def draw(self, surf, world, clock_t):
+    def draw(self, surf, world, clock_t, hud=True):
         cx = int(round(world.cam_x())); oy = 0
         if world.shake > 0:
             rnd = random.Random(int(clock_t * 60)); cx += rnd.randint(-2, 2); oy = rnd.randint(-1, 1)
@@ -120,7 +120,7 @@ class View:
                 k = int(v['t'] * self.timing['vfx'][v['name']])
                 if 0 <= k < 6:
                     self.blit_char(surf, 'vfx', v['name'], k, v['x'], cx, v['flip'], oy - int(round(v.get('y', 0))))
-        self._hud(surf, world, clock_t)
+        if hud: self._hud(surf, world, clock_t)
 
     def _projectiles(self, surf, world, cx, oy):
         for p in world.projectiles:
@@ -209,6 +209,14 @@ class View:
             self._bar(surf, C.SCREEN_W - 10, 20, o.hp, o.max_hp, (222, 80, 60), 'right')
             self._text(surf, f'{o.hp}', C.SCREEN_W - 156, 18, font=self.font_big, align='right')
         self._text(surf, f'Derrotas: {world.ogre_deaths}', C.SCREEN_W - 10, 38, (255, 220, 150), align='right')
+        st = world.stage
+        if st is not None:                                       # stage name + progress along the path (top centre)
+            w = 110; x = (C.SCREEN_W - w) // 2
+            self.center(surf, st.name, 4, (255, 236, 170), self.font)
+            frac = max(0.0, min(1.0, h.x / st.length))
+            self._small_bar(surf, x, 18, w, 4, frac, (240, 200, 90))
+            for enc in st.encounters:                            # ticks: encounters still to come
+                tx = x + int(w * enc['p']); surf.fill((255, 255, 255), (tx, 17, 1, 1))
         if t < 8:
             self._center(surf, 'SETAS ou A D: andar   ESPACO: pular   MOUSE ESQ: atacar   ESC: menu', C.SCREEN_H - 14)
 

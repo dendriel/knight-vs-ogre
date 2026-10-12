@@ -14,7 +14,7 @@ import main
 def post_key(k): pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=k))
 
 
-g = main.Game()
+g = main.Game('endless')
 frames = 0
 
 

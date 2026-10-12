@@ -25,7 +25,7 @@ def smart_bot(w):
 
 
 def record(total_s, policy, stills=(), every=3, out_dir='out'):
-    g = main.Game(); frames = []; stills = dict(stills)
+    g = main.Game('endless'); frames = []; stills = dict(stills)
     for n in range(int(total_s * 60)):
         t = n / 60
         keys_for(policy(g.world, t))
@@ -46,7 +46,7 @@ def save_gif(frames, path, fps=20, scale=2):
 
 def record_windows(total_s, policy, windows, every=6, stills=()):
     """simulate everything, but only draw frames inside the given [start, end) windows (keeps GIFs small)"""
-    g = main.Game(); out = [[] for _ in windows]; stills = dict(stills)
+    g = main.Game('endless'); out = [[] for _ in windows]; stills = dict(stills)
     for n in range(int(total_s * 60)):
         t = n / 60
         keys_for(policy(g.world, t)); g.handle_events(); g.update(1 / 60)

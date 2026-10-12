@@ -1,6 +1,8 @@
 # Knight vs Ogre (demo)
 
 ## Como rodar (Windows)
+O jogo abre num menu inicial: **Campanha** (3 fases), **Modo infinito** (o combate original), comandos e sair. Para pular o menu: `python main.py --endless` ou `python main.py --stage 2`.
+
 1. Instale o Python 3.10+ (marque "Add Python to PATH").
 2. De dois cliques em `run_game.bat` (instala o pygame na primeira vez e abre o jogo).
    Ou no terminal: `pip install -r requirements.txt` e `python main.py`.
@@ -27,7 +29,7 @@ Para gerar um `.exe`: `build_exe.bat` (resultado em `dist\KnightVsOgre.exe`).
 - Barra de combo (laranja no HUD): enche com o dano causado (x1,5) e recebido (x1,0). Com a barra cheia, segure o botao de ataque (0,25 s) para carregar e solte para disparar o **giro especial** (2 golpes de 15 em volta, ignora a invulnerabilidade dos alvos e o heroi fica invulneravel durante o giro). Um clique rapido com a barra cheia ainda e um golpe normal. A barra zera ao usar e quando o heroi morre.
 - Ogro morreu: o corpo fica no chao e outro ogro entra pela direita. Heroi morreu: outro heroi nasce na esquerda.
 - Contadores de derrotas de cada lado ficam abaixo das barras de vida.
-- O cenario e infinito (casas, arvores e pocos sao gerados por "fatias" conforme a camera anda).
+- O cenario do modo infinito e infinito (casas, arvores e pocos sao gerados por "fatias" conforme a camera anda). Nas fases o percurso e finito: a camera trava nas pontas, os inimigos entram quando o heroi cruza cada linha de encontro e a fase termina quando todos estao derrotados e o heroi chega ao fim. Morrer numa fase nao renasce sozinho (veja a tela de derrota).
 
 ## Ajustes de dificuldade
 Tudo fica em `game/config.py`: velocidade, tempo de espera do ogro antes de atacar (`OGRE_WAIT_BEFORE_ATTACK`),
@@ -64,7 +66,7 @@ Cada item traz o ID da tarefa; `[x]` = feito (ver `CHANGELOG.md`). Itens com **(
 - [x] T25 monstros de fantasia (orc, goblin, kobold, minotauro) **(arte)**
 
 ### Fases e progressao
-- [ ] T30 sistema de fases (percurso finito; o modo infinito vira a fase `endless`)
+- [x] T30 sistema de fases (percurso finito; o modo infinito vira a fase `endless`)
 - [ ] T36 encontros e dificuldade crescente (entre fases e dentro de cada fase; varios inimigos ao mesmo tempo)
 - [ ] T37 derrota: renascer por 100 de ouro ou reiniciar a fase
 - [ ] T31 tela de conclusao com estatisticas

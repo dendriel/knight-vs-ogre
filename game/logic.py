@@ -258,14 +258,19 @@ class AreaHit:
 
 
 class World:
-    def __init__(self, timing, seed=1):
+    def __init__(self, timing, seed=1, stage=None):
         self.timing = timing; self.rng = random.Random(seed)
         self.hero = Fighter('knight', 0.0, +1)
         self.enemies = [Fighter('ogre', C.START_OGRE_OFFSET, -1)]
         self.features = {'potions', 'weapon', 'armor', 'combo'}                              # HUD slots that exist: 'armor', 'combo', 'weapon', 'potions'
         self.potions = 0; self.combo = 0                   # inventory / combo meter (T10, T12)
         self.max_attackers = C.MAX_ATTACKERS               # tokens (T26)
+        self.stage = stage; self.next_enc = 0              # None = the endless mode; else a finite stage (T30)
+        self.stage_clear = False; self.defeated = False
+        if stage is not None:                              # a path: starts at the left end, no automatic respawns
+            self.hero.x = stage.start_x; self.enemies = []; self.cam_off = 0.0
         self.spawn_target = 1                              # endless mode keeps this many enemies in the world (T02)
+        if stage is not None: self.spawn_target = 0
         self._jump_held = False; self._box_cache = {}
         self.corpses = []; self.vfx = []
         self.projectiles = []; self.areas = []
@@ -281,7 +286,10 @@ class World:
         self.stats = dict(kills=0, damage_dealt=0, damage_taken=0, gold_gained=0)
 
     # ------------------------------------------------------------------ helpers
-    def cam_x(self): return self.hero.x - C.SCREEN_W / 2 + self.cam_off
+    def cam_x(self):
+        x = self.hero.x - C.SCREEN_W / 2 + (0.0 if self.stage is not None else self.cam_off)
+        if self.stage is not None: x = max(0.0, min(self.stage.length - C.SCREEN_W + C.STAGE_END_MARGIN, x))   # locked at the ends
+        return x
     def fighters(self): return (self.hero, *self.enemies)
 
     @property
@@ -365,6 +373,7 @@ class World:
         self._pickups(dt)
         self._timeouts()
         self._respawns(dt)
+        self._stage(dt)
         for v in self.vfx: v['t'] += dt
         self.vfx = [v for v in self.vfx if int(v['t'] * self.timing['vfx'][v['name']]) < 6]
         self.cam_off *= math.exp(-C.CAMERA_EASE * dt)
@@ -764,10 +773,31 @@ class World:
                     if was_attack: f.ai_cooldown = self.rng.uniform(*f.ai_p['cooldown'])
                     else: f.ai_cooldown = 0.0; f.ai_wait = self.rng.uniform(*f.ai_p['retaliate'])
 
+    def _stage(self, dt):
+        """Stage rules (T30): path bounds, encounters that fire when the hero crosses their line, and the end of the stage."""
+        st = self.stage
+        if st is None: return
+        h = self.hero
+        if h.state != 'dead': h.x = max(0.0, min(st.length, h.x))
+        while self.next_enc < len(st.encounters) and h.x >= st.trigger_x(st.encounters[self.next_enc]):
+            self._spawn_encounter(st.encounters[self.next_enc]); self.next_enc += 1
+        if (not self.stage_clear and self.next_enc >= len(st.encounters) and h.state != 'dead'
+                and not any(e.state != 'dead' for e in self.enemies) and h.x >= st.length - C.STAGE_FINISH_DIST):
+            self.stage_clear = True; self.events.append(('stage_clear', 'knight'))
+
+    def _spawn_encounter(self, enc):
+        """Enemies of an encounter walk in from beyond the right edge of the screen, a little apart from each other."""
+        x0 = self.cam_x() + C.SCREEN_W + C.OGRE_SPAWN_MARGIN
+        for i, (kind, elite) in enumerate(enc['enemies']):
+            e = Fighter(kind, x0 + i * C.ENCOUNTER_SPACING, -1, elite=elite); e.ai_cooldown = 0.6
+            self.enemies.append(e); self.events.append(('spawn', kind))
+
     def _respawns(self, dt):
         if self.hero_timer is not None:
             self.hero_timer -= dt
-            if self.hero_timer <= 0:
+            if self.hero_timer <= 0 and self.stage is not None:      # in a stage death is final: the defeat screen decides
+                self.hero_timer = None; self.defeated = True
+            elif self.hero_timer <= 0:
                 self.hero_timer = None; old_cam = self.cam_x(); self.bury(self.hero)
                 nx = old_cam + C.HERO_SPAWN_MARGIN
                 self.hero = Fighter('knight', nx, +1, invuln=C.SPAWN_INVULN)
@@ -777,7 +807,7 @@ class World:
             if e.respawn_t is not None:
                 e.respawn_t -= dt
                 if e.respawn_t <= 0: self.bury(e); self.enemies.remove(e)
-        quota = max(self.spawn_target, min(1 + self.ogre_deaths // C.ENDLESS_CROWD_EVERY, C.ENDLESS_CROWD_MAX))
+        quota = 0 if self.stage is not None else max(self.spawn_target, min(1 + self.ogre_deaths // C.ENDLESS_CROWD_EVERY, C.ENDLESS_CROWD_MAX))
         while len(self.enemies) < quota:                   # endless mode: keep the quota filled, entering from the right
             kind, elite = self._draw_enemy()
             e = Fighter(kind, self.cam_x() + C.SCREEN_W + C.OGRE_SPAWN_MARGIN, -1, elite=elite)

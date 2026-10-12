@@ -721,4 +721,43 @@ for _ in range(3): w.ogre_deaths += 5
 w.enemies = []; w.update(DT, Inputs()); assert len(w.enemies) == C.ENDLESS_CROWD_MAX
 print('39 ok: endless roster unlocks with kills, deterministic, crowds and elites grow')
 
+# 40) T30: stages: finite path, camera locked at the ends, encounters fire once, clear needs everyone dead + the end line,
+#     death is final (defeated), the endless mode keeps respawning
+from game.stages import Stage, STAGES, enc
+st = Stage('t', 'TESTE', 'village', 1000, [enc(0.3, 'ogre', 'soldier'), enc(0.6, 'goblin')], start_x=40)
+w = World(T, stage=st); assert w.hero.x == 40 and w.enemies == [] and w.spawn_target == 0 and not w.stage_clear
+run(w, 0.5, Inputs()); assert w.cam_x() == 0.0 and w.enemies == [], 'camera locked at the start, nothing spawned yet'
+run(w, 0.3, Inputs(left=True)); assert w.hero.x >= 0.0 and w.hero.x < 40                       # cannot leave the path to the left
+w.hero.x = 10000.0; w.update(DT, Inputs()); assert w.hero.x == 1000.0                          # nor to the right
+assert w.cam_x() == st.length - C.SCREEN_W + C.STAGE_END_MARGIN, w.cam_x()                      # camera locked at the end
+# encounters fire once when the line is crossed, from beyond the right edge of the screen
+w = World(T, stage=st); w.hero.x = st.trigger_x(st.encounters[0]) + 1; cam = w.cam_x(); w.update(DT, Inputs())
+assert [e.kind for e in w.enemies] == ['ogre', 'soldier'] and w.next_enc == 1
+assert all(e.x > cam + C.SCREEN_W for e in w.enemies) and w.enemies[1].x - w.enemies[0].x == C.ENCOUNTER_SPACING
+w.update(DT, Inputs()); w.update(DT, Inputs()); assert len(w.enemies) == 2, 'an encounter fires only once'
+# no respawns in a stage: killed enemies become corpses and are not replaced
+for e in list(w.enemies): e.invuln = 0; e.hp = 1; w._hit(w.hero, e)
+run(w, C.RESPAWN_DELAY + 0.2, Inputs()); assert w.enemies == [] and len(w.corpses) == 2
+# clear = every encounter fired, nobody alive, hero at the end line
+w.hero.x = st.trigger_x(st.encounters[1]) + 1; w.update(DT, Inputs()); assert len(w.enemies) == 1 and not w.stage_clear
+w.hero.x = 990.0; w.update(DT, Inputs()); assert not w.stage_clear                               # one still alive
+w.enemies[0].invuln = 0; w.enemies[0].hp = 1; w._hit(w.hero, w.enemies[0]); w.update(DT, Inputs())
+assert w.stage_clear and ('stage_clear', 'knight') in w.events
+# death is final in a stage: no new hero, `defeated` set; the endless mode respawns as before
+w = World(T, stage=st); w.hero.hp = 1; w.hero.invuln = 0; w._hit(w.ogre or Fighter('ogre', 0, 1), w.hero) if w.ogre else None
+w.enemies = [Fighter('ogre', 60, -1)]; w.hero.invuln = 0; w._hit(w.enemies[0], w.hero)
+assert w.hero.state == 'dead' and not w.defeated
+old = w.hero; run(w, C.RESPAWN_DELAY + 0.3, Inputs()); assert w.defeated and w.hero is old and old.state == 'dead'
+assert w.hero_deaths == 1 and old not in w.corpses
+w = World(T); w.hero.hp = 1; w.hero.invuln = 0; w._hit(w.ogre, w.hero); run(w, C.RESPAWN_DELAY + 0.3, Inputs())
+assert not w.defeated and w.hero.state != 'dead'
+# the campaign data is sane: ordered encounters, known kinds, increasing length
+from game.stages import CAMPAIGN
+prev = 0
+for sid in CAMPAIGN:
+    s = STAGES[sid]; assert s.length > prev; prev = s.length
+    ps = [e['p'] for e in s.encounters]; assert ps == sorted(ps) and 0 < ps[0] and ps[-1] < 1
+    assert all(k in FIGHTER_DEFS and not FIGHTER_DEFS[k]['hero'] for e in s.encounters for k, _ in e['enemies'])
+print('40 ok: stages (path bounds, locked camera, one-shot encounters, clear, final defeat) + campaign data')
+
 print('ALL LOGIC TESTS PASSED')

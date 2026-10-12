@@ -214,6 +214,11 @@ ENDLESS_ELITE_CHANCE = 0.25        # ...with this chance
 ENDLESS_CROWD_EVERY = 5            # one more simultaneous enemy every N kills (up to ENDLESS_CROWD_MAX)
 ENDLESS_CROWD_MAX = 3
 
+# ---- stages (T30) -------------------------------------------------------------------------
+STAGE_END_MARGIN = 40              # px of scenery shown past the end of the path when the camera is locked at the end
+STAGE_FINISH_DIST = 30             # the hero must be this close to the end line (and everything dead) to finish the stage
+ENCOUNTER_SPACING = 30             # px between the enemies of one encounter as they enter
+
 # ---- spawning / camera --------------------------------------------------------------------
 RESPAWN_DELAY = 1.6                # seconds between a death and the new fighter appearing
 SPIRIT_DELAY = 0.45                # the spirit leaves the body this long after the death starts
