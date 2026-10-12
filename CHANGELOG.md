@@ -153,6 +153,8 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - Teste 52: contrato arte × dados (toda animação e efeito que `FIGHTER_DEFS`/`ATTACKS` pedem existe no sheet que desenharia).
 - Desgaste das armas movido de `start_attack` para `World._hit` (cobra uma vez por golpe/tiro que acerta, inclusive no escudo); projéteis levam `next`/`wear`/`shield_break` do golpe que os disparou (`World._proj_at`). `World.charges()` / `can_use()` cuidam das cargas das facas.
 - `Fighter.pending` / `gap_until`: descanso entre golpes (atributo `gap` do ataque; `FINISHERS` = último golpe de cada combo). `Fighter.sheet` só troca para a ficha de arma do cavaleiro; as outras classes usam a própria ficha (têm as linhas `attack_axe/bow/crossbow`). O evento de tiro vira `fireball` para projéteis `fireball*`.
+- `art_tools/proposals_gen.py` (novo, fora do `build_assets`): gera em `out/art_proposals/` propostas estáticas de direção de arte (personagens mais baixos + visual mais sombrio) reaproveitando as fichas e props atuais. Não altera o jogo nem `assets/`.
+- README: seção final "Lista de features", mantida atualizada por regra no `CLAUDE.md` (6.2).
 
 ### Correções
 - `Game.run` (o laço principal) estava sobrescrito pelo atributo `self.run` (estado da run, T37): o jogo empacotado quebrava com 'dict object is not callable' ao iniciar. Atributo renomeado para `run_state`; achado ao rodar o executável do PyInstaller. Novos testes cobrem o laço principal (`Game.run`) com o stand-in e com o pygame real.

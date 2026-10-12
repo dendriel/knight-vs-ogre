@@ -109,7 +109,7 @@ escopo) e a validacao por jogo real (feeling, sons, estetica), que e do usuario.
 **Arte, audio e interface**
 - Toda a arte em pixel art gerada por codigo (Pillow): personagens num esqueleto compartilhado, chefes 96x96, 3 temas de cenario com parallax, efeitos, projeteis e icones
 - Efeitos: rastros de golpe por golpe do combo, sangue, espirito, cura, faiscas de escudo, escudo se partindo, explosoes, espinhos de pedra
-- 30 efeitos sonoros sintetizados por codigo e trilha em loop; mudo com M
+- 31 efeitos sonoros sintetizados por codigo e trilha em loop; mudo com M
 - HUD em slots (vida, armadura, combo, arma e durabilidade, secundario, pocoes, bombas, ouro), barra de vida e estamina do inimigo, barra do chefe
 - Janela redimensionavel com escala inteira, tela cheia (F11), controles listados em "Ver comandos"
 
