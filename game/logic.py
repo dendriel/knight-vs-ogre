@@ -2,6 +2,13 @@
 import json, math, os, random
 from . import config as C
 
+# Default parameters of the enemy AIs (T20); a fighter def may override any of them in 'ai_params'.
+#   attack_dist: stops walking and prepares to swing | wait: random pause before a swing (the player's window) |
+#   cooldown: rest after a swing | retaliate: shorter pause after recovering from a hit | patience: how far the hero may
+#   step back before the enemy forgets its plan
+AI_DEFAULT = dict(attack_dist=C.OGRE_ATTACK_DIST, wait=C.OGRE_WAIT_BEFORE_ATTACK, cooldown=C.OGRE_COOLDOWN,
+                  retaliate=C.OGRE_RETALIATE_WAIT, patience=C.OGRE_PATIENCE_DIST)
+
 # One entry per kind of fighter: everything that differs between a knight and an ogre lives here (T01).
 FIGHTER_DEFS = {
     'knight': dict(hero=True, max_hp=C.HERO_MAX_HP, speed=C.HERO_SPEED, half_width=8, sheet='knight', ai=None,
@@ -80,6 +87,7 @@ class Inputs:
 class Fighter:
     def __init__(self, kind, x, facing, hp=None, invuln=0.0):
         self.defn = FIGHTER_DEFS[kind]; self.max_hp = self.defn['max_hp']
+        self.ai_p = dict(AI_DEFAULT, **self.defn.get('ai_params', {}))
         if hp is None: hp = self.max_hp
         self.kind, self.x, self.facing, self.hp, self.invuln = kind, float(x), facing, hp, invuln
         self.state = 'idle'; self.t = 0.0
@@ -102,6 +110,9 @@ class Fighter:
 
     @property
     def is_hero(self): return self.defn['hero']
+
+    @property
+    def speed(self): return self.defn['speed']      # (elite variants multiply it, T26)
 
     @property
     def airborne(self): return not self.grounded
@@ -323,26 +334,36 @@ class World:
             h.set_state('idle')
 
     def _enemy_ai(self, o, dt):
+        """Dispatches to the behaviour named by FIGHTER_DEFS[kind]['ai'] (T20): _ai_melee, and the ones added later."""
+        getattr(self, '_ai_' + o.defn['ai'])(o, dt)
+
+    def _ai_prelude(self, o, dt):
+        """Shared first steps of every behaviour. Returns the hero when the enemy is free to decide something."""
         h = self.hero
         if o.state == 'attack' and h.state != 'dead' and abs(h.x - o.x) > 2 and o.frame_index(self.timing) < C.ACTIVE_FRAMES[0]:
             o.facing = 1 if h.x > o.x else -1               # wind-up: keep tracking a hero who walks through him
-        if not o.can_act(): return
+        if not o.can_act(): return None
         if h.state == 'dead':
             if o.state != 'idle': o.set_state('idle')
-            return
+            return None
         if abs(h.x - o.x) > 2: o.facing = 1 if h.x > o.x else -1        # no flip-flop when the hero is right on top of him
-        dist = abs(h.x - o.x)
-        reachable = abs(h.y - o.y) <= C.VERTICAL_REACH
         if o.ai_cooldown > 0: o.ai_cooldown -= dt
-        if dist > C.OGRE_ATTACK_DIST:                      # approach
-            o.x += o.facing * o.defn['speed'] * dt
+        return h
+
+    def _ai_melee(self, o, dt):
+        h = self._ai_prelude(o, dt)
+        if h is None: return
+        p = o.ai_p; dist = abs(h.x - o.x)
+        reachable = abs(h.y - o.y) <= C.VERTICAL_REACH
+        if dist > p['attack_dist']:                        # approach
+            o.x += o.facing * o.speed * dt
             if o.state != 'walk': o.set_state('walk')
-            if dist > C.OGRE_ATTACK_DIST + C.OGRE_PATIENCE_DIST: o.ai_wait = None   # hero ran away: forget the plan
+            if dist > p['attack_dist'] + p['patience']: o.ai_wait = None   # hero ran away: forget the plan
             return
         if o.state != 'idle': o.set_state('idle')
         if not reachable: o.ai_wait = None; return         # hero too high: the enemy just waits below him
         if o.ai_cooldown <= 0:                             # in range: pause first, then swing
-            if o.ai_wait is None: o.ai_wait = self.rng.uniform(*C.OGRE_WAIT_BEFORE_ATTACK)
+            if o.ai_wait is None: o.ai_wait = self.rng.uniform(*p['wait'])
             o.ai_wait -= dt
             if o.ai_wait <= 0:
                 o.ai_wait = None; self.start_attack(o, o.defn['primary'])
@@ -544,8 +565,8 @@ class World:
                     if queued: self.start_attack(f, queued); continue              # chained: no gap between strokes
                     f.chain = (self.time, nxt)                                       # a click in the next 0.15 s still chains
                 if not f.is_hero:
-                    if was_attack: f.ai_cooldown = self.rng.uniform(*C.OGRE_COOLDOWN)
-                    else: f.ai_cooldown = 0.0; f.ai_wait = self.rng.uniform(*C.OGRE_RETALIATE_WAIT)
+                    if was_attack: f.ai_cooldown = self.rng.uniform(*f.ai_p['cooldown'])
+                    else: f.ai_cooldown = 0.0; f.ai_wait = self.rng.uniform(*f.ai_p['retaliate'])
 
     def _respawns(self, dt):
         if self.hero_timer is not None:

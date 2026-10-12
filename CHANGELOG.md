@@ -56,6 +56,7 @@ Categorias: Jogabilidade · Balanceamento · Arte · Contrato de arte · Áudio 
 - T15: `apply_damage` passa a descontar da armadura (`Fighter.armor/armor_max`); `Pickup('armor')`; teste 29.
 - T12: estado `charge`; `ATTACKS['special']` com `rehit` (acerta de novo no frame 4), `ignore_invuln` e alcance simétrico; `World.combo`; teste 30.
 - T14: `ATTACKS[x].shoot` (dados do projétil, nasce em `slash_frame`), `Fighter.cd` + `ATTACKS[x].cooldown` (recarga), `WEAPONS` com `bow`/`xbow`; teste 31.
+- T20: IA modular: `FIGHTER_DEFS[kind]['ai']` escolhe o comportamento (`_ai_melee` = o ogro atual, sem mudança) e `ai_params` sobrescreve `AI_DEFAULT` (distância de ataque, espera, descanso, revide, paciência) por tipo; `Fighter.speed` pronto para as variantes elite. Teste 32.
 
 ### Pendente de validação
 - Legibilidade dos projéteis (8–16 px) e do marcador de queda no pygame real; ainda não há ataque do jogo que dispare projéteis (entram em T14/T23/T41).

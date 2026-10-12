@@ -539,4 +539,18 @@ w = fresh(0); w.ogre.x = 5000.0; w.hero.weapon = dict(id='bow', durability=C.BOW
 w.start_attack(w.hero, 'bow'); w.start_attack(w.hero, 'bow'); assert w.hero.weapon is None and w.hero.primary == 'sword'
 print('31 ok: bow/crossbow pickups (shot on frame 4, range, wear, crossbow reload)')
 
+# 32) T20: AI behaviours are data: a def with different ai_params changes how far away the enemy stops and attacks
+from game.logic import FIGHTER_DEFS
+FIGHTER_DEFS['far_ogre'] = dict(FIGHTER_DEFS['ogre'], ai='melee', ai_params=dict(attack_dist=70, wait=(0.1, 0.1)))
+w = fresh(0); w.enemies = [Fighter('far_ogre', 400, -1)]; w.enemies[0].ai_cooldown = 0
+stop = None
+for _ in range(int(8 / DT)):
+    w.update(DT, Inputs(left=False))
+    e = w.enemies[0]
+    if e.state == 'attack': stop = abs(e.x - w.hero.x); break
+assert stop is not None and 60 <= stop <= 72, stop                       # attacked from ~70 px, the ogre default is 38
+assert w.enemies[0].ai_p['attack_dist'] == 70 and Fighter('ogre', 0, 1).ai_p['attack_dist'] == C.OGRE_ATTACK_DIST
+del FIGHTER_DEFS['far_ogre']
+print('32 ok: AI parameters come from FIGHTER_DEFS (ai + ai_params)')
+
 print('ALL LOGIC TESTS PASSED')
